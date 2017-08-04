@@ -1,0 +1,63 @@
+"*":
+  "atom-beautify":
+    general:
+      _analyticsUserId: "b527f0b0-7cac-4680-9862-8d0926193df5"
+    ruby:
+      indent_size: 2
+  core:
+    customFileTypes:
+      "source.ini": [
+        ".buckconfig"
+        ".hgrc"
+        ".flowconfig"
+      ]
+      "source.json": [
+        ".arcconfig"
+        "BUCK.autodeps"
+      ]
+      "source.python": [
+        "BUCK"
+      ]
+    disabledPackages: [
+      "nuclide"
+    ]
+    telemetryConsent: "no"
+    themes: [
+      "dracula-ui"
+      "dracula-theme"
+    ]
+  editor:
+    scrollPastEnd: true
+  "exception-reporting":
+    userId: "980bf24e-de05-2b5e-f3c5-71e82ef16fed"
+  linter:
+    errorPanelHeight: 44
+  nuclide:
+    "nuclide-file-tree": {}
+    "nuclide-working-sets":
+      workingSets: [
+        {
+          name: "app & spec"
+          active: true
+          uris: [
+            "/home/punkbooster/Spark/greetabl/app"
+            "/home/punkbooster/Spark/greetabl/spec"
+          ]
+        }
+        {
+          name: "db"
+          active: true
+          uris: [
+            "/home/punkbooster/Spark/greetabl/db"
+          ]
+        }
+        {
+          name: "lib"
+          active: true
+          uris: [
+            "/home/punkbooster/Spark/greetabl/lib"
+          ]
+        }
+      ]
+  welcome:
+    showOnStartup: false

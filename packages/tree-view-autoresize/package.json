@@ -1,0 +1,68 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-117110-20357-1bkeeeg/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-117110-20357-1bkeeeg/package.tgz",
+        "spec": "/tmp/d-117110-20357-1bkeeeg/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-117110-20357-1gs58zm"
+    ]
+  ],
+  "_from": "../d-117110-20357-1bkeeeg/package.tgz",
+  "_id": "tree-view-autoresize@1.5.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/tree-view-autoresize",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-117110-20357-1bkeeeg/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-117110-20357-1bkeeeg/package.tgz",
+    "spec": "/tmp/d-117110-20357-1bkeeeg/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-117110-20357-1bkeeeg/package.tgz",
+  "_shasum": "8727e2262f65cc5131677b8406b927e04092fb49",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-117110-20357-1bkeeeg/package.tgz",
+  "_where": "/tmp/apm-install-dir-117110-20357-1gs58zm",
+  "bugs": {
+    "url": "https://github.com/lexcast/tree-view-autoresize/issues"
+  },
+  "dependencies": {
+    "atom-utils": "^0.9.2",
+    "jquery": "^2.2.2",
+    "scrollbar-width": "^3.1.1"
+  },
+  "description": "Autoresize the tree view when open/close folders",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "homepage": "https://github.com/lexcast/tree-view-autoresize#readme",
+  "keywords": [
+    "tree-view",
+    "autoresize"
+  ],
+  "license": "MIT",
+  "main": "./lib/tree-view-autoresize",
+  "name": "tree-view-autoresize",
+  "optionalDependencies": {},
+  "readme": "# Tree View Autoresize\n\n[![apm install tree-view-autoresize](https://apm-badges.herokuapp.com/apm/tree-view-autoresize.svg)](https://atom.io/packages/tree-view-autoresize)\n\nAutoresize the tree view when open/close folders.\n\n![Tree View Autoresize](https://cloud.githubusercontent.com/assets/10590799/14082869/a6132a20-f4cf-11e5-8640-e067730f7098.gif)\n\nIt also supports [Nuclide](http://nuclide.io) file tree\n\n## Install\nWith apm:\n```bash\napm install tree-view-autoresize\n```\nOr Settings ➔ Packages ➔ Search for `tree-view-autoresize`\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lexcast/tree-view-autoresize.git"
+  },
+  "version": "1.5.0"
+}

@@ -1,0 +1,67 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-117110-21728-179dkdw/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-117110-21728-179dkdw/package.tgz",
+        "spec": "/tmp/d-117110-21728-179dkdw/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-117110-21728-1nrefqm"
+    ]
+  ],
+  "_from": "../d-117110-21728-179dkdw/package.tgz",
+  "_id": "language-rspec@0.5.1",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/language-rspec",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-117110-21728-179dkdw/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-117110-21728-179dkdw/package.tgz",
+    "spec": "/tmp/d-117110-21728-179dkdw/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-117110-21728-179dkdw/package.tgz",
+  "_shasum": "7960ef029ea15fe517fcb5c6df1335c4f1390da2",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-117110-21728-179dkdw/package.tgz",
+  "_where": "/tmp/apm-install-dir-117110-21728-1nrefqm",
+  "bugs": {
+    "url": "https://github.com/paveldruzyak/language-rspec/issues"
+  },
+  "dependencies": {},
+  "description": "RSpec language package for Atom",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "homepage": "https://github.com/paveldruzyak/language-rspec#readme",
+  "keywords": [
+    "rspec",
+    "spec",
+    "ruby",
+    "test",
+    "bdd"
+  ],
+  "license": "MIT",
+  "main": "./lib/language-rspec",
+  "name": "language-rspec",
+  "optionalDependencies": {},
+  "readme": "[![Build Status](https://travis-ci.org/paveldruzyak/language-rspec.svg?branch=master)](https://travis-ci.org/paveldruzyak/language-rspec)\n\n# RSpec language support in Atom\n\nAdds syntax highlighting and snippets to RSpec file in Atom.\n\nOriginally [converted](http://atom.io/docs/latest/converting-a-text-mate-bundle)\nfrom the [RSpec TextMate bundle](https://github.com/rspec/rspec-tmbundle).\n\nContributions are greatly appreciated. Please fork this repository and open a\npull request to add snippets, make grammar tweaks, etc.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paveldruzyak/language-rspec.git"
+  },
+  "version": "0.5.1"
+}

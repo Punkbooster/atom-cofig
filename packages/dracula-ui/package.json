@@ -1,0 +1,60 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-117314-4581-1ynucj3/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-117314-4581-1ynucj3/package.tgz",
+        "spec": "/tmp/d-117314-4581-1ynucj3/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-117314-4581-ujje4n"
+    ]
+  ],
+  "_from": "../d-117314-4581-1ynucj3/package.tgz",
+  "_id": "dracula-ui@0.4.1",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/dracula-ui",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-117314-4581-1ynucj3/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-117314-4581-1ynucj3/package.tgz",
+    "spec": "/tmp/d-117314-4581-1ynucj3/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-117314-4581-1ynucj3/package.tgz",
+  "_shasum": "09fe97834f949323eed8f52d8118d91d170aa5e1",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-117314-4581-1ynucj3/package.tgz",
+  "_where": "/tmp/apm-install-dir-117314-4581-ujje4n",
+  "bugs": {
+    "url": "https://github.com/ichi3pm/dracula-ui/issues"
+  },
+  "dependencies": {},
+  "description": "dracula UI theme for Atom",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">0.40.0"
+  },
+  "homepage": "https://github.com/ichi3pm/dracula-ui#readme",
+  "license": "MIT",
+  "name": "dracula-ui",
+  "optionalDependencies": {},
+  "readme": "# Dracula UI theme\n\nDracula UI theme for Atom.\n\n![dracula-ui](https://github.com/yl0g0ly/dracula-ui/blob/master/ss.png?raw=true)\n\nRecommend [syntax theme](https://github.com/zenorocha/dracula-theme).\n\n## Thanks to\n+ [madhead](https://github.com/madhead/lavender-ui)\n+ [One Dark UI](https://github.com/atom/one-dark-ui) team\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ichi3pm/dracula-ui.git"
+  },
+  "theme": "ui",
+  "version": "0.4.1"
+}

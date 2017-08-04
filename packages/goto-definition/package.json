@@ -1,0 +1,68 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-11721-8864-m3aqev/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-11721-8864-m3aqev/package.tgz",
+        "spec": "/tmp/d-11721-8864-m3aqev/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-11721-8864-zbf2z0"
+    ]
+  ],
+  "_from": "../d-11721-8864-m3aqev/package.tgz",
+  "_id": "goto-definition@1.2.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/goto-definition",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-11721-8864-m3aqev/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-11721-8864-m3aqev/package.tgz",
+    "spec": "/tmp/d-11721-8864-m3aqev/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-11721-8864-m3aqev/package.tgz",
+  "_shasum": "743f0fbbcd91103d958a480a01345f6661e8bc99",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-11721-8864-m3aqev/package.tgz",
+  "_where": "/tmp/apm-install-dir-11721-8864-zbf2z0",
+  "author": {
+    "name": "faceair"
+  },
+  "bugs": {
+    "url": "https://github.com/faceair/atom-goto-definition/issues"
+  },
+  "dependencies": {
+    "atom-space-pen-views": "^2.1.1"
+  },
+  "description": "Goto definition.",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "homepage": "https://github.com/faceair/atom-goto-definition#readme",
+  "license": "GPL",
+  "main": "./lib/goto-definition",
+  "name": "goto-definition",
+  "optionalDependencies": {},
+  "readme": "# Goto Definition\n\n[![Build Status](https://travis-ci.org/r-chris/atom-goto-definition.svg?branch=master)](https://travis-ci.org/r-chris/atom-goto-definition)\n\n![demo](http://ww1.sinaimg.cn/large/71ef46c1jw1f0f2vkw1aeg218f0p77rg.gif)\n\n* Support `JavaScript(ES6 && JSX)`, `TypeScript`, `CoffeeScript`, `Python`, `Ruby`, `PHP`, `Hack`, `Perl`, `KRL` languages\n* Works with Mac OSX, Linux and Windows\n* Goto-Definition functionality, by default on `Alt+Cmd+Enter`/`Ctrl+Alt+Enter`\n\n## Installing\nInstall the package ```goto-definition``` in Atom (Preferences->Install) or use Atom's package manager from a shell:  \n```\n$ apm install goto-definition\n```\n\n### Notice\n\n* If you want include VCS ignored paths, please turn `Settings -> Exclude VCS Ignored Paths` option off.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/faceair/atom-goto-definition.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.2.0"
+}

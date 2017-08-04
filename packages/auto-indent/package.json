@@ -1,0 +1,60 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-1161028-24746-1920vt9/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-1161028-24746-1920vt9/package.tgz",
+        "spec": "/tmp/d-1161028-24746-1920vt9/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-1161028-24746-19kklrx"
+    ]
+  ],
+  "_from": "../d-1161028-24746-1920vt9/package.tgz",
+  "_id": "auto-indent@0.5.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/auto-indent",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-1161028-24746-1920vt9/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-1161028-24746-1920vt9/package.tgz",
+    "spec": "/tmp/d-1161028-24746-1920vt9/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-1161028-24746-1920vt9/package.tgz",
+  "_shasum": "c76fd4efa38ff3c143da927c0173d8547365b6a6",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-1161028-24746-1920vt9/package.tgz",
+  "_where": "/tmp/apm-install-dir-1161028-24746-19kklrx",
+  "bugs": {
+    "url": "https://github.com/griiin/atom-auto-indent/issues"
+  },
+  "dependencies": {},
+  "description": "This package will allow you to auto-indent your current file",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "homepage": "https://github.com/griiin/atom-auto-indent#readme",
+  "license": "MIT",
+  "main": "./lib/auto-indent",
+  "name": "auto-indent",
+  "optionalDependencies": {},
+  "readme": "# auto-indent package\n\nThis package will allow you to auto-indent your current file. Use the auto-indent:apply command.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/griiin/atom-auto-indent.git"
+  },
+  "version": "0.5.0"
+}

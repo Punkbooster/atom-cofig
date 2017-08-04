@@ -1,0 +1,63 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-116111-31129-1mb3x3b/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-116111-31129-1mb3x3b/package.tgz",
+        "spec": "/tmp/d-116111-31129-1mb3x3b/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-116111-31129-11mrx2r"
+    ]
+  ],
+  "_from": "../d-116111-31129-1mb3x3b/package.tgz",
+  "_id": "language-cjsx@0.3.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/language-cjsx",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-116111-31129-1mb3x3b/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-116111-31129-1mb3x3b/package.tgz",
+    "spec": "/tmp/d-116111-31129-1mb3x3b/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-116111-31129-1mb3x3b/package.tgz",
+  "_shasum": "b27c5a9220d751166565543c86cbe04a2d8a765d",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-116111-31129-1mb3x3b/package.tgz",
+  "_where": "/tmp/apm-install-dir-116111-31129-11mrx2r",
+  "author": {
+    "name": "Gordon L. Hempton",
+    "email": "ghempton@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/ghempton/language-cjsx/issues"
+  },
+  "dependencies": {},
+  "description": "CoffeeScript JSX language support",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "homepage": "https://github.com/ghempton/language-cjsx#readme",
+  "license": "MIT",
+  "name": "language-cjsx",
+  "optionalDependencies": {},
+  "readme": "# language-cjsx package\n\nAtom syntax highlighting for CoffeeScript JSX.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghempton/language-cjsx.git"
+  },
+  "version": "0.3.0"
+}

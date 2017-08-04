@@ -1,0 +1,66 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-117514-24687-1xc1tg/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-117514-24687-1xc1tg/package.tgz",
+        "spec": "/tmp/d-117514-24687-1xc1tg/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-117514-24687-1iijtb9"
+    ]
+  ],
+  "_from": "../d-117514-24687-1xc1tg/package.tgz",
+  "_id": "gemsource@0.3.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/gemsource",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-117514-24687-1xc1tg/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-117514-24687-1xc1tg/package.tgz",
+    "spec": "/tmp/d-117514-24687-1xc1tg/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-117514-24687-1xc1tg/package.tgz",
+  "_shasum": "1308565e25e7c47f9e13d5aac67fbd32c1f3c688",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-117514-24687-1xc1tg/package.tgz",
+  "_where": "/tmp/apm-install-dir-117514-24687-1iijtb9",
+  "activationCommands": {
+    "atom-workspace": "gemsource:open"
+  },
+  "bugs": {
+    "url": "https://github.com/KELiON/gemsource/issues"
+  },
+  "dependencies": {
+    "atom-space-pen-views": "^2.0.0"
+  },
+  "description": "Simple package to open source of installed ruby gems from atom",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">=0.174.0 <2.0.0"
+  },
+  "homepage": "https://github.com/KELiON/gemsource#readme",
+  "keywords": [],
+  "license": "MIT",
+  "main": "./lib/gemsource",
+  "name": "gemsource",
+  "optionalDependencies": {},
+  "readme": "# Gemsource package\n\nAtom plugin for simple navigation into source code of installed ruby gems. Plugin works in projects, that use [bundler](http://bundler.io/). Requires `Gemfile.lock` in root project directory.\n\n## How to use\n\nAll is simple: open command palette by `cmd+shift+p` and find `Gemsource:open`. Than choose gem that you need and press Enter.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KELiON/gemsource.git"
+  },
+  "version": "0.3.0"
+}
