@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -20,6 +11,17 @@ var _atom = require('atom');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const TASKS = exports.TASKS = [];
 
 /*
@@ -28,28 +30,14 @@ const TASKS = exports.TASKS = [];
  */
 class ArcToolbarModel {
 
-  constructor(outputMessages) {
-    this._outputMessages = outputMessages;
-  }
+  constructor() {}
 
-  setCwdApi(cwdApi) {
-    this._cwdApi = cwdApi;
-  }
-
-  logOutput(text, level) {
-    this._outputMessages.next({ text, level });
+  setProjectPath(projectPath) {
+    this._projectPath = projectPath;
   }
 
   getActiveProjectPath() {
-    if (this._cwdApi == null) {
-      return atom.project.getPaths()[0];
-    }
-    const workingDirectory = this._cwdApi.getCwd();
-    if (workingDirectory != null) {
-      return workingDirectory.getPath();
-    } else {
-      return null;
-    }
+    return this._projectPath;
   }
 
   onChange(callback) {
@@ -101,6 +89,5 @@ class ArcToolbarModel {
   viewDeactivated() {
     throw new Error('arc build not supported');
   }
-
 }
 exports.ArcToolbarModel = ArcToolbarModel;

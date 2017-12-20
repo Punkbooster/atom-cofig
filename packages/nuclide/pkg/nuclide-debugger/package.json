@@ -4,10 +4,24 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Allows debugging of various types of process from within Nuclide",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
-    "testRunner": "apm"
+    "testRunner": "apm",
+    "config": {
+      "openDevToolsOnDebuggerStart": {
+        "title": "Developer Only: Open the Dev Tools on debugger start",
+        "type": "boolean",
+        "default": false,
+        "description": "Opens the devtools on debugger start up to help debugging early events."
+      },
+      "forceNewChannel": {
+        "title": "Force to use the new debugger protocol channel",
+        "type": "boolean",
+        "default": false,
+        "description": "Force to use the new debugger protocol channel."
+      }
+    }
   },
   "providedServices": {
     "nuclide-debugger.remote": {
@@ -26,9 +40,9 @@
         "0.0.0": "consumeRegisterExecutor"
       }
     },
-    "nuclide-datatip.provider": {
+    "datatip": {
       "versions": {
-        "0.0.0": "consumeDatatipService"
+        "0.1.0": "consumeDatatipService"
       }
     },
     "nuclide-evaluation-expression.provider": {
@@ -59,6 +73,16 @@
     "nux-trigger": {
       "versions": {
         "0.0.0": "consumeTriggerNuxService"
+      }
+    },
+    "nuclide-current-working-directory": {
+      "versions": {
+        "0.0.0": "consumeCurrentWorkingDirectory"
+      }
+    },
+    "nuclide-output": {
+      "versions": {
+        "0.0.0": "consumeOutputService"
       }
     }
   }

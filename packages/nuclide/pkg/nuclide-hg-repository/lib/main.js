@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -25,16 +16,10 @@ function _load_registerGrammar() {
 
 var _atom = require('atom');
 
-var _nuclideHgGitBridge;
+var _nuclideVcsBase;
 
-function _load_nuclideHgGitBridge() {
-  return _nuclideHgGitBridge = require('../../nuclide-hg-git-bridge');
-}
-
-var _actions;
-
-function _load_actions() {
-  return _actions = require('./actions');
+function _load_nuclideVcsBase() {
+  return _nuclideVcsBase = require('../../nuclide-vcs-base');
 }
 
 var _HgRepositoryProvider;
@@ -44,6 +29,17 @@ function _load_HgRepositoryProvider() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const HG_ADD_TREE_CONTEXT_MENU_PRIORITY = 400;
 const HG_REVERT_FILE_TREE_CONTEXT_MENU_PRIORITY = 1050;
@@ -74,7 +70,7 @@ function getActivePathAndHgRepository() {
     return null;
   }
   const filePath = editor.getPath() || '';
-  const repository = (0, (_nuclideHgGitBridge || _load_nuclideHgGitBridge()).repositoryForPath)(filePath);
+  const repository = (0, (_nuclideVcsBase || _load_nuclideVcsBase()).repositoryForPath)(filePath);
   if (repository == null || repository.getType() !== 'hg') {
     return null;
   }
@@ -107,13 +103,18 @@ function activate(state) {
   subscriptions = new _atom.CompositeDisposable();
 
   subscriptions.add(atom.commands.add('atom-text-editor', 'nuclide-hg-repository:revert', event => {
-    const editorElement = event.target;
-    (0, (_actions || _load_actions()).revertPath)(editorElement.getModel().getPath());
+    const editorElement = event.currentTarget;
+    (0, (_nuclideVcsBase || _load_nuclideVcsBase()).revertPath)(editorElement.getModel().getPath());
+  }));
+
+  subscriptions.add(atom.commands.add('atom-text-editor', 'nuclide-hg-repository:confirm-and-revert', event => {
+    const editorElement = event.currentTarget;
+    (0, (_nuclideVcsBase || _load_nuclideVcsBase()).confirmAndRevertPath)(editorElement.getModel().getPath());
   }));
 
   subscriptions.add(atom.commands.add('atom-text-editor', 'nuclide-hg-repository:add', event => {
-    const editorElement = event.target;
-    (0, (_actions || _load_actions()).addPath)(editorElement.getModel().getPath());
+    const editorElement = event.currentTarget;
+    (0, (_nuclideVcsBase || _load_nuclideVcsBase()).addPath)(editorElement.getModel().getPath());
   }));
 
   // Text editor context menu items.
@@ -122,13 +123,13 @@ function activate(state) {
       label: 'Source Control',
       submenu: [{
         label: 'Revert',
-        command: 'nuclide-hg-repository:revert',
+        command: 'nuclide-hg-repository:confirm-and-revert',
         shouldDisplay() {
           return isActivePathRevertable();
         }
       }, {
         label: 'Add to Mercurial',
-        command: 'nuclide-hg-repository:revert',
+        command: 'nuclide-hg-repository:add',
         shouldDisplay() {
           return isActivePathAddable();
         }
@@ -139,7 +140,7 @@ function activate(state) {
     }, { type: 'separator' }]
   }));
 
-  (0, (_registerGrammar || _load_registerGrammar()).default)('source.ini', '.hgrc');
+  (0, (_registerGrammar || _load_registerGrammar()).default)('source.ini', ['.hgrc']);
 }
 
 function addItemsToFileTreeContextMenu(contextMenu) {
@@ -152,7 +153,7 @@ function addItemsToFileTreeContextMenu(contextMenu) {
     callback() {
       // TODO(most): support reverting multiple nodes at once.
       const revertNode = contextMenu.getSingleSelectedNode();
-      (0, (_actions || _load_actions()).revertPath)(revertNode == null ? null : revertNode.uri);
+      (0, (_nuclideVcsBase || _load_nuclideVcsBase()).confirmAndRevertPath)(revertNode == null ? null : revertNode.uri);
     },
     shouldDisplay() {
       return shouldDisplayActionTreeItem(contextMenu, 'Revert');
@@ -165,7 +166,7 @@ function addItemsToFileTreeContextMenu(contextMenu) {
     callback() {
       // TODO(most): support adding multiple nodes at once.
       const addNode = contextMenu.getSingleSelectedNode();
-      (0, (_actions || _load_actions()).addPath)(addNode == null ? null : addNode.uri);
+      (0, (_nuclideVcsBase || _load_nuclideVcsBase()).addPath)(addNode == null ? null : addNode.uri);
     },
     shouldDisplay() {
       return shouldDisplayActionTreeItem(contextMenu, 'Add');

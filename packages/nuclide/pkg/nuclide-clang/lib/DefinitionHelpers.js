@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -30,7 +21,7 @@ function _load_findWholeRangeOfSymbol() {
 var _range;
 
 function _load_range() {
-  return _range = require('../../commons-atom/range');
+  return _range = require('nuclide-commons-atom/range');
 }
 
 var _nuclideAnalytics;
@@ -47,10 +38,20 @@ function _load_constants() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class DefinitionHelpers {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
+class DefinitionHelpers {
   static getDefinition(editor, position) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('clang.get-definition', () => DefinitionHelpers._getDefinition(editor, position));
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('clang.get-definition', () => DefinitionHelpers._getDefinition(editor, position));
   }
 
   static _getDefinition(editor, position) {
@@ -97,13 +98,5 @@ class DefinitionHelpers {
       };
     })();
   }
-
-  static getDefinitionById(filePath, id) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('clang.get-definition-by-id', (0, _asyncToGenerator.default)(function* () {
-      // TODO:
-      return null;
-    }));
-  }
 }
 exports.default = DefinitionHelpers;
-module.exports = exports['default'];

@@ -1,18 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.fetchRevisionInfo = exports.fetchCommonAncestorOfHeadAndRevision = exports.INFO_REV_END_MARK = undefined;
+exports.fetchRevisionInfo = exports.fetchCommonAncestorOfHeadAndRevision = exports.NULL_CHAR = exports.INFO_REV_END_MARK = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -35,7 +26,7 @@ let fetchCommonAncestorOfHeadAndRevision = exports.fetchCommonAncestorOfHeadAndR
       const { stdout: ancestorRevisionNumber } = yield (0, (_hgUtils || _load_hgUtils()).hgAsyncExecute)(args, options);
       return ancestorRevisionNumber;
     } catch (e) {
-      (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().warn('Failed to get hg common ancestor: ', e.stderr, e.command);
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-hg-rpc').warn('Failed to get hg common ancestor: ', e.stderr, e.command);
       throw new Error('Could not fetch common ancestor of head and revision: ' + revision);
     }
   });
@@ -47,7 +38,7 @@ let fetchCommonAncestorOfHeadAndRevision = exports.fetchCommonAncestorOfHeadAndR
 
 let fetchRevisionInfo = exports.fetchRevisionInfo = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* (revisionExpression, workingDirectory) {
-    const [revisionInfo] = yield fetchRevisions(revisionExpression, workingDirectory).toPromise();
+    const [revisionInfo] = yield fetchRevisionsInfo(revisionExpression, workingDirectory).toPromise();
     return revisionInfo;
   });
 
@@ -58,6 +49,7 @@ let fetchRevisionInfo = exports.fetchRevisionInfo = (() => {
 
 exports.expressionForRevisionsBeforeHead = expressionForRevisionsBeforeHead;
 exports.expressionForCommonAncestor = expressionForCommonAncestor;
+exports.fetchRevisionsInfo = fetchRevisionsInfo;
 exports.fetchRevisionInfoBetweenRevisions = fetchRevisionInfoBetweenRevisions;
 exports.fetchSmartlogRevisions = fetchSmartlogRevisions;
 exports.parseRevisionInfoOutput = parseRevisionInfoOutput;
@@ -74,10 +66,10 @@ function _load_hgConstants() {
   return _hgConstants = require('./hg-constants');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
@@ -93,7 +85,20 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 
 // Exported for testing.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const INFO_REV_END_MARK = exports.INFO_REV_END_MARK = '<<NUCLIDE_REV_END_MARK>>';
+const NULL_CHAR = exports.NULL_CHAR = '\0';
+const ESCAPED_NULL_CHAR = '\\0';
 
 // We use `{p1node|short} {p2node|short}` instead of `{parents}`
 // because `{parents}` only prints when a node has more than one parent,
@@ -109,14 +114,22 @@ const REVISION_INFO_TEMPLATE = `{rev}
 {node|short}
 {branch}
 {phase}
-{bookmarks}
-{remotenames}
-{tags}
-{p1node|short} {p2node|short}
-{ifcontains(rev, revset('.'), '${ HEAD_MARKER }')}
+{bookmarks % '{bookmark}${ESCAPED_NULL_CHAR}'}
+{remotenames % '{remotename}${ESCAPED_NULL_CHAR}'}
+{tags % '{tag}${ESCAPED_NULL_CHAR}'}
+{p1node|short}${ESCAPED_NULL_CHAR}{p2node|short}${ESCAPED_NULL_CHAR}
+{ifcontains(rev, revset('.'), '${HEAD_MARKER}')}
+{singlepublicsuccessor}
+{amendsuccessors}
+{rebasesuccessors}
+{splitsuccessors}
+{foldsuccessors}
+{histeditsuccessors}
 {desc}
-${ INFO_REV_END_MARK }
+${INFO_REV_END_MARK}
 `;
+
+const SUCCESSOR_TEMPLATE_ORDER = [(_hgConstants || _load_hgConstants()).SuccessorType.PUBLIC, (_hgConstants || _load_hgConstants()).SuccessorType.AMEND, (_hgConstants || _load_hgConstants()).SuccessorType.REBASE, (_hgConstants || _load_hgConstants()).SuccessorType.SPLIT, (_hgConstants || _load_hgConstants()).SuccessorType.FOLD, (_hgConstants || _load_hgConstants()).SuccessorType.HISTEDIT];
 
 /**
  * @param revisionExpression An expression that can be passed to hg as an argument
@@ -144,22 +157,26 @@ function expressionForRevisionsBeforeHead(numberOfRevsBefore_) {
 // Section: Revision Sets
 
 function expressionForCommonAncestor(revision) {
-  const commonAncestorExpression = `ancestor(${ revision }, ${ (_hgConstants || _load_hgConstants()).HEAD_REVISION_EXPRESSION })`;
+  const commonAncestorExpression = `ancestor(${revision}, ${(_hgConstants || _load_hgConstants()).HEAD_REVISION_EXPRESSION})`;
   // shell-escape does not wrap ancestorExpression in quotes without this toString conversion.
   return commonAncestorExpression.toString();
-}
-
-function fetchRevisions(revisionExpression, workingDirectory, options) {
+}function fetchRevisionsInfo(revisionExpression, workingDirectory, options) {
   const revisionLogArgs = ['log', '--template', REVISION_INFO_TEMPLATE, '--rev', revisionExpression];
   if (options == null || options.shouldLimit == null || options.shouldLimit) {
     revisionLogArgs.push('--limit', '20');
   }
+
+  // --hidden prevents mercurial from loading the obsstore, which can be expensive.
+  if (options && options.hidden === true) {
+    revisionLogArgs.push('--hidden');
+  }
+
   const hgOptions = {
     cwd: workingDirectory
   };
   return (0, (_hgUtils || _load_hgUtils()).hgRunCommand)(revisionLogArgs, hgOptions).map(stdout => parseRevisionInfoOutput(stdout)).catch(e => {
-    (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().warn('Failed to get revision info for revisions' + ` ${ revisionExpression }: ${ e.stderr || e }, ${ e.command }`);
-    throw new Error(`Could not fetch revision info for revisions: ${ revisionExpression }`);
+    (0, (_log4js || _load_log4js()).getLogger)('nuclide-hg-rpc').warn('Failed to get revision info for revisions' + ` ${revisionExpression}: ${e.stderr || e}, ${e.command}`);
+    throw new Error(`Could not fetch revision info for revisions: ${revisionExpression}`);
   });
 }
 
@@ -175,15 +192,17 @@ function fetchRevisions(revisionExpression, workingDirectory, options) {
  * of bookmark names applied to that revision.
  */
 function fetchRevisionInfoBetweenRevisions(revisionFrom, revisionTo, workingDirectory) {
-  const revisionExpression = `${ revisionFrom }::${ revisionTo }`;
-  return fetchRevisions(revisionExpression, workingDirectory).toPromise();
+  const revisionExpression = `${revisionFrom}::${revisionTo}`;
+  return fetchRevisionsInfo(revisionExpression, workingDirectory).toPromise();
 }
 
 function fetchSmartlogRevisions(workingDirectory) {
   // This will get the `smartlog()` expression revisions
   // and the head revision commits to the nearest public commit parent.
-  const revisionExpression = 'smartlog(all) + ancestor(smartlog(all)) + last(::. & public())::.';
-  return fetchRevisions(revisionExpression, workingDirectory, { shouldLimit: false }).publish();
+  const revisionExpression = 'smartlog() + parents(smartlog())';
+  return fetchRevisionsInfo(revisionExpression, workingDirectory, {
+    shouldLimit: false
+  }).publish();
 }
 
 /**
@@ -194,9 +213,10 @@ function parseRevisionInfoOutput(revisionsInfoOutput) {
   const revisionInfo = [];
   for (const chunk of revisions) {
     const revisionLines = chunk.trim().split('\n');
-    if (revisionLines.length < 12) {
+    if (revisionLines.length < 18) {
       continue;
     }
+    const successorInfo = parseSuccessorData(revisionLines.slice(12, 18));
     revisionInfo.push({
       id: parseInt(revisionLines[0], 10),
       title: revisionLines[1],
@@ -212,16 +232,29 @@ function parseRevisionInfoOutput(revisionsInfoOutput) {
       tags: splitLine(revisionLines[9]),
       parents: splitLine(revisionLines[10]).filter(hash => hash !== NO_NODE_HASH),
       isHead: revisionLines[11] === HEAD_MARKER,
-      description: revisionLines.slice(12).join('\n')
+      successorInfo,
+      description: revisionLines.slice(18).join('\n')
     });
   }
   return revisionInfo;
 }
 
-function splitLine(line) {
-  if (line.length === 0) {
-    return [];
-  } else {
-    return line.split(' ');
+function parseSuccessorData(successorLines) {
+  if (!(successorLines.length === SUCCESSOR_TEMPLATE_ORDER.length)) {
+    throw new Error('Invariant violation: "successorLines.length === SUCCESSOR_TEMPLATE_ORDER.length"');
   }
+
+  for (let i = 0; i < SUCCESSOR_TEMPLATE_ORDER.length; i++) {
+    if (successorLines[i].length > 0) {
+      return {
+        hash: successorLines[i],
+        type: SUCCESSOR_TEMPLATE_ORDER[i]
+      };
+    }
+  }
+  return null;
+}
+
+function splitLine(line) {
+  return line.split(NULL_CHAR).filter(e => e.length > 0);
 }

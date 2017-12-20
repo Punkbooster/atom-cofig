@@ -1,12 +1,37 @@
 'use strict';
-'use babel';
 
-/*
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.diffJson = diffJson;
+exports.diffLines = diffLines;
+exports.addMatchers = addMatchers;
+
+var _chalk;
+
+function _load_chalk() {
+  return _chalk = _interopRequireDefault(require('chalk'));
+}
+
+var _diff;
+
+function _load_diff() {
+  return _diff = _interopRequireWildcard(require('diff'));
+}
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * 
+ * @format
  */
 
 /*
@@ -26,23 +51,6 @@
 
 // We have to create an invariant function that is a lie because using invariant() with an
 // instanceof check is the only way to convince Flow of the type of an unbound `this`.
-
-var _chalk;
-
-function _load_chalk() {
-  return _chalk = _interopRequireDefault(require('chalk'));
-}
-
-var _diff;
-
-function _load_diff() {
-  return _diff = _interopRequireWildcard(require('diff'));
-}
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 const invariant = condition => {};
 
 /**
@@ -103,9 +111,3 @@ function addMatchers(spec) {
   };
   spec.addMatchers(matchersPrototype);
 }
-
-module.exports = {
-  addMatchers,
-  diffJson,
-  diffLines
-};

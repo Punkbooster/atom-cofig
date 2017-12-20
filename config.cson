@@ -19,26 +19,33 @@
         "BUCK"
       ]
     disabledPackages: [
+      "atom-react-autocomplete"
+      "linter-rubocop"
       "nuclide"
     ]
     telemetryConsent: "no"
     themes: [
       "dracula-ui"
-      "dracula-theme"
+      "dracula-syntax"
     ]
   editor:
     scrollPastEnd: true
   "exception-reporting":
     userId: "980bf24e-de05-2b5e-f3c5-71e82ef16fed"
-  linter:
-    errorPanelHeight: 44
+  "git-blame":
+    columnWidth: 330
+  linter: {}
+  "linter-eslint":
+    disableWhenNoEslintConfig: false
+  "linter-ui-default":
+    panelHeight: 64
   nuclide:
     "nuclide-file-tree": {}
     "nuclide-working-sets":
       workingSets: [
         {
           name: "app & spec"
-          active: true
+          active: false
           uris: [
             "/home/punkbooster/Spark/greetabl/app"
             "/home/punkbooster/Spark/greetabl/spec"
@@ -46,16 +53,23 @@
         }
         {
           name: "db"
-          active: true
+          active: false
           uris: [
             "/home/punkbooster/Spark/greetabl/db"
           ]
         }
         {
           name: "lib"
-          active: true
+          active: false
           uris: [
             "/home/punkbooster/Spark/greetabl/lib"
+          ]
+        }
+        {
+          name: "Default"
+          active: true
+          uris: [
+            "/home/punkbooster/Spark/greetabl/app"
           ]
         }
       ]

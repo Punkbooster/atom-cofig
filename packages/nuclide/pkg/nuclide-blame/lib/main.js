@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -28,22 +19,22 @@ function _load_BlameGutter() {
   return _BlameGutter = _interopRequireDefault(require('./BlameGutter'));
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _goToLocation;
 
 function _load_goToLocation() {
-  return _goToLocation = require('../../commons-atom/go-to-location');
+  return _goToLocation = require('nuclide-commons-atom/go-to-location');
 }
 
-var _nuclideHgGitBridge;
+var _nuclideVcsBase;
 
-function _load_nuclideHgGitBridge() {
-  return _nuclideHgGitBridge = require('../../nuclide-hg-git-bridge');
+function _load_nuclideVcsBase() {
+  return _nuclideVcsBase = require('../../nuclide-vcs-base');
 }
 
 var _nuclideAnalytics;
@@ -54,7 +45,17 @@ function _load_nuclideAnalytics() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const PACKAGES_MISSING_MESSAGE = 'Could not open blame. Missing at least one blame provider.';
+const PACKAGES_MISSING_MESSAGE = 'Could not open blame. Missing at least one blame provider.'; /**
+                                                                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                                * All rights reserved.
+                                                                                                *
+                                                                                                * This source code is licensed under the license found in the LICENSE file in
+                                                                                                * the root directory of this source tree.
+                                                                                                *
+                                                                                                * 
+                                                                                                * @format
+                                                                                                */
+
 const TOGGLE_BLAME_FILE_TREE_CONTEXT_MENU_PRIORITY = 2000;
 
 class Activation {
@@ -139,7 +140,7 @@ class Activation {
       } else {
         atom.notifications.addInfo('Could not open blame: no blame information currently available for this file.');
 
-        (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().info('nuclide-blame: Could not open blame: no blame provider currently available for this ' + `file: ${ String(editor.getPath()) }`);
+        (0, (_log4js || _load_log4js()).getLogger)('nuclide-blame').info('nuclide-blame: Could not open blame: no blame provider currently available for this ' + `file: ${String(editor.getPath())}`);
       }
     }
   }
@@ -158,7 +159,7 @@ class Activation {
    */
 
   _showBlame(event) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('blame.showBlame', () => {
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('blame.showBlame', () => {
       const editor = atom.workspace.getActiveTextEditor();
       if (editor != null) {
         this._showBlameGutterForEditor(editor);
@@ -167,7 +168,7 @@ class Activation {
   }
 
   _hideBlame(event) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('blame.hideBlame', () => {
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('blame.hideBlame', () => {
       const editor = atom.workspace.getActiveTextEditor();
       if (editor != null) {
         this._removeBlameGutterForEditor(editor);
@@ -235,7 +236,7 @@ function findBlameableNodes(contextMenu) {
     if (node == null || !node.uri) {
       continue;
     }
-    const repo = (0, (_nuclideHgGitBridge || _load_nuclideHgGitBridge()).repositoryForPath)(node.uri);
+    const repo = (0, (_nuclideVcsBase || _load_nuclideVcsBase()).repositoryForPath)(node.uri);
     if (!node.isContainer && repo != null && repo.getType() === 'hg') {
       nodes.push(node);
     }

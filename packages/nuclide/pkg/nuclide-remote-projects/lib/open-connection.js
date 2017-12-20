@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -35,10 +26,10 @@ function _load_CreateConnectionProfileForm() {
   return _CreateConnectionProfileForm = _interopRequireDefault(require('./CreateConnectionProfileForm'));
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _promiseExecutors;
@@ -47,11 +38,24 @@ function _load_promiseExecutors() {
   return _promiseExecutors = require('../../commons-node/promise-executors');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-projects');
 let dialogPromiseQueue = null;
 
 /**
@@ -59,7 +63,7 @@ let dialogPromiseQueue = null;
  * for connection parameters (e.g. username, server name, etc), and optionally
  * asking for additional (e.g. 2-fac) authentication.
  */
-function openConnectionDialog(props) {
+function openConnectionDialog(options) {
   if (!dialogPromiseQueue) {
     dialogPromiseQueue = new (_promiseExecutors || _load_promiseExecutors()).PromiseQueue();
   }
@@ -67,7 +71,7 @@ function openConnectionDialog(props) {
   return dialogPromiseQueue.submit(() => new Promise((resolve, reject) => {
     // During the lifetime of this 'openConnectionDialog' flow, the 'default'
     // connection profile should not change (even if it is reset by the user
-    const defaultConnectionProfile = (0, (_connectionProfileUtils || _load_connectionProfileUtils()).getDefaultConnectionProfile)();
+    const defaultConnectionProfile = (0, (_connectionProfileUtils || _load_connectionProfileUtils()).getDefaultConnectionProfile)(options);
     // The `compositeConnectionProfiles` is the combination of the default connection
     // profile plus any user-created connection profiles. Initialize this to the
     // default connection profile. This array of profiles may change in the lifetime
@@ -119,10 +123,10 @@ function openConnectionDialog(props) {
     }
 
     /*
-     * When the "+" button is clicked (the user intends to add a new connection profile),
-     * open a new dialog with a form to create one.
-     * This new dialog will be prefilled with the info from the default connection profile.
-     */
+    * When the "+" button is clicked (the user intends to add a new connection profile),
+    * open a new dialog with a form to create one.
+    * This new dialog will be prefilled with the info from the default connection profile.
+    */
     function onAddProfileClicked() {
       if (basePanel != null) {
         basePanel.destroy();
@@ -140,7 +144,7 @@ function openConnectionDialog(props) {
       // Props
       function closeNewProfileForm(newProfile) {
         newProfileForm = null;
-        _reactForAtom.ReactDOM.unmountComponentAtNode(hostElementForNewProfileForm);
+        _reactDom.default.unmountComponentAtNode(hostElementForNewProfileForm);
         if (newProfilePanel != null) {
           newProfilePanel.destroy();
           newProfilePanel = null;
@@ -158,13 +162,16 @@ function openConnectionDialog(props) {
       const initialDialogProps = {
         onCancel: closeNewProfileForm,
         onSave,
-        initialFormFields: defaultConnectionProfile.params
+        initialFormFields: defaultConnectionProfile.params,
+        profileHosts: (0, (_connectionProfileUtils || _load_connectionProfileUtils()).getUniqueHostsForProfiles)(compositeConnectionProfiles)
       };
 
-      newProfilePanel = atom.workspace.addModalPanel({ item: hostElementForNewProfileForm });
+      newProfilePanel = atom.workspace.addModalPanel({
+        item: hostElementForNewProfileForm
+      });
 
       // Pop up a dialog that is pre-filled with the default params.
-      newProfileForm = _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement((_CreateConnectionProfileForm || _load_CreateConnectionProfileForm()).default, initialDialogProps), hostElementForNewProfileForm);
+      newProfileForm = _reactDom.default.render(_react.default.createElement((_CreateConnectionProfileForm || _load_CreateConnectionProfileForm()).default, initialDialogProps), hostElementForNewProfileForm);
     }
 
     function openBaseDialog(selectedProfile) {
@@ -182,7 +189,7 @@ function openConnectionDialog(props) {
       // to the ConnectionDialog will not.
       // Note: the `cleanupSubscriptionFunc` is called when the dialog closes:
       // `onConnect`, `onError`, or `onCancel`.
-      const baseDialogProps = Object.assign({
+      const baseDialogProps = {
         indexOfInitiallySelectedConnectionProfile,
         onAddProfileClicked,
         onCancel: () => {
@@ -191,7 +198,7 @@ function openConnectionDialog(props) {
         },
         onClosed: () => {
           // Unmount the ConnectionDialog and clean up the host element.
-          _reactForAtom.ReactDOM.unmountComponentAtNode(hostEl);
+          _reactDom.default.unmountComponentAtNode(hostEl);
           if (basePanel != null) {
             basePanel.destroy();
           }
@@ -214,7 +221,7 @@ function openConnectionDialog(props) {
         },
         onDeleteProfileClicked,
         onSaveProfile: saveProfile
-      }, props);
+      };
 
       // If/when the saved connection profiles change, we want to re-render the dialog
       // with the new set of connection profiles.
@@ -224,26 +231,29 @@ function openConnectionDialog(props) {
         const newDialogProps = Object.assign({}, baseDialogProps, {
           connectionProfiles: compositeConnectionProfiles
         });
-        _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement((_ConnectionDialog || _load_ConnectionDialog()).default, newDialogProps), hostEl);
+        _reactDom.default.render(_react.default.createElement((_ConnectionDialog || _load_ConnectionDialog()).default, newDialogProps), hostEl);
       });
 
       basePanel = atom.workspace.addModalPanel({ item: hostEl });
 
-      // Center the parent in both Atom v1.6 and in Atom v1.8.
-      // TODO(ssorallen): Remove all but `maxWidth` once Nuclide is Atom v1.8+
       // $FlowFixMe
       const parentEl = hostEl.parentElement;
       if (parentEl != null) {
-        parentEl.style.left = '50%';
-        parentEl.style.margin = '0 0 0 -40em';
-        parentEl.style.maxWidth = '80em';
-        parentEl.style.width = '80em';
+        // Atom sets the width of all modals, but the connection dialog
+        // is best with more width, so reach out to the parent (an atom-panel.modal)
+        // and increase the fixed width
+        parentEl.style.width = '650px';
+
+        // responsive behavior for this dialog. Aim for 650px as above,
+        // but not larger than the width of the window.
+        parentEl.style.maxWidth = '100%';
+        parentEl.style.minWidth = '550px';
       }
 
       const initialDialogProps = Object.assign({}, baseDialogProps, {
         connectionProfiles: compositeConnectionProfiles
       });
-      _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement((_ConnectionDialog || _load_ConnectionDialog()).default, initialDialogProps), hostEl);
+      _reactDom.default.render(_react.default.createElement((_ConnectionDialog || _load_ConnectionDialog()).default, initialDialogProps), hostEl);
     }
 
     // Select the last profile that was used. It's possible the config changed since the last time

@@ -1,13 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -35,12 +30,14 @@ function _load_FileTreeStore() {
   return _FileTreeStore = require('./FileTreeStore');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _atom = require('atom');
@@ -51,13 +48,24 @@ function _load_nuclideRemoteConnection() {
   return _nuclideRemoteConnection = require('../../nuclide-remote-connection');
 }
 
-var _nuclideHgGitBridge;
+var _nuclideVcsBase;
 
-function _load_nuclideHgGitBridge() {
-  return _nuclideHgGitBridge = require('../../nuclide-hg-git-bridge');
+function _load_nuclideVcsBase() {
+  return _nuclideVcsBase = require('../../nuclide-vcs-base');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 let atomPanel;
 let dialogComponent;
@@ -81,12 +89,12 @@ class FileSystemActions {
           return;
         }
 
-        const { pathname } = (_nuclideUri || _load_nuclideUri()).default.parse(filePath);
-        const basename = (_nuclideUri || _load_nuclideUri()).default.basename(pathname);
+        const { path } = (_nuclideUri || _load_nuclideUri()).default.parse(filePath);
+        const basename = (_nuclideUri || _load_nuclideUri()).default.basename(path);
         const newDirectory = directory.getSubdirectory(basename);
         const created = yield newDirectory.create();
         if (!created) {
-          atom.notifications.addError(`'${ basename }' already exists.`);
+          atom.notifications.addError(`'${basename}' already exists.`);
           onDidConfirm(null);
         } else {
           onDidConfirm(newDirectory.getPath());
@@ -104,25 +112,47 @@ class FileSystemActions {
     if (!node) {
       return;
     }
-    const hgRepository = (_FileTreeHgHelpers || _load_FileTreeHgHelpers()).default.getHgRepositoryForNode(node);
+
+    return this._openAddFileDialogImpl(node, node.localPath, node.uri, onDidConfirm);
+  }
+
+  openAddFileDialogRelative(onDidConfirm) {
+    const editor = atom.workspace.getActiveTextEditor();
+    const filePath = editor != null ? editor.getPath() : null;
+    if (!filePath) {
+      return;
+    }
+
+    const dirPath = (_FileTreeHelpers || _load_FileTreeHelpers()).default.getParentKey(filePath);
+    const rootNode = (_FileTreeStore || _load_FileTreeStore()).FileTreeStore.getInstance().getRootForPath(dirPath);
+
+    if (rootNode) {
+      const localPath = (_nuclideUri || _load_nuclideUri()).default.isRemote(dirPath) ? (_nuclideUri || _load_nuclideUri()).default.parse(dirPath).path : dirPath;
+
+      return this._openAddFileDialogImpl(rootNode, (_FileTreeHelpers || _load_FileTreeHelpers()).default.keyToPath(localPath), dirPath, onDidConfirm);
+    }
+  }
+
+  _openAddFileDialogImpl(rootNode, localPath, filePath, onDidConfirm) {
+    const hgRepository = (_FileTreeHgHelpers || _load_FileTreeHgHelpers()).default.getHgRepositoryForNode(rootNode);
     const additionalOptions = {};
     if (hgRepository != null) {
       additionalOptions.addToVCS = 'Add the new file to version control.';
     }
-    this._openAddDialog('file', (_nuclideUri || _load_nuclideUri()).default.ensureTrailingSeparator(node.localPath), (() => {
-      var _ref2 = (0, _asyncToGenerator.default)(function* (filePath, options) {
+    this._openAddDialog('file', (_nuclideUri || _load_nuclideUri()).default.ensureTrailingSeparator(localPath), (() => {
+      var _ref2 = (0, _asyncToGenerator.default)(function* (pathToCreate, options) {
         // Prevent submission of a blank field from creating a file.
-        if (filePath === '') {
+        if (pathToCreate === '') {
           return;
         }
 
-        // TODO: check if filePath is in rootKey and if not, find the rootKey it belongs to.
-        const directory = (_FileTreeHelpers || _load_FileTreeHelpers()).default.getDirectoryByKey(node.uri);
+        // TODO: check if pathToCreate is in rootKey and if not, find the rootKey it belongs to.
+        const directory = (_FileTreeHelpers || _load_FileTreeHelpers()).default.getDirectoryByKey(filePath);
         if (directory == null) {
           return;
         }
 
-        const newFile = directory.getFile(filePath);
+        const newFile = directory.getFile(pathToCreate);
         const created = yield newFile.create();
         if (created) {
           const newFilePath = newFile.getPath();
@@ -132,11 +162,11 @@ class FileSystemActions {
             try {
               yield hgRepository.addAll([newFilePath]);
             } catch (e) {
-              atom.notifications.addError(`Failed to add '${ newFilePath }' to version control. Error: ${ e.toString() }`);
+              atom.notifications.addError(`Failed to add '${newFilePath}' to version control. Error: ${e.toString()}`);
             }
           }
         } else {
-          atom.notifications.addError(`'${ filePath }' already exists.`);
+          atom.notifications.addError(`'${pathToCreate}' already exists.`);
           onDidConfirm(null);
         }
       });
@@ -148,7 +178,7 @@ class FileSystemActions {
   }
 
   _getHgRepositoryForPath(filePath) {
-    const repository = (0, (_nuclideHgGitBridge || _load_nuclideHgGitBridge()).repositoryForPath)(filePath);
+    const repository = (0, (_nuclideVcsBase || _load_nuclideVcsBase()).repositoryForPath)(filePath);
     if (repository != null && repository.getType() === 'hg') {
       return repository;
     }
@@ -174,7 +204,7 @@ class FileSystemActions {
     })();
   }
 
-  _onConfirmDuplicate(file, nodePath, newBasename, addToVCS, onDidConfirm) {
+  _onConfirmDuplicate(file, newBasename, addToVCS, onDidConfirm) {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
@@ -182,9 +212,9 @@ class FileSystemActions {
       const newFile = directory.getFile(newBasename);
       const newPath = newFile.getPath();
       const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileSystemServiceByNuclideUri)(newPath);
-      const exists = !(yield service.copy(nodePath, (_nuclideUri || _load_nuclideUri()).default.getPath(newPath)));
+      const exists = !(yield service.copy(file.getPath(), newPath));
       if (exists) {
-        atom.notifications.addError(`'${ newPath }' already exists.`);
+        atom.notifications.addError(`'${newPath}' already exists.`);
         onDidConfirm(null);
         return;
       }
@@ -219,18 +249,18 @@ class FileSystemActions {
     this._openDialog({
       iconClassName: 'icon-arrow-right',
       initialValue: (_nuclideUri || _load_nuclideUri()).default.basename(nodePath),
-      message: node.isContainer ? _reactForAtom.React.createElement(
+      message: node.isContainer ? _react.default.createElement(
         'span',
         null,
         'Enter the new path for the directory.'
-      ) : _reactForAtom.React.createElement(
+      ) : _react.default.createElement(
         'span',
         null,
         'Enter the new path for the file.'
       ),
       onConfirm: (newBasename, options) => {
         this._onConfirmRename(node, nodePath, newBasename).catch(error => {
-          atom.notifications.addError(`Rename to ${ newBasename } failed: ${ error.message }`);
+          atom.notifications.addError(`Rename to ${newBasename} failed: ${error.message}`);
         });
       },
       onClose: this._closeDialog,
@@ -259,7 +289,7 @@ class FileSystemActions {
     this._openDialog({
       iconClassName: 'icon-arrow-right',
       initialValue,
-      message: _reactForAtom.React.createElement(
+      message: _react.default.createElement(
         'span',
         null,
         'Enter the new path for the duplicate.'
@@ -270,8 +300,8 @@ class FileSystemActions {
           // TODO: Connection could have been lost for remote file.
           return;
         }
-        this._onConfirmDuplicate(file, nodePath, newBasename.trim(), Boolean(options.addToVCS), onDidConfirm).catch(error => {
-          atom.notifications.addError(`Failed to duplicate '${ file.getPath() }'`);
+        this._onConfirmDuplicate(file, newBasename.trim(), Boolean(options.addToVCS), onDidConfirm).catch(error => {
+          atom.notifications.addError(`Failed to duplicate '${file.getPath()}'`);
         });
       },
       onClose: this._closeDialog,
@@ -288,19 +318,23 @@ class FileSystemActions {
      * order.
      */
     const node = store.getSelectedNodes().first();
-    return node.isContainer ? node : node.parent;
+    if (node) {
+      return node.isContainer ? node : node.parent;
+    }
+
+    return null;
   }
 
   _openAddDialog(entryType, path, onConfirm, additionalOptions = {}) {
     this._openDialog({
       iconClassName: 'icon-file-add',
-      message: _reactForAtom.React.createElement(
+      message: _react.default.createElement(
         'span',
         null,
         'Enter the path for the new ',
         entryType,
         ' in the root:',
-        _reactForAtom.React.createElement('br', null),
+        _react.default.createElement('br', null),
         path
       ),
       onConfirm,
@@ -313,13 +347,13 @@ class FileSystemActions {
     this._closeDialog();
     const dialogHostElement = document.createElement('div');
     atomPanel = atom.workspace.addModalPanel({ item: dialogHostElement });
-    dialogComponent = _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement((_FileDialogComponent || _load_FileDialogComponent()).default, props), dialogHostElement);
+    dialogComponent = _reactDom.default.render(_react.default.createElement((_FileDialogComponent || _load_FileDialogComponent()).default, props), dialogHostElement);
   }
 
   _closeDialog() {
     if (atomPanel != null) {
       if (dialogComponent != null) {
-        _reactForAtom.ReactDOM.unmountComponentAtNode(atomPanel.getItem());
+        _reactDom.default.unmountComponentAtNode(atomPanel.getItem());
         dialogComponent = null;
       }
 
@@ -329,4 +363,4 @@ class FileSystemActions {
   }
 }
 
-module.exports = new FileSystemActions();
+exports.default = new FileSystemActions();

@@ -1,208 +1,249 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.DebuggerLaunchAttachUI = undefined;
 
-var _Dropdown;
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-function _load_Dropdown() {
-  return _Dropdown = require('../../nuclide-ui/Dropdown');
+var _react = _interopRequireDefault(require('react'));
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
-
-var _reactForAtom = require('react-for-atom');
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
+
+var _nuclideDebuggerBase;
+
+function _load_nuclideDebuggerBase() {
+  return _nuclideDebuggerBase = require('../../nuclide-debugger-base');
+}
+
+var _promise;
+
+function _load_promise() {
+  return _promise = require('nuclide-commons/promise');
+}
+
+var _Button;
+
+function _load_Button() {
+  return _Button = require('nuclide-commons-ui/Button');
+}
+
+var _ButtonGroup;
+
+function _load_ButtonGroup() {
+  return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
+}
+
+var _Tabs;
+
+function _load_Tabs() {
+  return _Tabs = _interopRequireDefault(require('../../nuclide-ui/Tabs'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class DebuggerLaunchAttachUI extends _reactForAtom.React.Component {
+class DebuggerLaunchAttachUI extends _react.default.Component {
 
   constructor(props) {
     super(props);
 
-    this._resetConnections = this._resetConnections.bind(this);
-    this._handleConnectionDropdownChange = this._handleConnectionDropdownChange.bind(this);
-    this._handleDebuggingTypeDropdownChange = this._handleDebuggingTypeDropdownChange.bind(this);
-    this._handleProviderActionsDropdownChange = this._handleProviderActionsDropdownChange.bind(this);
+    this._setConfigValid = valid => {
+      this.setState({
+        configIsValid: valid
+      });
+    };
+
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
+    this._disposables.add(atom.commands.add('atom-workspace', {
+      'core:confirm': () => {
+        if (this.state.configIsValid) {
+          this._rememberTab();
+
+          // Close the dialog, but do it on the next tick so that the child
+          // component gets to handle the event first (and start the debugger).
+          process.nextTick(this.props.dialogCloser);
+        }
+      }
+    }), atom.commands.add('atom-workspace', {
+      'core:cancel': () => {
+        this._rememberTab();
+        this.props.dialogCloser();
+      }
+    }));
 
     this.state = {
-      connectionsUpdatedDisposable: this.props.store.onConnectionsUpdated(this._resetConnections),
-      connections: [],
-      availableProviders: [],
-      providerActions: [],
-      connectionsDropdownIndex: 0,
-      debuggingTypeDropdownIndex: 0,
-      providerActionsDropdownIndex: 0,
-      element: null
+      selectedProviderTab: null,
+      configIsValid: false,
+      enabledProviders: []
     };
   }
 
+  _rememberTab() {
+    // Remember the last tab the user used for this connection when the "launch/attach"
+    // button is clicked.
+    const host = (_nuclideUri || _load_nuclideUri()).default.isRemote(this.props.connection) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(this.props.connection) : 'local';
+    if (this.state.selectedProviderTab != null) {
+      (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).setLastUsedDebugger)(host, this.props.dialogMode, this.state.selectedProviderTab || '');
+    }
+  }
+
   componentWillMount() {
-    this.props.debuggerActions.updateConnections();
+    const host = (_nuclideUri || _load_nuclideUri()).default.isRemote(this.props.connection) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(this.props.connection) : 'local';
+
+    this._filterProviders();
+    this.setState({
+      selectedProviderTab: (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).getLastUsedDebugger)(host, this.props.dialogMode)
+    });
   }
 
   componentWillUnmount() {
-    this.state.connectionsUpdatedDisposable.dispose();
+    this._disposables.dispose();
+  }
+
+  _filterProviders() {
+    var _this = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const enabled = yield (0, (_promise || _load_promise()).asyncFilter)(_this.props.providers, function (provider) {
+        return provider.getCallbacksForAction(_this.props.dialogMode).isEnabled();
+      });
+
+      const enabledProviders = [].concat(...enabled.map(function (provider) {
+        return provider.getCallbacksForAction(_this.props.dialogMode).getDebuggerTypeNames().map(function (debuggerName) {
+          return {
+            provider,
+            debuggerName
+          };
+        });
+      }));
+
+      _this.setState({
+        enabledProviders
+      });
+    })();
   }
 
   render() {
-    const connectionItems = this.state.connections.map((connection, index) => ({
-      label: (_nuclideUri || _load_nuclideUri()).default.isRemote(connection) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(connection) : connection,
-      value: index
-    }));
+    const displayName = (_nuclideUri || _load_nuclideUri()).default.isRemote(this.props.connection) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(this.props.connection) : 'localhost';
 
-    const debuggingTypeItems = this.state.availableProviders.map((provider, index) => ({
-      label: provider.getDebuggingTypeName(),
-      value: index
-    }));
+    const tabs = this.state.enabledProviders.map(debuggerType => ({
+      name: debuggerType.debuggerName,
+      tabContent: _react.default.createElement(
+        'span',
+        { title: debuggerType.debuggerName },
+        debuggerType.debuggerName
+      )
+    })).sort((a, b) => a.name.localeCompare(b.name));
 
-    const providerActions = this.state.providerActions.map((action, index) => ({
-      label: action,
-      value: index
-    }));
+    let providerContent = null;
+    if (tabs.length > 0) {
+      let selectedTab = this.state.selectedProviderTab != null ? this.state.selectedProviderTab : this.state.enabledProviders[0].debuggerName;
+      let provider = this.state.enabledProviders.find(p => p.debuggerName === selectedTab);
+      if (provider == null) {
+        provider = this.state.enabledProviders[0];
+        selectedTab = provider.debuggerName;
+      }
 
-    return _reactForAtom.React.createElement(
-      'div',
-      { className: 'padded nuclide-debugger-launch-attach-container' },
-      _reactForAtom.React.createElement(
-        'div',
-        { className: 'nuclide-debugger-launch-attach-header' },
-        _reactForAtom.React.createElement(
-          'label',
-          { className: 'inline-block' },
-          'Connection: '
-        ),
-        _reactForAtom.React.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
-          className: 'inline-block',
-          options: connectionItems,
-          onChange: this._handleConnectionDropdownChange,
-          value: this.state.connectionsDropdownIndex,
-          size: 'sm'
-        }),
-        _reactForAtom.React.createElement(
-          'label',
-          { className: 'inline-block' },
-          'Type: '
-        ),
-        _reactForAtom.React.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
-          className: 'inline-block',
-          options: debuggingTypeItems,
-          onChange: this._handleDebuggingTypeDropdownChange,
-          value: this.state.debuggingTypeDropdownIndex,
-          size: 'sm'
-        }),
-        _reactForAtom.React.createElement(
-          'label',
-          { className: 'inline-block' },
-          'Action: '
-        ),
-        _reactForAtom.React.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
-          className: 'inline-block',
-          options: providerActions,
-          onChange: this._handleProviderActionsDropdownChange,
-          value: this.state.providerActionsDropdownIndex,
-          size: 'sm'
-        })
-      ),
-      _reactForAtom.React.createElement(
+      const debuggerConfigPage = provider.provider.getCallbacksForAction(this.props.dialogMode).getComponent(selectedTab, valid => this._setConfigValid(valid));
+
+      providerContent = _react.default.createElement(
         'div',
         null,
-        this.state.element
+        _react.default.createElement((_Tabs || _load_Tabs()).default, {
+          className: 'nuclide-debugger-launch-attach-tabs',
+          tabs: tabs,
+          activeTabName: this.state.selectedProviderTab,
+          triggeringEvent: 'onClick',
+          onActiveTabChange: newTab => {
+            this._setConfigValid(false);
+            this.setState({ selectedProviderTab: newTab.name });
+          }
+        }),
+        _react.default.createElement(
+          'div',
+          { className: 'nuclide-debugger-launch-attach-tabcontent' },
+          debuggerConfigPage
+        )
+      );
+
+      if (this.state.selectedProviderTab == null) {
+        // Select the first tab.
+        this.setState({ selectedProviderTab: tabs[0].name });
+      }
+    } else {
+      // No debugging providers available.
+      providerContent = _react.default.createElement(
+        'div',
+        { className: 'nuclide-debugger-launch-attach-tabcontent' },
+        'There are no debuggers available.'
+      );
+    }
+
+    return _react.default.createElement(
+      'div',
+      { className: 'padded nuclide-debugger-launch-attach-container' },
+      _react.default.createElement(
+        'h1',
+        { className: 'nuclide-debugger-launch-attach-header' },
+        this.props.dialogMode === 'attach' ? 'Attach debugger to ' : 'Launch debugger on ',
+        _react.default.createElement(
+          'span',
+          {
+            className: 'nuclide-debugger-launch-connection',
+            title: 'Click to change the connection to be used for debugging.',
+            onClick: () => this.props.chooseConnection() },
+          displayName
+        ),
+        _react.default.createElement(
+          'span',
+          null,
+          ':'
+        )
+      ),
+      providerContent,
+      _react.default.createElement(
+        'div',
+        { className: 'nuclide-debugger-launch-attach-actions' },
+        _react.default.createElement(
+          (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
+          null,
+          _react.default.createElement(
+            (_Button || _load_Button()).Button,
+            {
+              onClick: () => atom.commands.dispatch(atom.views.getView(atom.workspace), 'core:cancel') },
+            'Cancel'
+          ),
+          _react.default.createElement(
+            (_Button || _load_Button()).Button,
+            {
+              buttonType: (_Button || _load_Button()).ButtonTypes.PRIMARY,
+              disabled: !this.state.configIsValid,
+              onClick: () => atom.commands.dispatch(atom.views.getView(atom.workspace), 'core:confirm') },
+            this.props.dialogMode === 'attach' ? 'Attach' : 'Launch'
+          )
+        )
       )
     );
   }
-
-  // Reset connections dropdown with latest connections.
-  _resetConnections() {
-    const connections = this.props.store.getConnections();
-    this.setState({
-      connections,
-      connectionsDropdownIndex: 0
-    });
-    // Continue fill debugging types dropdown for new connection.
-    this._resetAvailableDebuggingTypes(connections[0]);
-  }
-
-  _handleConnectionDropdownChange(newIndex) {
-    this.setState({
-      connectionsDropdownIndex: newIndex
-    });
-    const selectedConnection = this.state.connections[newIndex];
-    this._resetAvailableDebuggingTypes(selectedConnection);
-  }
-
-  // Reset debugging types dropdown for input connection.
-  _resetAvailableDebuggingTypes(connection) {
-    this._clearPreviousProviders();
-    const availableProviders = this.props.store.getLaunchAttachProvidersForConnection(connection);
-    this.setState({
-      availableProviders,
-      debuggingTypeDropdownIndex: 0
-    });
-    // Continue fill actions dropdown for new provider.
-    this._resetProviderActions(availableProviders[0]);
-  }
-
-  _clearPreviousProviders() {
-    for (const provider of this.state.availableProviders) {
-      provider.dispose();
-    }
-  }
-
-  _handleDebuggingTypeDropdownChange(newIndex) {
-    this.setState({
-      debuggingTypeDropdownIndex: newIndex
-    });
-    this._resetProviderActions(this.state.availableProviders[newIndex]);
-  }
-
-  // Reset actions dropdown for input DebuggerLaunchAttachProvider.
-  _resetProviderActions(provider) {
-    provider.getActions().then(providerActions => {
-      this.setState({
-        providerActions,
-        providerActionsDropdownIndex: 0
-      });
-      this._resetElement(provider, providerActions[0]);
-    });
-  }
-
-  _handleProviderActionsDropdownChange(newIndex) {
-    this.setState({
-      providerActionsDropdownIndex: newIndex
-    });
-    const selectedProviderIndex = this.state.debuggingTypeDropdownIndex;
-    const provider = this.state.availableProviders[selectedProviderIndex];
-    const selectedAction = this.state.providerActions[newIndex];
-    // Continue use new UI element for new provider + action.
-    this._resetElement(provider, selectedAction);
-  }
-
-  // Display new customized element UI from input provider and action.
-  _resetElement(provider, action) {
-    let element = provider.getComponent(action, this.props.emitter);
-    // Assign an unique key to element so that react treats it as a new element.
-    if (element != null) {
-      element = _reactForAtom.React.cloneElement(element, { key: provider.getUniqueKey() });
-    }
-    this.setState({
-      element
-    });
-  }
 }
-exports.DebuggerLaunchAttachUI = DebuggerLaunchAttachUI;
+exports.DebuggerLaunchAttachUI = DebuggerLaunchAttachUI; /**
+                                                          * Copyright (c) 2015-present, Facebook, Inc.
+                                                          * All rights reserved.
+                                                          *
+                                                          * This source code is licensed under the license found in the LICENSE file in
+                                                          * the root directory of this source tree.
+                                                          *
+                                                          * 
+                                                          * @format
+                                                          */

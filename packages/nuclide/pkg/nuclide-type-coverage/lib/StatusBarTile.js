@@ -1,20 +1,11 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.StatusBarTile = undefined;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
@@ -24,7 +15,9 @@ function _load_StatusBarTileComponent() {
   return _StatusBarTileComponent = require('./StatusBarTileComponent');
 }
 
-class StatusBarTile extends _reactForAtom.React.Component {
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+class StatusBarTile extends _react.default.Component {
 
   constructor(props) {
     super(props);
@@ -72,13 +65,14 @@ class StatusBarTile extends _reactForAtom.React.Component {
         this.setState({
           result: coverageResult == null ? null : {
             percentage: coverageResult.percentage,
-            providerName: result.provider.displayName
+            providerName: result.provider.displayName,
+            icon: result.provider.icon
           },
           pending: false
         });
         break;
       default:
-        throw new Error(`Should handle kind ${ result.kind }`);
+        throw new Error(`Should handle kind ${result.kind}`);
     }
   }
 
@@ -87,7 +81,16 @@ class StatusBarTile extends _reactForAtom.React.Component {
   }
 
   render() {
-    return _reactForAtom.React.createElement((_StatusBarTileComponent || _load_StatusBarTileComponent()).StatusBarTileComponent, Object.assign({}, this.state, { onClick: this.props.onClick }));
+    return _react.default.createElement((_StatusBarTileComponent || _load_StatusBarTileComponent()).StatusBarTileComponent, Object.assign({}, this.state, { onClick: this.props.onClick }));
   }
 }
-exports.StatusBarTile = StatusBarTile;
+exports.StatusBarTile = StatusBarTile; /**
+                                        * Copyright (c) 2015-present, Facebook, Inc.
+                                        * All rights reserved.
+                                        *
+                                        * This source code is licensed under the license found in the LICENSE file in
+                                        * the root directory of this source tree.
+                                        *
+                                        * 
+                                        * @format
+                                        */

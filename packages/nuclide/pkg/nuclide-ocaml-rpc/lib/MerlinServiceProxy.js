@@ -9,11 +9,6 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 59
-        },
         kind: "named",
         name: "NuclideUri"
       }
@@ -21,18 +16,8 @@ module.exports = _client => {
       return _client.callRemoteFunction("MerlinService/pushDotMerlinPath", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 59
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 59
-          },
           kind: "any"
         }
       });
@@ -43,40 +28,20 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "name",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 64
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "content",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 64
-        },
         kind: "string"
       }
     }]).then(args => {
       return _client.callRemoteFunction("MerlinService/pushNewBuffer", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 64
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 64
-          },
           kind: "any"
         }
       });
@@ -87,121 +52,51 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 70
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "line",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 71
-        },
         kind: "number"
       }
     }, {
       name: "col",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 72
-        },
         kind: "number"
       }
     }, {
       name: "kind",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 73
-        },
         kind: "string"
       }
     }]).then(args => {
       return _client.callRemoteFunction("MerlinService/locate", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 74
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 74
-          },
           kind: "object",
           fields: [{
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 75
-            },
             name: "file",
             type: {
-              location: {
-                type: "source",
-                fileName: "MerlinService.js",
-                line: 75
-              },
               kind: "named",
               name: "NuclideUri"
             },
             optional: false
           }, {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 76
-            },
             name: "pos",
             type: {
-              location: {
-                type: "source",
-                fileName: "MerlinService.js",
-                line: 76
-              },
               kind: "object",
               fields: [{
-                location: {
-                  type: "source",
-                  fileName: "MerlinService.js",
-                  line: 77
-                },
                 name: "line",
                 type: {
-                  location: {
-                    type: "source",
-                    fileName: "MerlinService.js",
-                    line: 77
-                  },
                   kind: "number"
                 },
                 optional: false
               }, {
-                location: {
-                  type: "source",
-                  fileName: "MerlinService.js",
-                  line: 78
-                },
                 name: "col",
                 type: {
-                  location: {
-                    type: "source",
-                    fileName: "MerlinService.js",
-                    line: 78
-                  },
                   kind: "number"
                 },
                 optional: false
@@ -218,57 +113,27 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 90
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "line",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 91
-        },
         kind: "number"
       }
     }, {
       name: "col",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 92
-        },
         kind: "number"
       }
     }]).then(args => {
       return _client.callRemoteFunction("MerlinService/enclosingType", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 93
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 93
-          },
           kind: "array",
           type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 93
-            },
             kind: "named",
             name: "MerlinType"
           }
@@ -281,53 +146,28 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 99
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "line",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 100
-        },
         kind: "number"
       }
     }, {
       name: "col",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 101
-        },
         kind: "number"
       }
     }, {
       name: "prefix",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 102
-        },
         kind: "string"
       }
     }]).then(args => {
       return _client.callRemoteFunction("MerlinService/complete", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 103
-        },
         kind: "any"
       });
     });
@@ -337,11 +177,6 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 109
-        },
         kind: "named",
         name: "NuclideUri"
       }
@@ -349,25 +184,10 @@ module.exports = _client => {
       return _client.callRemoteFunction("MerlinService/errors", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 110
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 110
-          },
           kind: "array",
           type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 110
-            },
             kind: "named",
             name: "MerlinError"
           }
@@ -380,11 +200,6 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 116
-        },
         kind: "named",
         name: "NuclideUri"
       }
@@ -392,25 +207,10 @@ module.exports = _client => {
       return _client.callRemoteFunction("MerlinService/outline", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 117
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 117
-          },
           kind: "array",
           type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 117
-            },
             kind: "named",
             name: "MerlinOutline"
           }
@@ -423,22 +223,12 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 123
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "position",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 124
-        },
         kind: "named",
         name: "atom$Point"
       }
@@ -446,18 +236,8 @@ module.exports = _client => {
       return _client.callRemoteFunction("MerlinService/cases", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 125
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 125
-          },
           kind: "named",
           name: "MerlinCases"
         }
@@ -469,22 +249,12 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 139
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "position",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 140
-        },
         kind: "named",
         name: "atom$Point"
       }
@@ -492,18 +262,8 @@ module.exports = _client => {
       return _client.callRemoteFunction("MerlinService/occurrences", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 141
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 141
-          },
           kind: "named",
           name: "MerlinOccurrences"
         }
@@ -515,33 +275,18 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "path",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 151
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "command",
       type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 152
-        },
         kind: "mixed"
       }
     }]).then(args => {
       return _client.callRemoteFunction("MerlinService/runSingleCommand", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 153
-        },
         kind: "any"
       });
     });
@@ -556,1305 +301,735 @@ Object.defineProperty(module.exports, "inject", {
   }
 });
 Object.defineProperty(module.exports, "defs", {
-  value: new Map([["Object", {
-    kind: "alias",
-    name: "Object",
-    location: {
-      type: "builtin"
-    }
-  }], ["Date", {
-    kind: "alias",
-    name: "Date",
-    location: {
-      type: "builtin"
-    }
-  }], ["RegExp", {
-    kind: "alias",
-    name: "RegExp",
-    location: {
-      type: "builtin"
-    }
-  }], ["Buffer", {
-    kind: "alias",
-    name: "Buffer",
-    location: {
-      type: "builtin"
-    }
-  }], ["fs.Stats", {
-    kind: "alias",
-    name: "fs.Stats",
-    location: {
-      type: "builtin"
-    }
-  }], ["NuclideUri", {
-    kind: "alias",
-    name: "NuclideUri",
-    location: {
-      type: "builtin"
-    }
-  }], ["atom$Point", {
-    kind: "alias",
-    name: "atom$Point",
-    location: {
-      type: "builtin"
-    }
-  }], ["atom$Range", {
-    kind: "alias",
-    name: "atom$Range",
-    location: {
-      type: "builtin"
-    }
-  }], ["MerlinPosition", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 16
+  value: {
+    Object: {
+      kind: "alias",
+      name: "Object",
+      location: {
+        type: "builtin"
+      }
     },
-    name: "MerlinPosition",
-    definition: {
+    Date: {
+      kind: "alias",
+      name: "Date",
+      location: {
+        type: "builtin"
+      }
+    },
+    RegExp: {
+      kind: "alias",
+      name: "RegExp",
+      location: {
+        type: "builtin"
+      }
+    },
+    Buffer: {
+      kind: "alias",
+      name: "Buffer",
+      location: {
+        type: "builtin"
+      }
+    },
+    "fs.Stats": {
+      kind: "alias",
+      name: "fs.Stats",
+      location: {
+        type: "builtin"
+      }
+    },
+    NuclideUri: {
+      kind: "alias",
+      name: "NuclideUri",
+      location: {
+        type: "builtin"
+      }
+    },
+    atom$Point: {
+      kind: "alias",
+      name: "atom$Point",
+      location: {
+        type: "builtin"
+      }
+    },
+    atom$Range: {
+      kind: "alias",
+      name: "atom$Range",
+      location: {
+        type: "builtin"
+      }
+    },
+    MerlinPosition: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "MerlinService.js",
         line: 16
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 17
-        },
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 17
+      name: "MerlinPosition",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "line",
+          type: {
+            kind: "number"
           },
-          kind: "number"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 18
-        },
-        name: "col",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 18
+          optional: false
+        }, {
+          name: "col",
+          type: {
+            kind: "number"
           },
-          kind: "number"
-        },
-        optional: false
-      }]
-    }
-  }], ["MerlinType", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 21
+          optional: false
+        }]
+      }
     },
-    name: "MerlinType",
-    definition: {
+    MerlinType: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "MerlinService.js",
         line: 21
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 22
-        },
-        name: "start",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 22
+      name: "MerlinType",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "start",
+          type: {
+            kind: "named",
+            name: "MerlinPosition"
           },
-          kind: "named",
-          name: "MerlinPosition"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 23
-        },
-        name: "end",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 23
+          optional: false
+        }, {
+          name: "end",
+          type: {
+            kind: "named",
+            name: "MerlinPosition"
           },
-          kind: "named",
-          name: "MerlinPosition"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 24
-        },
-        name: "type",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 24
+          optional: false
+        }, {
+          name: "type",
+          type: {
+            kind: "string"
           },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 25
-        },
-        name: "tail",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 25
+          optional: false
+        }, {
+          name: "tail",
+          type: {
+            kind: "union",
+            types: [{
+              kind: "string-literal",
+              value: "no"
+            }, {
+              kind: "string-literal",
+              value: "position"
+            }, {
+              kind: "string-literal",
+              value: "call"
+            }]
           },
-          kind: "union",
-          types: [{
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 25
-            },
-            kind: "string-literal",
-            value: "no"
-          }, {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 25
-            },
-            kind: "string-literal",
-            value: "position"
-          }, {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 25
-            },
-            kind: "string-literal",
-            value: "call"
-          }]
-        },
-        optional: false
-      }]
-    }
-  }], ["MerlinError", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 28
+          optional: false
+        }]
+      }
     },
-    name: "MerlinError",
-    definition: {
+    MerlinError: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "MerlinService.js",
         line: 28
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 29
-        },
-        name: "start",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 29
+      name: "MerlinError",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "start",
+          type: {
+            kind: "named",
+            name: "MerlinPosition"
           },
-          kind: "named",
-          name: "MerlinPosition"
-        },
-        optional: true
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 30
-        },
-        name: "end",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 30
+          optional: true
+        }, {
+          name: "end",
+          type: {
+            kind: "named",
+            name: "MerlinPosition"
           },
-          kind: "named",
-          name: "MerlinPosition"
-        },
-        optional: true
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 31
-        },
-        name: "valid",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 31
+          optional: true
+        }, {
+          name: "valid",
+          type: {
+            kind: "boolean"
           },
-          kind: "boolean"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 32
-        },
-        name: "message",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 32
+          optional: false
+        }, {
+          name: "message",
+          type: {
+            kind: "string"
           },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 33
-        },
-        name: "type",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 33
+          optional: false
+        }, {
+          name: "type",
+          type: {
+            kind: "union",
+            types: [{
+              kind: "string-literal",
+              value: "type"
+            }, {
+              kind: "string-literal",
+              value: "parser"
+            }, {
+              kind: "string-literal",
+              value: "env"
+            }, {
+              kind: "string-literal",
+              value: "warning"
+            }, {
+              kind: "string-literal",
+              value: "unknown"
+            }]
           },
-          kind: "union",
-          types: [{
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 33
-            },
-            kind: "string-literal",
-            value: "type"
-          }, {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 33
-            },
-            kind: "string-literal",
-            value: "parser"
-          }, {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 33
-            },
-            kind: "string-literal",
-            value: "env"
-          }, {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 33
-            },
-            kind: "string-literal",
-            value: "warning"
-          }, {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 33
-            },
-            kind: "string-literal",
-            value: "unknown"
-          }]
-        },
-        optional: false
-      }]
-    }
-  }], ["MerlinOutline", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 36
+          optional: false
+        }]
+      }
     },
-    name: "MerlinOutline",
-    definition: {
+    MerlinOutline: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "MerlinService.js",
         line: 36
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 37
-        },
-        name: "start",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 37
-          },
-          kind: "named",
-          name: "MerlinPosition"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 38
-        },
-        name: "end",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 38
-          },
-          kind: "named",
-          name: "MerlinPosition"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 39
-        },
-        name: "kind",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 39
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 40
-        },
-        name: "name",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 40
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 41
-        },
-        name: "children",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 41
-          },
-          kind: "array",
+      name: "MerlinOutline",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "start",
           type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 41
-            },
             kind: "named",
-            name: "MerlinOutline"
-          }
-        },
-        optional: false
-      }]
-    }
-  }], ["MerlinCases", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 44
+            name: "MerlinPosition"
+          },
+          optional: false
+        }, {
+          name: "end",
+          type: {
+            kind: "named",
+            name: "MerlinPosition"
+          },
+          optional: false
+        }, {
+          name: "kind",
+          type: {
+            kind: "string"
+          },
+          optional: false
+        }, {
+          name: "name",
+          type: {
+            kind: "string"
+          },
+          optional: false
+        }, {
+          name: "children",
+          type: {
+            kind: "array",
+            type: {
+              kind: "named",
+              name: "MerlinOutline"
+            }
+          },
+          optional: false
+        }]
+      }
     },
-    name: "MerlinCases",
-    definition: {
+    MerlinCases: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "MerlinService.js",
         line: 44
       },
-      kind: "tuple",
-      types: [{
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 45
-        },
-        kind: "object",
-        fields: [{
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 46
-          },
-          name: "start",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 46
+      name: "MerlinCases",
+      definition: {
+        kind: "tuple",
+        types: [{
+          kind: "object",
+          fields: [{
+            name: "start",
+            type: {
+              kind: "named",
+              name: "MerlinPosition"
             },
-            kind: "named",
-            name: "MerlinPosition"
-          },
-          optional: false
+            optional: false
+          }, {
+            name: "end",
+            type: {
+              kind: "named",
+              name: "MerlinPosition"
+            },
+            optional: false
+          }]
         }, {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 47
-          },
-          name: "end",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 47
-            },
-            kind: "named",
-            name: "MerlinPosition"
-          },
-          optional: false
+          kind: "string"
         }]
-      }, {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 51
-        },
-        kind: "string"
-      }]
-    }
-  }], ["MerlinOccurrences", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 54
+      }
     },
-    name: "MerlinOccurrences",
-    definition: {
+    MerlinOccurrences: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "MerlinService.js",
         line: 54
       },
-      kind: "array",
-      type: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 54
-        },
-        kind: "object",
-        fields: [{
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 55
-          },
-          name: "start",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 55
+      name: "MerlinOccurrences",
+      definition: {
+        kind: "array",
+        type: {
+          kind: "object",
+          fields: [{
+            name: "start",
+            type: {
+              kind: "named",
+              name: "MerlinPosition"
             },
-            kind: "named",
-            name: "MerlinPosition"
-          },
-          optional: false
-        }, {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 56
-          },
-          name: "end",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 56
+            optional: false
+          }, {
+            name: "end",
+            type: {
+              kind: "named",
+              name: "MerlinPosition"
             },
-            kind: "named",
-            name: "MerlinPosition"
-          },
-          optional: false
-        }]
+            optional: false
+          }]
+        }
       }
-    }
-  }], ["pushDotMerlinPath", {
-    kind: "function",
-    name: "pushDotMerlinPath",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 59
     },
-    type: {
+    pushDotMerlinPath: {
+      kind: "function",
+      name: "pushDotMerlinPath",
       location: {
         type: "source",
         fileName: "MerlinService.js",
         line: 59
       },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 59
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }],
-      returnType: {
+      type: {
         location: {
           type: "source",
           fileName: "MerlinService.js",
           line: 59
         },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 59
-          },
-          kind: "nullable",
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
           type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 59
-            },
-            kind: "any"
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "any"
+            }
           }
         }
       }
-    }
-  }], ["pushNewBuffer", {
-    kind: "function",
-    name: "pushNewBuffer",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 64
     },
-    type: {
+    pushNewBuffer: {
+      kind: "function",
+      name: "pushNewBuffer",
       location: {
         type: "source",
         fileName: "MerlinService.js",
         line: 64
       },
-      kind: "function",
-      argumentTypes: [{
-        name: "name",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 64
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "content",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 64
-          },
-          kind: "string"
-        }
-      }],
-      returnType: {
+      type: {
         location: {
           type: "source",
           fileName: "MerlinService.js",
           line: 64
         },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 64
-          },
-          kind: "nullable",
+        kind: "function",
+        argumentTypes: [{
+          name: "name",
           type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 64
-            },
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "content",
+          type: {
+            kind: "string"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "any"
+            }
+          }
+        }
+      }
+    },
+    locate: {
+      kind: "function",
+      name: "locate",
+      location: {
+        type: "source",
+        fileName: "MerlinService.js",
+        line: 72
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "MerlinService.js",
+          line: 72
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "line",
+          type: {
+            kind: "number"
+          }
+        }, {
+          name: "col",
+          type: {
+            kind: "number"
+          }
+        }, {
+          name: "kind",
+          type: {
+            kind: "string"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "object",
+              fields: [{
+                name: "file",
+                type: {
+                  kind: "named",
+                  name: "NuclideUri"
+                },
+                optional: false
+              }, {
+                name: "pos",
+                type: {
+                  kind: "object",
+                  fields: [{
+                    name: "line",
+                    type: {
+                      kind: "number"
+                    },
+                    optional: false
+                  }, {
+                    name: "col",
+                    type: {
+                      kind: "number"
+                    },
+                    optional: false
+                  }]
+                },
+                optional: false
+              }]
+            }
+          }
+        }
+      }
+    },
+    enclosingType: {
+      kind: "function",
+      name: "enclosingType",
+      location: {
+        type: "source",
+        fileName: "MerlinService.js",
+        line: 92
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "MerlinService.js",
+          line: 92
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "line",
+          type: {
+            kind: "number"
+          }
+        }, {
+          name: "col",
+          type: {
+            kind: "number"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "MerlinType"
+              }
+            }
+          }
+        }
+      }
+    },
+    complete: {
+      kind: "function",
+      name: "complete",
+      location: {
+        type: "source",
+        fileName: "MerlinService.js",
+        line: 101
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "MerlinService.js",
+          line: 101
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "line",
+          type: {
+            kind: "number"
+          }
+        }, {
+          name: "col",
+          type: {
+            kind: "number"
+          }
+        }, {
+          name: "prefix",
+          type: {
+            kind: "string"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "any"
+          }
+        }
+      }
+    },
+    errors: {
+      kind: "function",
+      name: "errors",
+      location: {
+        type: "source",
+        fileName: "MerlinService.js",
+        line: 111
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "MerlinService.js",
+          line: 111
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "MerlinError"
+              }
+            }
+          }
+        }
+      }
+    },
+    outline: {
+      kind: "function",
+      name: "outline",
+      location: {
+        type: "source",
+        fileName: "MerlinService.js",
+        line: 116
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "MerlinService.js",
+          line: 116
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "MerlinOutline"
+              }
+            }
+          }
+        }
+      }
+    },
+    cases: {
+      kind: "function",
+      name: "cases",
+      location: {
+        type: "source",
+        fileName: "MerlinService.js",
+        line: 123
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "MerlinService.js",
+          line: 123
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "position",
+          type: {
+            kind: "named",
+            name: "atom$Point"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "named",
+              name: "MerlinCases"
+            }
+          }
+        }
+      }
+    },
+    occurrences: {
+      kind: "function",
+      name: "occurrences",
+      location: {
+        type: "source",
+        fileName: "MerlinService.js",
+        line: 143
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "MerlinService.js",
+          line: 143
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "position",
+          type: {
+            kind: "named",
+            name: "atom$Point"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "named",
+              name: "MerlinOccurrences"
+            }
+          }
+        }
+      }
+    },
+    runSingleCommand: {
+      kind: "function",
+      name: "runSingleCommand",
+      location: {
+        type: "source",
+        fileName: "MerlinService.js",
+        line: 157
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "MerlinService.js",
+          line: 157
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "path",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "command",
+          type: {
+            kind: "mixed"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
             kind: "any"
           }
         }
       }
     }
-  }], ["locate", {
-    kind: "function",
-    name: "locate",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 69
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "MerlinService.js",
-        line: 69
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 70
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 71
-          },
-          kind: "number"
-        }
-      }, {
-        name: "col",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 72
-          },
-          kind: "number"
-        }
-      }, {
-        name: "kind",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 73
-          },
-          kind: "string"
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 74
-        },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 74
-          },
-          kind: "nullable",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 74
-            },
-            kind: "object",
-            fields: [{
-              location: {
-                type: "source",
-                fileName: "MerlinService.js",
-                line: 75
-              },
-              name: "file",
-              type: {
-                location: {
-                  type: "source",
-                  fileName: "MerlinService.js",
-                  line: 75
-                },
-                kind: "named",
-                name: "NuclideUri"
-              },
-              optional: false
-            }, {
-              location: {
-                type: "source",
-                fileName: "MerlinService.js",
-                line: 76
-              },
-              name: "pos",
-              type: {
-                location: {
-                  type: "source",
-                  fileName: "MerlinService.js",
-                  line: 76
-                },
-                kind: "object",
-                fields: [{
-                  location: {
-                    type: "source",
-                    fileName: "MerlinService.js",
-                    line: 77
-                  },
-                  name: "line",
-                  type: {
-                    location: {
-                      type: "source",
-                      fileName: "MerlinService.js",
-                      line: 77
-                    },
-                    kind: "number"
-                  },
-                  optional: false
-                }, {
-                  location: {
-                    type: "source",
-                    fileName: "MerlinService.js",
-                    line: 78
-                  },
-                  name: "col",
-                  type: {
-                    location: {
-                      type: "source",
-                      fileName: "MerlinService.js",
-                      line: 78
-                    },
-                    kind: "number"
-                  },
-                  optional: false
-                }]
-              },
-              optional: false
-            }]
-          }
-        }
-      }
-    }
-  }], ["enclosingType", {
-    kind: "function",
-    name: "enclosingType",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 89
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "MerlinService.js",
-        line: 89
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 90
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 91
-          },
-          kind: "number"
-        }
-      }, {
-        name: "col",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 92
-          },
-          kind: "number"
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 93
-        },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 93
-          },
-          kind: "nullable",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 93
-            },
-            kind: "array",
-            type: {
-              location: {
-                type: "source",
-                fileName: "MerlinService.js",
-                line: 93
-              },
-              kind: "named",
-              name: "MerlinType"
-            }
-          }
-        }
-      }
-    }
-  }], ["complete", {
-    kind: "function",
-    name: "complete",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 98
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "MerlinService.js",
-        line: 98
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 99
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 100
-          },
-          kind: "number"
-        }
-      }, {
-        name: "col",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 101
-          },
-          kind: "number"
-        }
-      }, {
-        name: "prefix",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 102
-          },
-          kind: "string"
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 103
-        },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 103
-          },
-          kind: "any"
-        }
-      }
-    }
-  }], ["errors", {
-    kind: "function",
-    name: "errors",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 108
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "MerlinService.js",
-        line: 108
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 109
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 110
-        },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 110
-          },
-          kind: "nullable",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 110
-            },
-            kind: "array",
-            type: {
-              location: {
-                type: "source",
-                fileName: "MerlinService.js",
-                line: 110
-              },
-              kind: "named",
-              name: "MerlinError"
-            }
-          }
-        }
-      }
-    }
-  }], ["outline", {
-    kind: "function",
-    name: "outline",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 115
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "MerlinService.js",
-        line: 115
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 116
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 117
-        },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 117
-          },
-          kind: "nullable",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 117
-            },
-            kind: "array",
-            type: {
-              location: {
-                type: "source",
-                fileName: "MerlinService.js",
-                line: 117
-              },
-              kind: "named",
-              name: "MerlinOutline"
-            }
-          }
-        }
-      }
-    }
-  }], ["cases", {
-    kind: "function",
-    name: "cases",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 122
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "MerlinService.js",
-        line: 122
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 123
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "position",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 124
-          },
-          kind: "named",
-          name: "atom$Point"
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 125
-        },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 125
-          },
-          kind: "nullable",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 125
-            },
-            kind: "named",
-            name: "MerlinCases"
-          }
-        }
-      }
-    }
-  }], ["occurrences", {
-    kind: "function",
-    name: "occurrences",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 138
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "MerlinService.js",
-        line: 138
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 139
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "position",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 140
-          },
-          kind: "named",
-          name: "atom$Point"
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 141
-        },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 141
-          },
-          kind: "nullable",
-          type: {
-            location: {
-              type: "source",
-              fileName: "MerlinService.js",
-              line: 141
-            },
-            kind: "named",
-            name: "MerlinOccurrences"
-          }
-        }
-      }
-    }
-  }], ["runSingleCommand", {
-    kind: "function",
-    name: "runSingleCommand",
-    location: {
-      type: "source",
-      fileName: "MerlinService.js",
-      line: 150
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "MerlinService.js",
-        line: 150
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "path",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 151
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "command",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 152
-          },
-          kind: "mixed"
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "MerlinService.js",
-          line: 153
-        },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "MerlinService.js",
-            line: 153
-          },
-          kind: "any"
-        }
-      }
-    }
-  }]])
+  }
 });

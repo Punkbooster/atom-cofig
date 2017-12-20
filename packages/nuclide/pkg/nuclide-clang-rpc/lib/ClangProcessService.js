@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -24,7 +15,18 @@ exports.get_local_references = get_local_references;
 
 function compile(contents) {
   throw new Error('Rpc Stub');
-}function get_completions(contents, line, column, tokenStartColumn, prefix) {
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
+
+function get_completions(contents, line, column, tokenStartColumn, prefix) {
   throw new Error('Rpc Stub');
 }
 

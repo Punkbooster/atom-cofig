@@ -1,17 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 var _accumulateState;
 
@@ -42,7 +29,7 @@ function _load_Commands() {
 var _createPackage;
 
 function _load_createPackage() {
-  return _createPackage = _interopRequireDefault(require('../../commons-atom/createPackage'));
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
 }
 
 var _utils;
@@ -51,34 +38,34 @@ function _load_utils() {
   return _utils = require('./utils');
 }
 
-var _nuclideHgGitBridge;
+var _nuclideVcsBase;
 
-function _load_nuclideHgGitBridge() {
-  return _nuclideHgGitBridge = require('../../nuclide-hg-git-bridge');
+function _load_nuclideVcsBase() {
+  return _nuclideVcsBase = require('../../nuclide-vcs-base');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _event;
 
 function _load_event() {
-  return _event = require('../../commons-node/event');
+  return _event = require('nuclide-commons/event');
 }
 
 var _nuclideAnalytics;
@@ -91,9 +78,22 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function createStateStream(actions, initialState) {
   const states = new _rxjsBundlesRxMinJs.BehaviorSubject(initialState);
-  actions.scan((_accumulateState || _load_accumulateState()).accumulateState, initialState).subscribe(states);
+  actions.scan((_accumulateState || _load_accumulateState()).accumulateState, initialState).catch(error => {
+    (0, (_log4js || _load_log4js()).getLogger)('nuclide-bookshelf').fatal('bookshelf middleware got broken', error);
+    atom.notifications.addError('Nuclide bookshelf broke, please report a bug to help us fix it!');
+    return _rxjsBundlesRxMinJs.Observable.empty();
+  }).subscribe(states);
   return states;
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 class Activation {
 
@@ -102,7 +102,7 @@ class Activation {
     try {
       initialState = (0, (_utils || _load_utils()).deserializeBookShelfState)(state);
     } catch (error) {
-      (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error('failed to deserialize nuclide-bookshelf state', state, error);
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-bookshelf').error('failed to deserialize nuclide-bookshelf state', state, error);
       initialState = (0, (_utils || _load_utils()).getEmptBookShelfState)();
     }
 
@@ -114,7 +114,7 @@ class Activation {
     };
     const commands = new (_Commands || _load_Commands()).Commands(dispatch, () => states.getValue());
 
-    const addedRepoSubscription = (0, (_nuclideHgGitBridge || _load_nuclideHgGitBridge()).getHgRepositoryStream)().subscribe(repository => {
+    const addedRepoSubscription = (0, (_nuclideVcsBase || _load_nuclideVcsBase()).getHgRepositoryStream)().subscribe(repository => {
       // $FlowFixMe wrong repository type
       commands.addProjectRepository(repository);
     });
@@ -163,11 +163,10 @@ class Activation {
     try {
       return (0, (_utils || _load_utils()).serializeBookShelfState)(this._states.getValue());
     } catch (error) {
-      (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error('failed to serialize nuclide-bookshelf state', error);
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-bookshelf').error('failed to serialize nuclide-bookshelf state', error);
       return null;
     }
   }
 }
 
-exports.default = (0, (_createPackage || _load_createPackage()).default)(Activation);
-module.exports = exports['default'];
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

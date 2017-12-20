@@ -1,28 +1,15 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 var _projects;
 
 function _load_projects() {
-  return _projects = require('../../commons-atom/projects');
+  return _projects = require('nuclide-commons-atom/projects');
 }
 
 var _textEditor;
 
 function _load_textEditor() {
-  return _textEditor = require('../../commons-atom/text-editor');
+  return _textEditor = require('nuclide-commons-atom/text-editor');
 }
 
 var _NavigationStackController;
@@ -40,19 +27,19 @@ function _load_nuclideAnalytics() {
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _goToLocation;
 
 function _load_goToLocation() {
-  return _goToLocation = require('../../commons-atom/go-to-location');
+  return _goToLocation = require('nuclide-commons-atom/go-to-location');
 }
 
 var _createPackage;
 
 function _load_createPackage() {
-  return _createPackage = _interopRequireDefault(require('../../commons-atom/createPackage'));
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
 }
 
 var _StatusBar;
@@ -62,6 +49,17 @@ function _load_StatusBar() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const controller = new (_NavigationStackController || _load_NavigationStackController()).NavigationStackController();
 
@@ -90,21 +88,23 @@ class Activation {
 
     const addEditor = addEvent => {
       const editor = addEvent.textEditor;
-      subscribeEditor(editor);
-      controller.onCreate(editor);
+      if ((0, (_textEditor || _load_textEditor()).isValidTextEditor)(editor)) {
+        subscribeEditor(editor);
+        controller.onCreate(editor);
+      }
     };
 
     atom.workspace.getTextEditors().forEach(subscribeEditor);
     this._disposables.add(atom.workspace.onDidAddTextEditor(addEditor), atom.workspace.onDidOpen(event => {
-      if (atom.workspace.isTextEditor(event.item)) {
+      if ((0, (_textEditor || _load_textEditor()).isValidTextEditor)(event.item)) {
         controller.onOpen(event.item);
       }
     }), atom.workspace.observeActivePaneItem(item => {
-      if (atom.workspace.isTextEditor(item)) {
+      if ((0, (_textEditor || _load_textEditor()).isValidTextEditor)(item)) {
         controller.onActivate(item);
       }
     }), atom.workspace.onDidStopChangingActivePaneItem(item => {
-      if (atom.workspace.isTextEditor(item)) {
+      if ((0, (_textEditor || _load_textEditor()).isValidTextEditor)(item)) {
         controller.onActiveStopChanging(item);
       }
     }), (0, (_projects || _load_projects()).onDidRemoveProjectPath)(path => {
@@ -112,9 +112,9 @@ class Activation {
     }), (0, (_goToLocation || _load_goToLocation()).observeNavigatingEditors)().subscribe(editor => {
       controller.onOptInNavigation(editor);
     }), atom.commands.add('atom-workspace', 'nuclide-navigation-stack:navigate-forwards', () => {
-      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-navigation-stack:forwards', () => controller.navigateForwards());
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-navigation-stack:forwards', () => controller.navigateForwards());
     }), atom.commands.add('atom-workspace', 'nuclide-navigation-stack:navigate-backwards', () => {
-      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-navigation-stack:backwards', () => controller.navigateBackwards());
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-navigation-stack:backwards', () => controller.navigateBackwards());
     }));
   }
 
@@ -129,5 +129,4 @@ class Activation {
   }
 }
 
-exports.default = (0, (_createPackage || _load_createPackage()).default)(Activation);
-module.exports = exports['default'];
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

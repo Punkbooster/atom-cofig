@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,10 +7,10 @@ exports.WebSocketTransport = undefined;
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _eventKit;
@@ -34,7 +25,18 @@ function _load_compression() {
   return _compression = require('./compression');
 }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-server');
 // Do not synchronously compress large payloads (risks blocking the event loop)
 const MAX_SYNC_COMPRESS_LENGTH = 100000;
 
@@ -79,10 +81,10 @@ class WebSocketTransport {
 
     socket.on('error', e => {
       if (this._socket != null) {
-        logger.error(`Client #${ this.id } error: ${ e.message }`);
+        logger.error(`Client #${this.id} error: ${e.message}`);
         this._emitter.emit('error', e);
       } else {
-        logger.error(`Client #${ this.id } error after close: ${ e.message }`);
+        logger.error(`Client #${this.id} error after close: ${e.message}`);
       }
     });
 
@@ -98,7 +100,7 @@ class WebSocketTransport {
 
   _onSocketMessage(message) {
     if (this._socket == null) {
-      logger.error('Received socket message after connection closed', new Error());
+      logger.error('Received socket message after connection closed');
       return;
     }
     this._messages.next(message);

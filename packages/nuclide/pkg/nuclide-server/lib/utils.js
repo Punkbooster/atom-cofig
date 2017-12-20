@@ -1,13 +1,15 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.asyncRequest = asyncRequest;
+exports.sendTextResponse = sendTextResponse;
+exports.sendJsonResponse = sendJsonResponse;
+exports.parseRequestBody = parseRequestBody;
+exports.getQueryParameters = getQueryParameters;
+exports.serializeArgs = serializeArgs;
+exports.deserializeArgs = deserializeArgs;
 
 var _url = _interopRequireDefault(require('url'));
 
@@ -18,6 +20,17 @@ function _load_request() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const MAX_REQUEST_LENGTH = 1e6;
 
@@ -162,13 +175,3 @@ function deserializeArgs(requestUrl) {
     }
   });
 }
-
-module.exports = {
-  asyncRequest,
-  deserializeArgs,
-  getQueryParameters,
-  parseRequestBody,
-  sendJsonResponse,
-  sendTextResponse,
-  serializeArgs
-};

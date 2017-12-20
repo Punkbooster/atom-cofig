@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -23,7 +14,7 @@ function _load_MemoizedFieldsDeriver() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _immutable;
@@ -47,8 +38,18 @@ const DEFAULT_OPTIONS = {
   connectionTitle: '',
   subscription: null,
   highlightedText: '',
-  matchesFilter: true
-};
+  matchesFilter: true,
+  isPendingLoad: false
+}; /**
+    * Copyright (c) 2015-present, Facebook, Inc.
+    * All rights reserved.
+    *
+    * This source code is licensed under the license found in the LICENSE file in
+    * the root directory of this source tree.
+    *
+    * 
+    * @format
+    */
 
 /**
 * OVERVIEW
@@ -105,12 +106,6 @@ class FileTreeNode {
   * of FileTreeNode instances
   */
 
-
-  // Derived from children
-
-
-  // Derived
-
   // Mutable properties - set when the node is assigned to its parent (and are immutable after)
   static childrenFromArray(children) {
     return new (_immutable || _load_immutable()).default.OrderedMap(children.map(child => [child.name, child]));
@@ -119,6 +114,12 @@ class FileTreeNode {
   /**
   * The _derivedChange param is not for external use.
   */
+
+
+  // Derived from children
+
+
+  // Derived
   constructor(options, conf, _deriver = null) {
     this.parent = null;
     this.nextSibling = null;
@@ -144,8 +145,9 @@ class FileTreeNode {
     let containsDragHover = this.isDragHovered;
     let containsTrackedNode = this.isTracked;
     let containsFilterMatches = this.matchesFilter;
-    let shownChildrenBelow = this.shouldBeShown ? 1 : 0;
     let containsHidden = !this.shouldBeShown;
+    let childrenAreLoading = this.childrenAreLoading || this.isLoading;
+    let childCountIfNotPendingLoad = 0;
 
     let prevChild = null;
     this.children.forEach(c => {
@@ -174,11 +176,15 @@ class FileTreeNode {
       }
 
       if (this.shouldBeShown && this.isExpanded) {
-        shownChildrenBelow += c.shownChildrenBelow;
+        childCountIfNotPendingLoad += c.shownChildrenCount;
       }
 
       if (!containsHidden && c.containsHidden) {
         containsHidden = true;
+      }
+
+      if (!childrenAreLoading && c.childrenAreLoading) {
+        childrenAreLoading = true;
       }
     });
     if (prevChild != null) {
@@ -189,8 +195,15 @@ class FileTreeNode {
     this.containsDragHover = containsDragHover;
     this.containsTrackedNode = containsTrackedNode;
     this.containsFilterMatches = containsFilterMatches;
-    this.shownChildrenBelow = shownChildrenBelow;
     this.containsHidden = containsHidden;
+    this.childrenAreLoading = childrenAreLoading;
+
+    this.isPendingLoad = this.isPendingLoad && childrenAreLoading;
+    let shownChildrenCount = this.shouldBeShown ? 1 : 0;
+    if (!this.isPendingLoad) {
+      shownChildrenCount += childCountIfNotPendingLoad;
+    }
+    this.shownChildrenCount = shownChildrenCount;
   }
 
   /**
@@ -218,6 +231,7 @@ class FileTreeNode {
     this.subscription = o.subscription !== undefined ? o.subscription : D.subscription;
     this.highlightedText = o.highlightedText !== undefined ? o.highlightedText : D.highlightedText;
     this.matchesFilter = o.matchesFilter !== undefined ? o.matchesFilter : D.matchesFilter;
+    this.isPendingLoad = o.isPendingLoad !== undefined ? o.isPendingLoad : D.isPendingLoad;
   }
 
   /**
@@ -261,7 +275,8 @@ class FileTreeNode {
       connectionTitle: this.connectionTitle,
       subscription: this.subscription,
       highlightedText: this.highlightedText,
-      matchesFilter: this.matchesFilter
+      matchesFilter: this.matchesFilter,
+      isPendingLoad: this.isPendingLoad
     };
   }
 
@@ -411,7 +426,7 @@ class FileTreeNode {
       return null;
     }
 
-    if (this.shownChildrenBelow > 1) {
+    if (this.shownChildrenCount > 1) {
       return this.children.find(c => c.shouldBeShown);
     }
 
@@ -513,7 +528,7 @@ class FileTreeNode {
     let index = this.shouldBeShown ? 1 : 0;
     let prev = this.findPrevShownSibling();
     while (prev != null) {
-      index += prev.shownChildrenBelow;
+      index += prev.shownChildrenCount;
       prev = prev.findPrevShownSibling();
     }
     return index + (this.parent == null ? 0 : this.parent.calculateVisualIndex());
@@ -555,6 +570,10 @@ class FileTreeNode {
     }
 
     if (props.children !== undefined && props.children !== this.children && !(_immutable || _load_immutable()).default.is(this.children, props.children)) {
+      return false;
+    }
+
+    if (props.isPendingLoad !== undefined && props.isPendingLoad !== this.isPendingLoad) {
       return false;
     }
 

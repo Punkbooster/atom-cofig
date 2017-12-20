@@ -1,31 +1,22 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.RenameComponent = undefined;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _AtomInput;
 
 function _load_AtomInput() {
-  return _AtomInput = require('../../../nuclide-ui/AtomInput');
+  return _AtomInput = require('nuclide-commons-ui/AtomInput');
 }
 
 var _Button;
 
 function _load_Button() {
-  return _Button = require('../../../nuclide-ui/Button');
+  return _Button = require('nuclide-commons-ui/Button');
 }
 
 var _refactorActions;
@@ -36,7 +27,9 @@ function _load_refactorActions() {
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-class RenameComponent extends _reactForAtom.React.Component {
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+class RenameComponent extends _react.default.Component {
 
   constructor(props) {
     super(props);
@@ -46,10 +39,10 @@ class RenameComponent extends _reactForAtom.React.Component {
   }
 
   render() {
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       null,
-      _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+      _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
         autofocus: true,
         startSelected: true,
         className: 'nuclide-refactorizer-rename-editor',
@@ -57,7 +50,7 @@ class RenameComponent extends _reactForAtom.React.Component {
         onDidChange: text => this.setState({ newName: text }),
         onConfirm: () => this._runRename()
       }),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         (_Button || _load_Button()).Button
         // Used to identify this element in integration tests
         ,
@@ -81,4 +74,13 @@ class RenameComponent extends _reactForAtom.React.Component {
     this.props.store.dispatch((_refactorActions || _load_refactorActions()).execute(this.props.phase.provider, refactoring));
   }
 }
-exports.RenameComponent = RenameComponent;
+exports.RenameComponent = RenameComponent; /**
+                                            * Copyright (c) 2015-present, Facebook, Inc.
+                                            * All rights reserved.
+                                            *
+                                            * This source code is licensed under the license found in the LICENSE file in
+                                            * the root directory of this source tree.
+                                            *
+                                            * 
+                                            * @format
+                                            */

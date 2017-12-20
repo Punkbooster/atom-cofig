@@ -1,21 +1,21 @@
-'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-// Mercurial history emails can be invalid.
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.shortNameForAuthor = shortNameForAuthor;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
+// Mercurial history emails can be invalid.
 const HG_EMAIL_REGEX = /\b([A-Za-z0-9._%+-]+)@[A-Za-z0-9.-]+\b/;
 
 /**

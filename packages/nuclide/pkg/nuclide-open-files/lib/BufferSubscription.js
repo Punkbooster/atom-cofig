@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,10 +9,10 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _atom = require('atom');
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _nuclideOpenFilesRpc;
@@ -32,7 +23,16 @@ function _load_nuclideOpenFilesRpc() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-open-files'); /**
+                                                                                  * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                  * All rights reserved.
+                                                                                  *
+                                                                                  * This source code is licensed under the license found in the LICENSE file in
+                                                                                  * the root directory of this source tree.
+                                                                                  *
+                                                                                  * 
+                                                                                  * @format
+                                                                                  */
 
 const RESYNC_TIMEOUT_MS = 2000;
 
@@ -58,12 +58,14 @@ class BufferSubscription {
     this._notifier = null;
     this._serverVersion = -1;
     this._lastAttemptedSync = -1;
+    this._changeCount = 1;
     this._sentOpen = false;
 
     const subscriptions = new _atom.CompositeDisposable();
 
     subscriptions.add(buffer.onDidChange((() => {
       var _ref = (0, _asyncToGenerator.default)(function* (event) {
+        _this._changeCount++;
         if (_this._notifier == null) {
           return;
         }
@@ -76,7 +78,7 @@ class BufferSubscription {
           throw new Error('Invariant violation: "filePath != null"');
         }
 
-        const version = _this._buffer.changeCount;
+        const version = _this._changeCount;
 
         if (!(_this._notifier != null)) {
           throw new Error('Invariant violation: "this._notifier != null"');
@@ -97,7 +99,7 @@ class BufferSubscription {
             newText: event.newText
           });
         } else {
-          _this._sendOpenByNotifier(notifier);
+          _this._sendOpenByNotifier(notifier, version);
         }
       });
 
@@ -116,18 +118,16 @@ class BufferSubscription {
     // TODO: Could watch onDidReload() which will catch the case where an empty file is opened
     // after startup, leaving the only failure the reopening of empty files at startup.
     if (this._buffer.getText() !== '' && this._notifier != null) {
-      this._notifier.then(notifier => this._sendOpenByNotifier(notifier));
+      this._notifier.then(notifier => this._sendOpenByNotifier(notifier, this._changeCount));
     }
   }
 
-  _sendOpenByNotifier(notifier) {
+  _sendOpenByNotifier(notifier, version) {
     const filePath = this._buffer.getPath();
 
     if (!(filePath != null)) {
       throw new Error('Invariant violation: "filePath != null"');
     }
-
-    const version = this._buffer.changeCount;
 
     this._sentOpen = true;
     this.sendEvent({
@@ -139,6 +139,10 @@ class BufferSubscription {
       },
       contents: this._buffer.getText()
     });
+  }
+
+  getVersion() {
+    return this._changeCount;
   }
 
   sendEvent(event) {
@@ -153,7 +157,7 @@ class BufferSubscription {
         yield event.fileVersion.notifier.onFileEvent(event);
         _this2.updateServerVersion(event.fileVersion.version);
       } catch (e) {
-        logger.error(`Error sending file event: ${ eventToString(event) }`, e);
+        logger.error(`Error sending file event: ${eventToString(event)}`, e);
 
         if (event.fileVersion.filePath === _this2._buffer.getPath()) {
           logger.error('Attempting file resync');
@@ -176,7 +180,7 @@ class BufferSubscription {
     var _this3 = this;
 
     // always attempt to resync to the latest version
-    const resyncVersion = this._buffer.changeCount;
+    const resyncVersion = this._changeCount;
     const filePath = this._buffer.getPath();
 
     // don't send a resync if another edit has already succeeded at this version
@@ -203,7 +207,7 @@ class BufferSubscription {
             logger.error('Resync preempted by file rename');
           } else if (resyncVersion !== _this3._lastAttemptedSync) {
             logger.error('Resync preempted by later resync');
-          } else if (resyncVersion !== _this3._buffer.changeCount) {
+          } else if (resyncVersion !== _this3._changeCount) {
             logger.error('Resync preempted by later edit');
           } else {
             const syncEvent = {
@@ -219,9 +223,9 @@ class BufferSubscription {
               yield notifier.onFileEvent(syncEvent);
               _this3.updateServerVersion(resyncVersion);
 
-              logger.error(`Successful resync event: ${ eventToString(syncEvent) }`);
+              logger.error(`Successful resync event: ${eventToString(syncEvent)}`);
             } catch (syncError) {
-              logger.error(`Error sending file sync event: ${ eventToString(syncEvent) }`, syncError);
+              logger.error(`Error sending file sync event: ${eventToString(syncEvent)}`, syncError);
 
               // continue trying until either the file is closed,
               // or a resync to a later edit is attempted
@@ -245,7 +249,7 @@ class BufferSubscription {
   sendClose() {
     // Use different retry policy for close messages.
     if (this._oldPath != null) {
-      this._notifiers.sendClose(this._oldPath, this._buffer.changeCount);
+      this._notifiers.sendClose(this._oldPath, this._changeCount);
     }
   }
 

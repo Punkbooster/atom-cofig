@@ -1,18 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Connection = exports.BREAKPOINT = exports.ASYNC_BREAK = undefined;
+exports.Connection = exports.EXCEPTION = exports.BREAKPOINT = exports.ASYNC_BREAK = undefined;
 
 var _DbgpSocket;
 
@@ -32,10 +23,20 @@ function _load_eventKit() {
   return _eventKit = require('event-kit');
 }
 
-let connectionCount = 1;
+let connectionCount = 1; /**
+                          * Copyright (c) 2015-present, Facebook, Inc.
+                          * All rights reserved.
+                          *
+                          * This source code is licensed under the license found in the LICENSE file in
+                          * the root directory of this source tree.
+                          *
+                          * 
+                          * @format
+                          */
 
 const ASYNC_BREAK = exports.ASYNC_BREAK = 'async_break';
 const BREAKPOINT = exports.BREAKPOINT = 'breakpoint';
+const EXCEPTION = exports.EXCEPTION = 'exception';
 
 class Connection {
 
@@ -48,6 +49,8 @@ class Connection {
     this._isDummyConnection = isDummyConnection;
     this._isDummyViewable = false;
     this._disposables = new (_eventKit || _load_eventKit()).CompositeDisposable();
+    this._breakCount = 0;
+
     if (onStatusCallback != null) {
       this._disposables.add(this.onStatus((status, ...args) => onStatusCallback(this, status, ...args)));
     }
@@ -55,6 +58,7 @@ class Connection {
       this._disposables.add(this.onNotification((notifyName, notify) => onNotificationCallback(this, notifyName, notify)));
     }
     this._stopReason = null;
+    this._stopBreakpointLocation = null;
   }
 
   isDummyConnection() {
@@ -74,14 +78,28 @@ class Connection {
     switch (newStatus) {
       case (_DbgpSocket || _load_DbgpSocket()).ConnectionStatus.Running:
         this._stopReason = null;
+        this._stopBreakpointLocation = null;
         break;
       case (_DbgpSocket || _load_DbgpSocket()).ConnectionStatus.Break:
         if (prevStatus === (_DbgpSocket || _load_DbgpSocket()).ConnectionStatus.BreakMessageReceived) {
           this._stopReason = ASYNC_BREAK;
+          this._stopBreakpointLocation = null;
         } else if (prevStatus !== (_DbgpSocket || _load_DbgpSocket()).ConnectionStatus.Break) {
           // TODO(dbonafilia): investigate why we sometimes receive two BREAK_MESSAGES
-          this._stopReason = BREAKPOINT;
+          const [file, line, exception] = args;
+          this._stopReason = exception == null ? BREAKPOINT : EXCEPTION;
+          if (file != null && line != null) {
+            this._stopBreakpointLocation = {
+              filename: file,
+              lineNumber: Number(line),
+              conditionExpression: null
+            };
+          } else {
+            // Unknown stop location.
+            this._stopBreakpointLocation = null;
+          }
         }
+        this._breakCount++;
         break;
       case (_DbgpSocket || _load_DbgpSocket()).ConnectionStatus.DummyIsViewable:
         this._isDummyViewable = true;
@@ -115,6 +133,10 @@ class Connection {
     } else {
       return this._status === (_DbgpSocket || _load_DbgpSocket()).ConnectionStatus.Break;
     }
+  }
+
+  getBreakCount() {
+    return this._breakCount;
   }
 
   onNotification(callback) {
@@ -184,6 +206,12 @@ class Connection {
 
   getStopReason() {
     return this._stopReason;
+  }
+
+  // Returns the location this connection is stopped at if it is stopped at a file+line breakpoint.
+  // Otherwise, returns null.
+  getStopBreakpointLocation() {
+    return this._stopBreakpointLocation;
   }
 
   dispose() {

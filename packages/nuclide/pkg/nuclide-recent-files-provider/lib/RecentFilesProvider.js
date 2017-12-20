@@ -1,37 +1,32 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.RecentFilesProvider = undefined;
 
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+exports.setRecentFilesService = setRecentFilesService;
+
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _nuclideFuzzyNative;
@@ -40,9 +35,26 @@ function _load_nuclideFuzzyNative() {
   return _nuclideFuzzyNative = require('../../nuclide-fuzzy-native');
 }
 
+var _PathWithFileIcon;
+
+function _load_PathWithFileIcon() {
+  return _PathWithFileIcon = _interopRequireDefault(require('../../nuclide-ui/PathWithFileIcon'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Imported from nuclide-files-service, which is an apm package, preventing a direct import.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 let _recentFilesService = null;
 
 function getRecentFilesMatching(query) {
@@ -94,41 +106,23 @@ function opacityForTimestamp(timestamp) {
 }
 
 const RecentFilesProvider = exports.RecentFilesProvider = {
-
-  getName() {
-    return 'RecentFilesProvider';
+  providerType: 'GLOBAL',
+  name: 'RecentFilesProvider',
+  debounceDelay: 0,
+  display: {
+    title: 'Recent Files',
+    prompt: 'Search recently opened filenames...',
+    action: 'nuclide-recent-files-provider:toggle-provider'
   },
 
-  getProviderType() {
-    return 'GLOBAL';
+  isEligibleForDirectories(directories) {
+    return (0, _asyncToGenerator.default)(function* () {
+      return true;
+    })();
   },
 
-  getDebounceDelay() {
-    return 0;
-  },
-
-  isRenderable() {
-    return true;
-  },
-
-  getAction() {
-    return 'nuclide-recent-files-provider:toggle-provider';
-  },
-
-  getPromptText() {
-    return 'Search recently opened files';
-  },
-
-  getTabTitle() {
-    return 'Recent Files';
-  },
-
-  executeQuery(query) {
+  executeQuery(query, directories) {
     return Promise.resolve(getRecentFilesMatching(query));
-  },
-
-  setRecentFilesService(service) {
-    _recentFilesService = service;
   },
 
   getComponentForItem(item) {
@@ -136,32 +130,32 @@ const RecentFilesProvider = exports.RecentFilesProvider = {
     const filePath = item.path.substring(0, item.path.lastIndexOf(filename));
     const date = item.timestamp == null ? null : new Date(item.timestamp);
     const datetime = date === null ? '' : date.toLocaleString();
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       {
         className: 'recent-files-provider-result',
         style: { opacity: opacityForTimestamp(item.timestamp || Date.now()) },
         title: datetime },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'recent-files-provider-filepath-container' },
-        _reactForAtom.React.createElement(
-          'span',
+        _react.default.createElement(
+          (_PathWithFileIcon || _load_PathWithFileIcon()).default,
           {
-            className: 'icon icon-file-text file recent-files-provider-file-path',
-            'data-name': filename },
+            className: 'recent-files-provider-file-path',
+            path: filename },
           filePath
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'span',
           { className: 'recent-files-provider-file-name' },
           filename
         )
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'recent-files-provider-datetime-container' },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'span',
           { className: 'recent-files-provider-datetime-label' },
           date === null ? 'At some point' : (0, (_string || _load_string()).relativeDate)(date)
@@ -169,5 +163,8 @@ const RecentFilesProvider = exports.RecentFilesProvider = {
       )
     );
   }
-
 };
+
+function setRecentFilesService(service) {
+  _recentFilesService = service;
+}

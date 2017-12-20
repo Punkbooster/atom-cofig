@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -19,24 +10,23 @@ function _load_nuclideRemoteConnection() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// eslint-disable-next-line nuclide-internal/no-commonjs
 module.exports = {
   getAutocompleteSuggestions(request) {
     return (0, _asyncToGenerator.default)(function* () {
-
       const { editor, prefix } = request;
+
+      const path = editor.getPath();
+      if (path == null) {
+        return null;
+      }
 
       // OCaml.Pervasives has a lot of stuff that gets shown on every keystroke without this.
       if (prefix.trim().length === 0) {
         return [];
       }
 
-      const path = editor.getPath();
-      const ocamlmerlin = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getServiceByNuclideUri)('MerlinService', path);
-
-      if (!ocamlmerlin) {
-        throw new Error('Invariant violation: "ocamlmerlin"');
-      }
-
+      const ocamlmerlin = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getMerlinServiceByNuclideUri)(path);
       const text = editor.getText();
       const [line, col] = editor.getCursorBufferPosition().toArray();
 
@@ -66,4 +56,13 @@ module.exports = {
       });
     })();
   }
-};
+}; /**
+    * Copyright (c) 2015-present, Facebook, Inc.
+    * All rights reserved.
+    *
+    * This source code is licensed under the license found in the LICENSE file in
+    * the root directory of this source tree.
+    *
+    * 
+    * @format
+    */

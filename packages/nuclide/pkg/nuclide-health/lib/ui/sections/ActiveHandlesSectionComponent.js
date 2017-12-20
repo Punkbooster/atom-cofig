@@ -1,19 +1,10 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _HandlesTableComponent;
 
@@ -23,18 +14,18 @@ function _load_HandlesTableComponent() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class ActiveHandlesSectionComponent extends _reactForAtom.React.Component {
+class ActiveHandlesSectionComponent extends _react.default.Component {
 
   render() {
     if (!this.props.activeHandlesByType || Object.keys(this.props.activeHandlesByType).length === 0) {
-      return _reactForAtom.React.createElement('div', null);
+      return _react.default.createElement('div', null);
     }
 
     // Note that widthPercentage properties should add up to 90 since the ID column always adds 10.
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       null,
-      _reactForAtom.React.createElement((_HandlesTableComponent || _load_HandlesTableComponent()).default, {
+      _react.default.createElement((_HandlesTableComponent || _load_HandlesTableComponent()).default, {
         key: 2,
         title: 'TLS Sockets',
         handles: this.props.activeHandlesByType.tlssocket,
@@ -53,7 +44,7 @@ class ActiveHandlesSectionComponent extends _reactForAtom.React.Component {
           widthPercentage: 10
         }]
       }),
-      _reactForAtom.React.createElement((_HandlesTableComponent || _load_HandlesTableComponent()).default, {
+      _react.default.createElement((_HandlesTableComponent || _load_HandlesTableComponent()).default, {
         key: 3,
         title: 'Other handles',
         handles: this.props.activeHandlesByType.other,
@@ -67,5 +58,13 @@ class ActiveHandlesSectionComponent extends _reactForAtom.React.Component {
     );
   }
 }
-exports.default = ActiveHandlesSectionComponent;
-module.exports = exports['default'];
+exports.default = ActiveHandlesSectionComponent; /**
+                                                  * Copyright (c) 2015-present, Facebook, Inc.
+                                                  * All rights reserved.
+                                                  *
+                                                  * This source code is licensed under the license found in the LICENSE file in
+                                                  * the root directory of this source tree.
+                                                  *
+                                                  * 
+                                                  * @format
+                                                  */

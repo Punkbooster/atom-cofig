@@ -1,15 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/* @providesModule HgConstants */
 
 const StatusCodeId = Object.freeze({
   ADDED: 'A',
@@ -23,6 +12,19 @@ const StatusCodeId = Object.freeze({
 });
 
 // This is to work around flow's missing support of enums.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+/* @providesModule HgConstants */
+
 StatusCodeId;
 
 const StatusCodeNumber = Object.freeze({
@@ -53,7 +55,8 @@ const StatusCodeIdToNumber = {
 const MergeConflictStatus = Object.freeze({
   BOTH_CHANGED: 'both changed',
   DELETED_IN_THEIRS: 'deleted in theirs',
-  DELETED_IN_OURS: 'deleted in ours'
+  DELETED_IN_OURS: 'deleted in ours',
+  RESOLVED: 'resolved'
 });
 
 // This is to work around flow's missing support of enums.
@@ -74,17 +77,39 @@ const CommitPhase = Object.freeze({
   SECRET: 'secret'
 });
 
-const HEAD_REVISION_EXPRESSION = '.';
-
 // This is to work around flow's missing support of enums.
 CommitPhase;
 
+const SuccessorType = Object.freeze({
+  PUBLIC: 'public',
+  AMEND: 'amend',
+  REBASE: 'rebase',
+  SPLIT: 'split',
+  FOLD: 'fold',
+  HISTEDIT: 'histedit'
+});
+
+// This is to work around flow's missing support of enums.
+SuccessorType;
+
+const MergeConflictFileStatus = Object.freeze({
+  RESOLVED: 'R',
+  UNRESOLVED: 'U'
+});
+
+MergeConflictFileStatus;
+
+const HEAD_REVISION_EXPRESSION = '.';
+
+// eslint-disable-next-line nuclide-internal/no-commonjs
 module.exports = {
   AmendMode,
   CommitPhase,
   HEAD_REVISION_EXPRESSION,
   MergeConflictStatus,
+  MergeConflictFileStatus,
   StatusCodeId,
   StatusCodeIdToNumber,
-  StatusCodeNumber
+  StatusCodeNumber,
+  SuccessorType
 };

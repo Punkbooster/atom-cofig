@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -25,28 +16,40 @@ function _load_stripAnsi() {
   return _stripAnsi = _interopRequireDefault(require('strip-ansi'));
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
-var _getDiagnostics;
+var _DiagnosticsParser;
 
-function _load_getDiagnostics() {
-  return _getDiagnostics = _interopRequireDefault(require('./getDiagnostics'));
+function _load_DiagnosticsParser() {
+  return _DiagnosticsParser = _interopRequireDefault(require('./DiagnosticsParser'));
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const PROGRESS_OUTPUT_INTERVAL = 5 * 1000;
 const BUILD_FAILED_MESSAGE = 'BUILD FAILED:';
+const BUILD_OUTPUT_REGEX = /^OK {3}(.*?) (.*?) (.*?)$/;
 
 function convertJavaLevel(level) {
   switch (level) {
@@ -76,20 +79,29 @@ function getEventsFromSocket(socketStream) {
       case 'ParseFinished':
         return log('Parsing finished. Starting build...');
       case 'ConsoleEvent':
-        return log(message.message, convertJavaLevel(message.level.name));
+        const match = message.message.match(BUILD_OUTPUT_REGEX);
+        if (match != null && match.length === 4) {
+          // The result is also printed to stdout and converted into build-output there.
+          return _rxjsBundlesRxMinJs.Observable.empty();
+        } else {
+          return log(message.message, convertJavaLevel(message.level.name));
+        }
       case 'InstallFinished':
         return log('Install finished.', 'info');
       case 'BuildFinished':
-        return log(`Build finished with exit code ${ message.exitCode }.`, message.exitCode === 0 ? 'info' : 'error');
+        return log(`Build finished with exit code ${message.exitCode}.`, message.exitCode === 0 ? 'info' : 'error');
       case 'BuildProgressUpdated':
         return _rxjsBundlesRxMinJs.Observable.of({
           type: 'progress',
           progress: message.progressValue
         });
+      case 'CompilerErrorEvent':
+        // TODO: forward suggestions to diagnostics as autofixes
+        return log(message.error, 'error');
     }
     return _rxjsBundlesRxMinJs.Observable.empty();
   }).catch(err => {
-    (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error('Got Buck websocket error', err);
+    (0, (_log4js || _load_log4js()).getLogger)('nuclide-buck').error('Got Buck websocket error', err);
     // Return to indeterminate progress.
     return _rxjsBundlesRxMinJs.Observable.of({
       type: 'progress',
@@ -100,7 +112,7 @@ function getEventsFromSocket(socketStream) {
   // Periodically emit log events for progress updates.
   const progressEvents = eventStream.switchMap(event => {
     if (event.type === 'progress' && event.progress != null && event.progress > 0 && event.progress < 1) {
-      return log(`Building... [${ Math.round(event.progress * 100) }%]`);
+      return log(`Building... [${Math.round(event.progress * 100)}%]`);
     }
     return _rxjsBundlesRxMinJs.Observable.empty();
   });
@@ -114,15 +126,15 @@ function getEventsFromProcess(processStream) {
       case 'error':
         return {
           type: 'error',
-          message: `Buck failed: ${ message.error.message }`
+          message: `Buck failed: ${message.error.message}`
         };
       case 'exit':
-        const logMessage = `Buck exited with ${ (0, (_process || _load_process()).exitEventToMessage)(message) }.`;
+        const logMessage = `Buck exited with ${(0, (_process || _load_process()).exitEventToMessage)(message)}.`;
         if (message.exitCode === 0) {
           return {
             type: 'log',
             message: logMessage,
-            level: 'success'
+            level: 'info'
           };
         }
         return {
@@ -131,14 +143,26 @@ function getEventsFromProcess(processStream) {
         };
       case 'stderr':
       case 'stdout':
-        return {
-          type: 'log',
-          // Some Buck steps output ansi escape codes regardless of terminal setting.
-          message: (0, (_stripAnsi || _load_stripAnsi()).default)(message.data),
-          // Build failure messages typically do not show up in the web socket.
-          // TODO(hansonw): fix this on the Buck side
-          level: message.data.indexOf(BUILD_FAILED_MESSAGE) === -1 ? 'log' : 'error'
-        };
+        const match = message.data.trim().match(BUILD_OUTPUT_REGEX);
+        if (match != null && match.length === 4) {
+          return {
+            type: 'build-output',
+            output: {
+              target: match[1],
+              successType: match[2],
+              path: match[3]
+            }
+          };
+        } else {
+          return {
+            type: 'log',
+            // Some Buck steps output ansi escape codes regardless of terminal setting.
+            message: (0, (_stripAnsi || _load_stripAnsi()).default)(message.data),
+            // Build failure messages typically do not show up in the web socket.
+            // TODO(hansonw): fix this on the Buck side
+            level: message.data.indexOf(BUILD_FAILED_MESSAGE) === -1 ? 'log' : 'error'
+          };
+        }
       default:
         throw new Error('impossible');
     }
@@ -158,17 +182,14 @@ function combineEventStreams(subcommand, socketEvents, processEvents) {
   // Despite the docs, takeUntil doesn't respond to completion.
   .concat(_rxjsBundlesRxMinJs.Observable.of(null))).share();
   let mergedEvents = _rxjsBundlesRxMinJs.Observable.merge(finiteSocketEvents,
-
   // Take all process output until the first socket message.
   // There's a slight risk of output duplication if the socket message is late,
   // but this is pretty rare.
   processEvents.takeUntil(finiteSocketEvents).takeWhile(isRegularLogMessage),
-
   // Error/info logs from the process represent exit/error conditions, so always take them.
   // We ensure that error/info logs will not duplicate messages from the websocket.
-  // $FlowFixMe: add skipWhile to flow-typed rx definitions
   processEvents.skipWhile(isRegularLogMessage));
-  if (subcommand === 'test') {
+  if (subcommand === 'test' || subcommand === 'run') {
     // The websocket does not reliably provide test output.
     // After the build finishes, fall back to the Buck output stream.
     mergedEvents = _rxjsBundlesRxMinJs.Observable.concat(mergedEvents.takeUntil(finiteSocketEvents.filter(isBuildFinishEvent)),
@@ -190,10 +211,11 @@ function combineEventStreams(subcommand, socketEvents, processEvents) {
 }
 
 function getDiagnosticEvents(events, buckRoot) {
+  const diagnosticsParser = new (_DiagnosticsParser || _load_DiagnosticsParser()).default();
   return events.flatMap(event => {
     // For log messages, try to detect compile errors and emit diagnostics.
     if (event.type === 'log') {
-      return _rxjsBundlesRxMinJs.Observable.fromPromise((0, (_getDiagnostics || _load_getDiagnostics()).default)(event.message, event.level, buckRoot)).map(diagnostics => ({ type: 'diagnostics', diagnostics }));
+      return _rxjsBundlesRxMinJs.Observable.fromPromise(diagnosticsParser.getDiagnostics(event.message, event.level, buckRoot)).map(diagnostics => ({ type: 'diagnostics', diagnostics }));
     }
     return _rxjsBundlesRxMinJs.Observable.empty();
   });

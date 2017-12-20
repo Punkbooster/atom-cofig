@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,6 +9,10 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 let getInstance = exports.getInstance = (() => {
   var _ref4 = (0, _asyncToGenerator.default)(function* (file) {
+    if (yield (0, (_OCamlService || _load_OCamlService()).getUseLspConnection)()) {
+      return null;
+    }
+
     if (merlinProcessInstance && merlinProcessInstance.isRunning()) {
       return merlinProcessInstance;
     }
@@ -39,11 +34,14 @@ let getInstance = exports.getInstance = (() => {
       // logic. This also implies .nucliderc isn't considered, if there's any
       // extra override; to simulate the same behavior, do this in your bashrc:
       // if [ "$TERM" = "nuclide"]; then someOverrideLogic if
-      env: (0, (_process || _load_process()).getOriginalEnvironment)()
+      env: yield (0, (_process || _load_process()).getOriginalEnvironment)()
     };
 
     logger.info('Spawning new ocamlmerlin process version ' + version);
-    const process = yield (0, (_process || _load_process()).safeSpawn)(merlinPath, flags, options);
+    const processStream = (0, (_process || _load_process()).spawn)(merlinPath, flags, options).publish();
+    const processPromise = processStream.take(1).toPromise();
+    processStream.connect();
+    const process = yield processPromise;
     // Turns 2.5.1 into 2.5
     const majorMinor = version.split('.').slice(0, 2).join('.');
     switch (majorMinor) {
@@ -54,7 +52,7 @@ let getInstance = exports.getInstance = (() => {
         merlinProcessInstance = new MerlinProcessV2_3_1(process);
         break;
       default:
-        logger.error(`Unsupported merlin version: ${ version }`);
+        logger.error(`Unsupported merlin version: ${version}`);
         return null;
     }
 
@@ -82,19 +80,21 @@ let getInstance = exports.getInstance = (() => {
 let getMerlinVersion = (() => {
   var _ref5 = (0, _asyncToGenerator.default)(function* (merlinPath) {
     if (merlinVersionCache === undefined) {
-      const result = yield (0, (_process || _load_process()).asyncExecute)(merlinPath, ['-version'], {
-        env: (0, (_process || _load_process()).getOriginalEnvironment)()
-      });
-      if (result.exitCode === 0) {
-        const match = result.stdout.match(/^The Merlin toolkit version (\d+(?:\.\d)*),/);
-        if (match != null && match[1] != null) {
-          merlinVersionCache = match[1];
-        } else {
-          logger.info('unable to determine ocamlmerlin version');
-          merlinVersionCache = null;
-        }
-      } else {
+      let stdout;
+      try {
+        stdout = yield (0, (_process || _load_process()).runCommand)(merlinPath, ['-version'], {
+          env: yield (0, (_process || _load_process()).getOriginalEnvironment)()
+        }).toPromise();
+      } catch (err) {
         logger.info('ocamlmerlin not installed');
+        merlinVersionCache = null;
+        return merlinVersionCache;
+      }
+      const match = stdout.match(/^The Merlin toolkit version (\d+(?:\.\d)*),/);
+      if (match != null && match[1] != null) {
+        merlinVersionCache = match[1];
+      } else {
+        logger.info('unable to determine ocamlmerlin version');
         merlinVersionCache = null;
       }
     }
@@ -116,21 +116,27 @@ let getMerlinVersion = (() => {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _readline = _interopRequireDefault(require('readline'));
 
+var _OCamlService;
+
+function _load_OCamlService() {
+  return _OCamlService = require('./OCamlService');
+}
+
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
 var _promiseExecutors;
@@ -139,15 +145,24 @@ function _load_promiseExecutors() {
   return _promiseExecutors = require('../../commons-node/promise-executors');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-ocaml-rpc'); /**
+                                                                                 * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                 * All rights reserved.
+                                                                                 *
+                                                                                 * This source code is licensed under the license found in the LICENSE file in
+                                                                                 * the root directory of this source tree.
+                                                                                 *
+                                                                                 * 
+                                                                                 * @format
+                                                                                 */
 
 const ERROR_RESPONSES = new Set(['failure', 'error', 'exception']);
 
@@ -187,7 +202,6 @@ class MerlinProcessBase {
  *   https://github.com/the-lambda-church/merlin/tree/master/src/frontend
  */
 class MerlinProcessV2_3_1 extends MerlinProcessBase {
-
   constructor(proc) {
     super(proc);
   }
@@ -203,7 +217,7 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this._promiseQueue.submit(function () {
+      return _this._promiseQueue.submit(function () {
         return _this.runSingleCommand(['reset', 'dot_merlin', [file], 'auto'], file);
       });
     })();
@@ -213,7 +227,7 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this2 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this2._promiseQueue.submit((0, _asyncToGenerator.default)(function* () {
+      return _this2._promiseQueue.submit((0, _asyncToGenerator.default)(function* () {
         yield _this2.runSingleCommand(['reset', 'auto', name], name);
         // Clear the buffer.
         yield _this2.runSingleCommand(['seek', 'exact', { line: 1, col: 0 }], name);
@@ -230,7 +244,7 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this3 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this3._promiseQueue.submit((0, _asyncToGenerator.default)(function* () {
+      return _this3._promiseQueue.submit((0, _asyncToGenerator.default)(function* () {
         const location = yield _this3.runSingleCommand(['locate', /* identifier name */'', kind, 'at', { line: line + 1, col }], file);
 
         if (typeof location === 'string') {
@@ -252,7 +266,8 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this4 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this4._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this4._promiseQueue.submit(function () {
         return _this4.runSingleCommand(['type', 'enclosing', 'at', { line: line + 1, col }], file);
       });
     })();
@@ -262,7 +277,7 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this5 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this5._promiseQueue.submit(function () {
+      return _this5._promiseQueue.submit(function () {
         return _this5.runSingleCommand(['complete', 'prefix', prefix, 'at', { line: line + 1, col: col + 1 }], file);
       });
     })();
@@ -272,7 +287,8 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this6 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this6._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this6._promiseQueue.submit(function () {
         return _this6.runSingleCommand(['errors'], path);
       });
     })();
@@ -282,7 +298,8 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this7 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this7._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this7._promiseQueue.submit(function () {
         return _this7.runSingleCommand(['outline'], path);
       });
     })();
@@ -292,7 +309,8 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this8 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this8._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this8._promiseQueue.submit(function () {
         return _this8.runSingleCommand(['case', 'analysis', 'from', start, 'to', end], path);
       });
     })();
@@ -302,7 +320,8 @@ class MerlinProcessV2_3_1 extends MerlinProcessBase {
     var _this9 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this9._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this9._promiseQueue.submit(function () {
         return _this9.runSingleCommand(['occurrences', 'ident', 'at', { line: line + 1, col: col + 1 }], path);
       });
     })();
@@ -319,7 +338,6 @@ exports.MerlinProcessV2_3_1 = MerlinProcessV2_3_1; /**
                                                     */
 
 class MerlinProcessV2_5 extends MerlinProcessBase {
-
   constructor(proc) {
     super(proc);
   }
@@ -335,7 +353,7 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this10 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this10._promiseQueue.submit(function () {
+      return _this10._promiseQueue.submit(function () {
         return _this10.runSingleCommand(['reset', 'dot_merlin', [file], 'auto'], file, false);
       });
     })();
@@ -352,7 +370,7 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this11 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this11._promiseQueue.submit(function () {
+      return _this11._promiseQueue.submit(function () {
         return _this11.runSingleCommand(['tell', 'start', 'end', content], name);
       });
     })();
@@ -371,7 +389,7 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this12 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this12._promiseQueue.submit((0, _asyncToGenerator.default)(function* () {
+      return _this12._promiseQueue.submit((0, _asyncToGenerator.default)(function* () {
         const location = yield _this12.runSingleCommand(['locate', /* identifier name */'', kind, 'at', { line: line + 1, col }], file);
 
         if (typeof location === 'string') {
@@ -393,7 +411,8 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this13 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this13._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this13._promiseQueue.submit(function () {
         return _this13.runSingleCommand(['type', 'enclosing', 'at', { line: line + 1, col }], file);
       });
     })();
@@ -403,7 +422,7 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this14 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this14._promiseQueue.submit(function () {
+      return _this14._promiseQueue.submit(function () {
         return _this14.runSingleCommand(['complete', 'prefix', prefix, 'at', { line: line + 1, col: col + 1 }], file);
       });
     })();
@@ -413,7 +432,8 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this15 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this15._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this15._promiseQueue.submit(function () {
         return _this15.runSingleCommand(['errors'], path);
       });
     })();
@@ -423,7 +443,8 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this16 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this16._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this16._promiseQueue.submit(function () {
         return _this16.runSingleCommand(['outline'], path);
       });
     })();
@@ -433,7 +454,8 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this17 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this17._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this17._promiseQueue.submit(function () {
         return _this17.runSingleCommand(['case', 'analysis', 'from', start, 'to', end], path);
       });
     })();
@@ -443,7 +465,8 @@ class MerlinProcessV2_5 extends MerlinProcessBase {
     var _this18 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return yield _this18._promiseQueue.submit(function () {
+      // $FlowFixMe: runSingleCommand returns `Promise<Object>`, should me mixed.
+      return _this18._promiseQueue.submit(function () {
         return _this18.runSingleCommand(['occurrences', 'ident', 'at', { line: line + 1, col: col + 1 }], path);
       });
     })();
@@ -498,7 +521,7 @@ function runSingleCommandImpl(process, command) {
       const content = response[1];
 
       if (ERROR_RESPONSES.has(status)) {
-        logger.error(`Ocamlmerlin raised an error: ${ line }\n  command: ${ commandString }`);
+        logger.error(`Ocamlmerlin raised an error: ${line}\n  command: ${commandString}`);
         reject(Error('Ocamlmerlin returned an error'));
         return;
       }

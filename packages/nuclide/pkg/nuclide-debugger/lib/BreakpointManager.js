@@ -1,15 +1,16 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _atom = require('atom');
+
+var _textEditor;
+
+function _load_textEditor() {
+  return _textEditor = require('nuclide-commons-atom/text-editor');
+}
 
 var _BreakpointDisplayController;
 
@@ -25,7 +26,7 @@ class BreakpointManager {
     this._breakpointStore = store;
     this._debuggerActions = debuggerActions;
     this._displayControllers = new Map();
-    this._disposables = new _atom.CompositeDisposable(atom.workspace.observeTextEditors(this._handleTextEditor.bind(this)));
+    this._disposables = new _atom.CompositeDisposable((0, (_textEditor || _load_textEditor()).observeTextEditors)(this._handleTextEditor.bind(this)));
   }
 
   dispose() {
@@ -56,5 +57,13 @@ class BreakpointManager {
     }
   }
 }
-
-module.exports = BreakpointManager;
+exports.default = BreakpointManager; /**
+                                      * Copyright (c) 2015-present, Facebook, Inc.
+                                      * All rights reserved.
+                                      *
+                                      * This source code is licensed under the license found in the LICENSE file in
+                                      * the root directory of this source tree.
+                                      *
+                                      * 
+                                      * @format
+                                      */

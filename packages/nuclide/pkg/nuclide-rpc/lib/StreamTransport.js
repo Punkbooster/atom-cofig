@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,13 +8,13 @@ exports.StreamTransport = undefined;
 var _observable;
 
 function _load_observable() {
-  return _observable = require('../../commons-node/observable');
+  return _observable = require('nuclide-commons/observable');
 }
 
 var _stream;
 
 function _load_stream() {
-  return _stream = require('../../commons-node/stream');
+  return _stream = require('nuclide-commons/stream');
 }
 
 class StreamTransport {
@@ -61,4 +52,13 @@ class StreamTransport {
     return this._isClosed;
   }
 }
-exports.StreamTransport = StreamTransport;
+exports.StreamTransport = StreamTransport; /**
+                                            * Copyright (c) 2015-present, Facebook, Inc.
+                                            * All rights reserved.
+                                            *
+                                            * This source code is licensed under the license found in the LICENSE file in
+                                            * the root directory of this source tree.
+                                            *
+                                            * 
+                                            * @format
+                                            */

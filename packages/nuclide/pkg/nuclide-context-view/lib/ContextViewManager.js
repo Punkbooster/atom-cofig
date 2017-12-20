@@ -1,40 +1,49 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ContextViewManager = undefined;
+exports.ContextViewManager = exports.WORKSPACE_VIEW_URI = undefined;
 
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
+}
+
+var _observePaneItemVisibility;
+
+function _load_observePaneItemVisibility() {
+  return _observePaneItemVisibility = _interopRequireDefault(require('nuclide-commons-atom/observePaneItemVisibility'));
 }
 
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _debounced;
 
 function _load_debounced() {
-  return _debounced = require('../../commons-atom/debounced');
+  return _debounced = require('nuclide-commons-atom/debounced');
 }
 
-var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+var _ProviderRegistry;
+
+function _load_ProviderRegistry() {
+  return _ProviderRegistry = _interopRequireDefault(require('nuclide-commons-atom/ProviderRegistry'));
+}
 
 var _nuclideAnalytics;
 
@@ -42,10 +51,10 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _ContextViewMessage;
@@ -74,10 +83,22 @@ function _load_NoProvidersView() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const EDITOR_DEBOUNCE_INTERVAL = 500;
 const POSITION_DEBOUNCE_INTERVAL = 500;
+const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/context-view';
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-context-view');
 
 /**
  * Manages registering/unregistering of definition service and context providers,
@@ -86,22 +107,38 @@ const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
  */
 class ContextViewManager {
   // Whether Context View should keep displaying the current content even after the cursor moves
-  constructor(width, isVisible) {
-    this._atomPanel = null;
+  constructor() {
+    this.hide = () => {
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nuclide-context-view:hide');
+      if (this._isVisible) {
+        this._isVisible = false;
+        this._render();
+      }
+      this.updateSubscription();
+    };
+
+    this._setLocked = locked => {
+      if (locked !== this._locked) {
+        this._locked = locked;
+        this.updateSubscription();
+        this._render();
+      }
+    };
+
     this._contextProviders = [];
     this._defServiceSubscription = null;
     this._settingDisposables = new Map();
-    this._definitionService = null;
-    this._isVisible = isVisible;
+    this._definitionProviders = new (_ProviderRegistry || _load_ProviderRegistry()).default();
+    this._isVisible = false;
     this._locked = false; // Should be unlocked by default
-    this._panelDOMElement = null;
-    this._width = width;
     this.currentDefinition = null;
 
-    this.hide = this.hide.bind(this);
-    this._onResize = this._onResize.bind(this);
-    this._setLocked = this._setLocked.bind(this);
+    this._panelDOMElement = document.createElement('div');
+    this._panelDOMElement.style.display = 'flex';
 
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default((0, (_observePaneItemVisibility || _load_observePaneItemVisibility()).default)(this).subscribe(visible => {
+      this.didChangeVisibility(visible);
+    }));
     this._render();
   }
   // Subscriptions to all changes in registered context providers' `priority` setting.
@@ -114,15 +151,7 @@ class ContextViewManager {
     this._settingDisposables.forEach(disposable => {
       disposable.dispose();
     });
-  }
-
-  hide() {
-    (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nuclide-context-view:hide');
-    if (this._isVisible) {
-      this._isVisible = false;
-      this._render();
-    }
-    this.updateSubscription();
+    this._disposables.dispose();
   }
 
   registerProvider(newProvider) {
@@ -164,47 +193,44 @@ class ContextViewManager {
     this._render();
   }
 
-  serialize() {
-    return {
-      width: this._width,
-      visible: this._isVisible
-    };
-  }
-
   /**
    * Sets handle to registered definition service, sets the subscriber
    * to the definition service to an Observable<Definition>, and
    * re-renders if necessary.
    */
-  consumeDefinitionService(service) {
-    this._definitionService = service;
+  consumeDefinitionProvider(provider) {
+    const disposable = this._definitionProviders.addProvider(provider);
+    this._disposables.add(disposable);
     this.updateSubscription();
     this._render();
+    return disposable;
   }
 
   /**
    * Subscribes or unsubscribes to definition service based on the current state.
    */
   updateSubscription() {
+    if (this._defServiceSubscription != null) {
+      this._defServiceSubscription.unsubscribe();
+      this._defServiceSubscription = null;
+    }
     // Only subscribe if panel showing && there's something to subscribe to && not locked
-    if (this._isVisible && this._definitionService != null && !this._locked) {
-      this._defServiceSubscription = (0, (_debounced || _load_debounced()).observeTextEditorsPositions)(EDITOR_DEBOUNCE_INTERVAL, POSITION_DEBOUNCE_INTERVAL).filter(editorPos => editorPos != null).map(editorPos => {
-        return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-context-view:getDefinition', () => {
+    if (this._isVisible && !this._locked) {
+      this._defServiceSubscription = (0, (_debounced || _load_debounced()).observeTextEditorsPositions)(EDITOR_DEBOUNCE_INTERVAL, POSITION_DEBOUNCE_INTERVAL).filter(editorPos => editorPos != null).switchMap(editorPos => {
+        return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-context-view:getDefinition', () => {
           if (!(editorPos != null)) {
             throw new Error('Invariant violation: "editorPos != null"');
           }
 
-          if (!(this._definitionService != null)) {
-            throw new Error('Invariant violation: "this._definitionService != null"');
+          const definitionProvider = this._definitionProviders.getProviderForEditor(editorPos.editor);
+          if (definitionProvider == null) {
+            return Promise.resolve(null);
           }
-
-          return this._definitionService.getDefinition(editorPos.editor, editorPos.position).catch(error => {
+          return definitionProvider.getDefinition(editorPos.editor, editorPos.position).catch(error => {
             logger.error('Error querying definition service: ', error);
             return null;
           });
         });
-      }).switchMap(queryResult => {
-        return queryResult != null ? _rxjsBundlesRxMinJs.Observable.fromPromise(queryResult) : _rxjsBundlesRxMinJs.Observable.empty();
       }).map(queryResult => {
         if (queryResult != null) {
           (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nuclide-context-view:filterQueryResults', {
@@ -217,11 +243,6 @@ class ContextViewManager {
         return null;
       }).subscribe(def => this.updateCurrentDefinition(def));
       return;
-    }
-    // Otherwise, unsubscribe if there is a subscription
-    if (this._defServiceSubscription != null) {
-      this._defServiceSubscription.unsubscribe();
-      this._defServiceSubscription = null;
     }
   }
 
@@ -270,31 +291,12 @@ class ContextViewManager {
     this._render();
   }
 
-  _setLocked(locked) {
-    if (locked !== this._locked) {
-      this._locked = locked;
-      this.updateSubscription();
-      this._render();
-    }
-  }
-
   _disposeView() {
-    if (this._panelDOMElement != null) {
-      _reactForAtom.ReactDOM.unmountComponentAtNode(this._panelDOMElement);
-      this._panelDOMElement = null;
-    }
-    if (this._atomPanel != null) {
-      this._atomPanel.destroy();
-      this._atomPanel = null;
-    }
+    _reactDom.default.unmountComponentAtNode(this._panelDOMElement);
     if (this._defServiceSubscription != null) {
       this._defServiceSubscription.unsubscribe();
       this._defServiceSubscription = null;
     }
-  }
-
-  _onResize(newWidth) {
-    this._width = newWidth;
   }
 
   _renderProviders() {
@@ -307,7 +309,7 @@ class ContextViewManager {
         setLocked: this._setLocked
       });
       if (element != null) {
-        return _reactForAtom.React.createElement(
+        return _react.default.createElement(
           (_ProviderContainer || _load_ProviderContainer()).ProviderContainer,
           { title: prov.title, key: index },
           element
@@ -317,37 +319,16 @@ class ContextViewManager {
 
     // If there are no context providers to show, show a message instead
     if (providerElements.length === 0) {
-      providerElements.push(_reactForAtom.React.createElement((_NoProvidersView || _load_NoProvidersView()).NoProvidersView, { key: 0 }));
+      providerElements.push(_react.default.createElement((_NoProvidersView || _load_NoProvidersView()).NoProvidersView, { key: 0 }));
     }
 
-    // Render the panel in atom workspace
-    if (!this._panelDOMElement) {
-      this._panelDOMElement = document.createElement('div');
-      this._panelDOMElement.style.display = 'flex';
-    }
-
-    _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement(
+    _reactDom.default.render(_react.default.createElement(
       (_ContextViewPanel || _load_ContextViewPanel()).ContextViewPanel,
       {
-        initialWidth: this._width,
-        onResize: this._onResize,
         definition: this.currentDefinition,
-        locked: this._locked,
-        onHide: this.hide },
+        locked: this._locked },
       providerElements
     ), this._panelDOMElement);
-
-    if (!this._atomPanel) {
-      if (!(this._panelDOMElement != null)) {
-        throw new Error('Invariant violation: "this._panelDOMElement != null"');
-      }
-
-      this._atomPanel = atom.workspace.addRightPanel({
-        item: this._panelDOMElement,
-        visible: true,
-        priority: 200
-      });
-    }
   }
 
   _render() {
@@ -358,5 +339,42 @@ class ContextViewManager {
     }
   }
 
+  getTitle() {
+    return 'Context View';
+  }
+
+  getIconName() {
+    return 'info';
+  }
+
+  getPreferredWidth() {
+    return 300;
+  }
+
+  getURI() {
+    return WORKSPACE_VIEW_URI;
+  }
+
+  getDefaultLocation() {
+    return 'right';
+  }
+
+  didChangeVisibility(visible) {
+    if (visible) {
+      this.show();
+    } else {
+      this.hide();
+    }
+  }
+
+  getElement() {
+    return this._panelDOMElement;
+  }
+
+  serialize() {
+    return {
+      deserializer: 'nuclide.ContextViewPanelState'
+    };
+  }
 }
 exports.ContextViewManager = ContextViewManager;

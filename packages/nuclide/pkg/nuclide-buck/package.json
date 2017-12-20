@@ -4,7 +4,7 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Buck integration for Nuclide.",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
     "testRunner": "apm",
@@ -26,6 +26,11 @@
         "type": "boolean",
         "default": "true",
         "description": "Attempt to detect and display compile errors in Diagnostics."
+      },
+      "suggestTaskRunner": {
+        "title": "Suggest building with the Task Runner after detecting CLI Buck builds.",
+        "type": "boolean",
+        "default": "true"
       }
     }
   },
@@ -34,20 +39,15 @@
       "versions": {
         "0.0.0": "consumeTaskRunnerServiceApi"
       }
-    },
-    "nuclide-output": {
-      "versions": {
-        "0.0.0": "consumeOutputService"
-      }
     }
   },
   "providedServices": {
-    "hyperclick.provider": {
+    "hyperclick": {
       "versions": {
-        "0.0.0": "getHyperclickProvider"
+        "0.1.0": "getHyperclickProvider"
       }
     },
-    "nuclide-diagnostics-provider": {
+    "diagnostics": {
       "versions": {
         "0.2.0": "provideObservableDiagnosticUpdates"
       }
@@ -55,6 +55,16 @@
     "nuclide.buck-builder": {
       "versions": {
         "0.0.0": "provideBuckBuilder"
+      }
+    },
+    "nuclide.buck-platforms": {
+      "versions": {
+        "0.0.0": "providePlatformService"
+      }
+    },
+    "nuclide.clang.configuration": {
+      "versions": {
+        "0.0.0": "provideClangConfiguration"
       }
     }
   },

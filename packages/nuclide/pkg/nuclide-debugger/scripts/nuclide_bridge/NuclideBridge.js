@@ -1,13 +1,10 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _electron = _interopRequireDefault(require('electron'));
 
@@ -20,13 +17,13 @@ function _load_Emitter() {
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _AnalyticsHelper;
@@ -43,6 +40,17 @@ function _load_WebInspector() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const { ipcRenderer } = _electron.default;
 
 if (!(ipcRenderer != null)) {
@@ -50,8 +58,6 @@ if (!(ipcRenderer != null)) {
 }
 
 const NUCLIDE_DEBUGGER_CONSOLE_OBJECT_GROUP = 'console';
-const DebuggerSettingsChangedEvent = 'debugger-settings-updated';
-const PARSABLE_EXTENSIONS = ['.php', '.hh', '.c', '.cpp', '.h', '.hpp', '.js', '.m', '.mm', '.java'];
 
 class NuclideBridge {
 
@@ -61,7 +67,7 @@ class NuclideBridge {
     this._emitter = new (_Emitter || _load_Emitter()).default();
     this._debuggerPausedCount = 0;
     this._suppressBreakpointNotification = false;
-    this._settings = {};
+    this._callframeId = -1;
 
     ipcRenderer.on('command', this._handleIpcCommand.bind(this));
 
@@ -89,7 +95,6 @@ class NuclideBridge {
 
     (_WebInspector || _load_WebInspector()).default.breakpointManager.addEventListener((_WebInspector || _load_WebInspector()).default.BreakpointManager.Events.BreakpointRemoved, this._handleBreakpointRemoved, this);
 
-    this._handleSettingsUpdated = this._handleSettingsUpdated.bind(this);
     this._customizeWebInspector();
     window.runOnWindowLoad(this._handleWindowLoad.bind(this));
   }
@@ -102,9 +107,9 @@ class NuclideBridge {
     // $FlowFixMe.
     (_WebInspector || _load_WebInspector()).default.ObjectPropertyTreeElement._populate = function (treeElement, value, skipProto, emptyPlaceholder) {
       /**
-       * @param {?Array.<!WebInspector.RemoteObjectProperty>} properties
-       * @param {?Array.<!WebInspector.RemoteObjectProperty>} internalProperties
-       */
+         * @param {?Array.<!WebInspector.RemoteObjectProperty>} properties
+         * @param {?Array.<!WebInspector.RemoteObjectProperty>} internalProperties
+         */
       function callback(properties, internalProperties) {
         treeElement.removeChildren();
         if (!properties) {
@@ -120,20 +125,20 @@ class NuclideBridge {
     // $FlowFixMe.
     (_WebInspector || _load_WebInspector()).default.ObjectPropertiesSection.prototype.update = function () {
       /**
-       * @param {?Array.<!WebInspector.RemoteObjectProperty>} properties
-       * @param {?Array.<!WebInspector.RemoteObjectProperty>} internalProperties
-       * @this {WebInspector.ObjectPropertiesSection}
-       */
-      function callback(properties, internalProperties) {
+         * @param {?Array.<!WebInspector.RemoteObjectProperty>} properties
+         * @param {?Array.<!WebInspector.RemoteObjectProperty>} internalProperties
+         * @this {WebInspector.ObjectPropertiesSection}
+         */
+      function callback(scopeName, properties, internalProperties) {
         if (!properties) {
           return;
         }
         this.updateProperties(properties, internalProperties);
-        const neededProperties = getIpcExpansionResult(properties);
-        ipcRenderer.sendToHost('notification', 'LocalsUpdate', neededProperties);
       }
       // $FlowFixMe.
-      (_WebInspector || _load_WebInspector()).default.RemoteObject.loadFromObject(this.object, Boolean(this.ignoreHasOwnProperty), callback.bind(this));
+      (_WebInspector || _load_WebInspector()).default.RemoteObject.loadFromObject(this.object, Boolean(this.ignoreHasOwnProperty),
+      // We use the scope object's `description` field as the scope's section header in the UI.
+      callback.bind(this));
     };
   }
 
@@ -143,9 +148,6 @@ class NuclideBridge {
 
   _handleIpcCommand(event, command, ...args) {
     switch (command) {
-      case 'UpdateSettings':
-        this._handleSettingsUpdated(args[0]);
-        break;
       case 'SyncBreakpoints':
         this._allBreakpoints = args[0];
         this._syncBreakpoints();
@@ -162,6 +164,9 @@ class NuclideBridge {
       case 'Continue':
         this._continue();
         break;
+      case 'Pause':
+        this._pause();
+        break;
       case 'StepOver':
         this._stepOver();
         break;
@@ -170,6 +175,9 @@ class NuclideBridge {
         break;
       case 'StepOut':
         this._stepOut();
+        break;
+      case 'RunToLocation':
+        this._runToLocation(args[0], args[1]);
         break;
       case 'evaluateOnSelectedCallFrame':
         this._evaluateOnSelectedCallFrame(args[0], args[1], args[2]);
@@ -200,19 +208,6 @@ class NuclideBridge {
     }
   }
 
-  getSettings() {
-    return this._settings;
-  }
-
-  _handleSettingsUpdated(settingsData) {
-    this._settings = JSON.parse(settingsData);
-    this._emitter.emit(DebuggerSettingsChangedEvent, null);
-  }
-
-  onDebuggerSettingsChanged(callback) {
-    return this._emitter.on(DebuggerSettingsChangedEvent, callback);
-  }
-
   _handleCallFrameSelected(event) {
     // TODO(jonaldislarry): Extend chrome protocol as per t12187369.
     if (this._debuggerPausedCount <= 1) {
@@ -224,6 +219,7 @@ class NuclideBridge {
       sourceURL: uiLocation.uiSourceCode.uri(),
       lineNumber: uiLocation.lineNumber
     });
+    this._updateScopes(frame);
   }
 
   _handleOpenSourceLocation(event) {
@@ -258,7 +254,38 @@ class NuclideBridge {
     if (target != null) {
       const selectedFrame = target.debuggerModel.callFrames[callframeIndex];
       target.debuggerModel.setSelectedCallFrame(selectedFrame);
+      this._updateScopes(selectedFrame);
+      this._callframeId = selectedFrame.id;
     }
+  }
+
+  _updateScopes(frame) {
+    return (0, _asyncToGenerator.default)(function* () {
+      const scopes = frame.scopeChain();
+      // We need to wait for the backend to send us the scope data, and only want to continue when
+      // we have each scope.
+      const scopeSections = yield Promise.all(scopes.map(function (scope) {
+        const scopeObj = scope.object();
+        return new Promise(function (resolve) {
+          return scopeObj.getOwnProperties(function (scopeVariables) {
+            return resolve({ name: scopeObj.description, scopeVariables });
+          });
+        });
+      }));
+      ipcRenderer.sendToHost('notification', 'ScopesUpdate', scopeSections.map(function (scope) {
+        const { name, scopeVariables } = scope;
+        return {
+          name,
+          scopeVariables: scopeVariables.map(function (scopeVariable) {
+            const { name: variableName, value: scopeValue } = scopeVariable;
+            return {
+              name: variableName,
+              value: getIpcEvaluationResult(false /* wasThrown */, scopeValue)
+            };
+          })
+        };
+      }));
+    })();
   }
 
   _sendCallstack() {
@@ -281,14 +308,17 @@ class NuclideBridge {
   _convertFramesToIPCFrames(callFrames) {
     return callFrames.map(callFrame => {
       const location = callFrame.location();
+      // If there is a sourcemap available, use it to adjust the column and line numbers.
+      const uiLocation = (_WebInspector || _load_WebInspector()).default.debuggerWorkspaceBinding.rawLocationToUILocation(location);
       /* names anonymous functions "(anonymous function)" */
       const functionName = (_WebInspector || _load_WebInspector()).default.beautifyFunctionName(callFrame.functionName);
       return {
         name: functionName,
         location: {
-          path: callFrame.script.sourceURL,
-          column: location.columnNumber,
-          line: location.lineNumber
+          path: uiLocation.uiSourceCode.uri(),
+          column: uiLocation.columnNumber,
+          line: uiLocation.lineNumber,
+          hasSource: callFrame.hasSource() != null ? callFrame.hasSource() : true
         }
       };
     });
@@ -322,18 +352,30 @@ class NuclideBridge {
     if (mainTarget == null) {
       return;
     }
-    mainTarget.debuggerModel.evaluateOnSelectedCallFrame(expression, objectGroup, false, /* includeCommandLineAPI */
-    true, /* doNotPauseOnExceptionsAndMuteConsole */
-    false, /* returnByValue */
-    false, /* generatePreview */
-    (remoteObject, wasThrown, error) => {
+    mainTarget.debuggerModel.evaluateOnSelectedCallFrame(expression, objectGroup, false /* includeCommandLineAPI */
+    , true /* doNotPauseOnExceptionsAndMuteConsole */
+    , false /* returnByValue */
+    , false /* generatePreview */
+    , (remoteObject, wasThrown, error) => {
       const result = getIpcEvaluationResult(wasThrown, remoteObject);
       ipcRenderer.sendToHost('notification', 'ExpressionEvaluationResponse', {
         result,
-        error: wasThrown ? error : null,
+        error: wasThrown ? error || result : null,
         expression,
         id
       });
+
+      if (!wasThrown) {
+        // Evaluate could have had a side effect. Force a refresh of scopes for the current
+        // frame.
+        mainTarget.debuggerModel.threadStore.getRefreshedThreadStack(callFrames => {
+          const frames = callFrames != null && callFrames.length > 0 ? callFrames : mainTarget.debuggerModel.callFrames;
+
+          const targetFrameId = frames.length === 0 || this._callframeId !== -1 ? this._callframeId : frames[0].id;
+
+          frames.filter(frame => frame.id === targetFrameId).forEach(frame => this._updateScopes(frame));
+        });
+      }
     });
   }
 
@@ -347,11 +389,11 @@ class NuclideBridge {
       return;
     }
     const firstContext = executionContexts[0];
-    firstContext.evaluate(expression, NUCLIDE_DEBUGGER_CONSOLE_OBJECT_GROUP, false, /* includeCommandLineAPI */
-    true, /* doNotPauseOnExceptionsAndMuteConsole */
-    false, /* returnByValue */
-    false, /* generatePreview */
-    (remoteObject, wasThrown, error) => {
+    firstContext.evaluate(expression, NUCLIDE_DEBUGGER_CONSOLE_OBJECT_GROUP, false /* includeCommandLineAPI */
+    , true /* doNotPauseOnExceptionsAndMuteConsole */
+    , false /* returnByValue */
+    , false /* generatePreview */
+    , (remoteObject, wasThrown, error) => {
       const result = getIpcEvaluationResult(wasThrown, remoteObject);
       ipcRenderer.sendToHost('notification', 'ExpressionEvaluationResponse', {
         result,
@@ -394,16 +436,17 @@ class NuclideBridge {
   _handleDebuggerPaused(event) {
     (0, (_AnalyticsHelper || _load_AnalyticsHelper()).endTimerTracking)();
     ++this._debuggerPausedCount;
+
     if (this._debuggerPausedCount === 1) {
-      ipcRenderer.sendToHost('notification', 'LoaderBreakpointHit', {});
       this._handleLoaderBreakpoint();
     } else {
       ipcRenderer.sendToHost('notification', 'NonLoaderDebuggerPaused', {
         stopThreadId: event.data.stopThreadId,
         threadSwitchNotification: this._generateThreadSwitchNotification(event.data.threadSwitchMessage, event.data.location)
       });
+      // Only send callstack for non-loader breakpoint pause.
+      this._sendCallstack();
     }
-    this._sendCallstack();
   }
 
   _generateThreadSwitchNotification(message, location) {
@@ -466,12 +509,13 @@ class NuclideBridge {
   }
 
   _getIPCBreakpointFromEvent(event) {
-    const { breakpoint, uiLocation } = event.data;
+    const { breakpoint, uiLocation, resolved } = event.data;
     return {
       sourceURL: uiLocation.uiSourceCode.uri(),
       lineNumber: uiLocation.lineNumber,
       condition: breakpoint.condition(),
-      enabled: breakpoint.enabled()
+      enabled: breakpoint.enabled(),
+      resolved: resolved || false
     };
   }
 
@@ -486,48 +530,33 @@ class NuclideBridge {
     });
   }
 
-  _hasParsableExtension(sourceUrl) {
-    return PARSABLE_EXTENSIONS.some(extension => (_nuclideUri || _load_nuclideUri()).default.extname(sourceUrl) === extension);
-  }
-
-  _isFileWithNoExtension(sourceUrl) {
-    return !(_nuclideUri || _load_nuclideUri()).default.endsWithSeparator(sourceUrl) && (_nuclideUri || _load_nuclideUri()).default.extname(sourceUrl) === '';
-  }
-
   _parseBreakpointSourceIfNeeded(breakpoint) {
     const sourceUrl = breakpoint.sourceURL;
-    if (this._hasParsableExtension(sourceUrl) || this._isFileWithNoExtension(sourceUrl)) {
-      const source = (_WebInspector || _load_WebInspector()).default.workspace.uiSourceCodeForOriginURL(sourceUrl);
-      if (source != null) {
-        return;
-      }
-      const target = (_WebInspector || _load_WebInspector()).default.targetManager.mainTarget();
-      if (target == null) {
-        return;
-      }
-      target.debuggerModel._parsedScriptSource(sourceUrl, sourceUrl);
+    const source = (_WebInspector || _load_WebInspector()).default.workspace.uiSourceCodeForOriginURL(sourceUrl);
+    if (source != null) {
+      return;
     }
+    const target = (_WebInspector || _load_WebInspector()).default.targetManager.mainTarget();
+    if (target == null) {
+      return;
+    }
+    target.debuggerModel._parsedScriptSource(sourceUrl, sourceUrl);
   }
 
   // Synchronizes nuclide BreakpointStore and BreakpointManager
   _syncBreakpoints() {
-    try {
-      this._suppressBreakpointNotification = true;
-      this._parseBreakpointSources();
+    this._parseBreakpointSources();
 
-      // Add the ones that don't.
-      this._unresolvedBreakpoints = new (_collection || _load_collection()).MultiMap();
-      this._allBreakpoints.forEach(breakpoint => {
-        if (!this._addBreakpoint(breakpoint)) {
-          // No API exists for adding breakpoints to source files that are not
-          // yet known, store it locally and try to add them later.
-          this._unresolvedBreakpoints.set(breakpoint.sourceURL, [breakpoint.lineNumber]);
-        }
-      });
-      this._emitter.emit('unresolved-breakpoints-changed', null);
-    } finally {
-      this._suppressBreakpointNotification = false;
-    }
+    // Add the ones that don't.
+    this._unresolvedBreakpoints = new (_collection || _load_collection()).MultiMap();
+    this._allBreakpoints.forEach(breakpoint => {
+      if (!this._addBreakpoint(breakpoint)) {
+        // No API exists for adding breakpoints to source files that are not
+        // yet known, store it locally and try to add them later.
+        this._unresolvedBreakpoints.set(breakpoint.sourceURL, [breakpoint.lineNumber]);
+      }
+    });
+    this._emitter.emit('unresolved-breakpoints-changed', null);
   }
 
   _addBreakpoint(breakpoint) {
@@ -589,6 +618,14 @@ class NuclideBridge {
     }
   }
 
+  _pause() {
+    const target = (_WebInspector || _load_WebInspector()).default.targetManager.mainTarget();
+    if (target) {
+      (0, (_AnalyticsHelper || _load_AnalyticsHelper()).beginTimerTracking)('nuclide-debugger-atom:pause');
+      target.debuggerModel.pause();
+    }
+  }
+
   _stepOver() {
     const target = (_WebInspector || _load_WebInspector()).default.targetManager.mainTarget();
     if (target) {
@@ -610,6 +647,16 @@ class NuclideBridge {
     if (target) {
       (0, (_AnalyticsHelper || _load_AnalyticsHelper()).beginTimerTracking)('nuclide-debugger-atom:stepOut');
       target.debuggerModel.stepOut();
+    }
+  }
+
+  _runToLocation(path, line) {
+    const target = (_WebInspector || _load_WebInspector()).default.targetManager.mainTarget();
+    if (target) {
+      (0, (_AnalyticsHelper || _load_AnalyticsHelper()).beginTimerTracking)('nuclide-debugger-atom:runToLocation');
+      const url = (_nuclideUri || _load_nuclideUri()).default.nuclideUriToUri(path);
+      const location = target.debuggerModel.createRawLocationByURL(url, line, 0);
+      location.continueToLocation();
     }
   }
 
@@ -645,6 +692,9 @@ class NuclideBridge {
   }
 
   _handleThreadsUpdated(event) {
+    if (this._debuggerPausedCount <= 1) {
+      return;
+    }
     ipcRenderer.sendToHost('notification', 'ThreadsUpdate', event.data);
   }
 
@@ -654,7 +704,7 @@ class NuclideBridge {
 }
 
 function getIpcEvaluationResult(wasThrown, remoteObject) {
-  if (wasThrown || remoteObject == null) {
+  if (remoteObject == null) {
     return null;
   }
   return {
@@ -685,4 +735,4 @@ function getIpcExpansionResult(properties) {
   });
 }
 
-module.exports = new NuclideBridge();
+exports.default = new NuclideBridge();

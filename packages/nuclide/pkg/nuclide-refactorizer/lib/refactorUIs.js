@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,10 +8,12 @@ exports.initRefactorUIs = initRefactorUIs;
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _MainRefactorComponent;
 
@@ -38,7 +31,20 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const refactorUIFactories = [genericRefactorUI, closeOnEscape, focusEditorOnClose, renameShortcut];function initRefactorUIs(store) {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const refactorUIFactories = [genericRefactorUI, closeOnEscape, focusEditorOnClose, renameShortcut];
+
+function initRefactorUIs(store) {
   const disposables = refactorUIFactories.map(uiFn => uiFn(store));
   return new (_UniversalDisposable || _load_UniversalDisposable()).default(...disposables);
 }
@@ -105,12 +111,13 @@ function renameShortcut(store) {
         case 'pick':
           let renameRefactoring = null;
           for (const refactoring of phase.availableRefactorings) {
-            if (refactoring.kind === 'rename') {
+            if (refactoring.kind === 'rename' || refactoring.kind === 'freeform' && refactoring.disabled !== false && refactoring.name.match(/rename/i)) {
               renameRefactoring = refactoring;
+              break;
             }
           }
           if (renameRefactoring == null) {
-            // TODO display a message here
+            atom.notifications.addWarning('Unable to rename at this location');
             store.dispatch((_refactorActions || _load_refactorActions()).close());
           } else {
             store.dispatch((_refactorActions || _load_refactorActions()).pickedRefactor(renameRefactoring));
@@ -135,14 +142,11 @@ class GenericUIRenderer {
         const element = document.createElement('div');
         this._panel = atom.workspace.addModalPanel({ item: element });
       }
-      _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement((_MainRefactorComponent || _load_MainRefactorComponent()).MainRefactorComponent, {
-        appState: state,
-        store: this._store
-      }), this._panel.getItem());
+      _reactDom.default.render(_react.default.createElement((_MainRefactorComponent || _load_MainRefactorComponent()).MainRefactorComponent, { appState: state, store: this._store }), this._panel.getItem());
     } else {
       if (this._panel != null) {
         const panel = this._panel;
-        _reactForAtom.ReactDOM.unmountComponentAtNode(panel.getItem());
+        _reactDom.default.unmountComponentAtNode(panel.getItem());
         panel.destroy();
         this._panel = null;
       }

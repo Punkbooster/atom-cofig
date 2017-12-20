@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -24,19 +15,19 @@ function _load_nuclideAnalytics() {
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 var _range;
 
 function _load_range() {
-  return _range = require('../../commons-atom/range');
+  return _range = require('nuclide-commons-atom/range');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _libclang;
@@ -47,16 +38,22 @@ function _load_libclang() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const IDENTIFIER_REGEX = /[a-z0-9_]+/gi;
+const IDENTIFIER_REGEX = /[a-z0-9_]+/gi; /**
+                                          * Copyright (c) 2015-present, Facebook, Inc.
+                                          * All rights reserved.
+                                          *
+                                          * This source code is licensed under the license found in the LICENSE file in
+                                          * the root directory of this source tree.
+                                          *
+                                          * 
+                                          * @format
+                                          */
+
 const DEFAULT_FLAGS_WARNING = 'Diagnostics are disabled due to lack of compilation flags. ' + 'Build this file with Buck, or create a compile_commands.json file manually.';
 
-function fixSourceRange(editor, clangRange) {
+function isValidRange(clangRange) {
   // Some ranges are unbounded/invalid (end with -1) or empty.
-  // Treat these as point diagnostics.
-  if (clangRange.end.row === -1 || clangRange.start.isEqual(clangRange.end)) {
-    return getRangeFromPoint(editor, clangRange.start);
-  }
-  return clangRange;
+  return clangRange.start.row !== -1 && clangRange.end.row !== -1 && !clangRange.start.isEqual(clangRange.end);
 }
 
 function getRangeFromPoint(editor, location) {
@@ -72,9 +69,8 @@ function getRangeFromPoint(editor, location) {
 }
 
 class ClangLinter {
-
   static lint(textEditor) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-clang-atom.fetch-diagnostics', () => ClangLinter._lint(textEditor));
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-clang-atom.fetch-diagnostics', () => ClangLinter._lint(textEditor));
   }
 
   static _lint(textEditor) {
@@ -98,7 +94,7 @@ class ClangLinter {
         });
         return ClangLinter._processDiagnostics(diagnostics, textEditor);
       } catch (error) {
-        (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error(`ClangLinter: error linting ${ filePath }`, error);
+        (0, (_log4js || _load_log4js()).getLogger)('nuclide-clang').error(`ClangLinter: error linting ${filePath}`, error);
         return [];
       }
     })();
@@ -121,9 +117,9 @@ class ClangLinter {
         }
 
         let range;
-        if (diagnostic.ranges) {
+        if (diagnostic.ranges && isValidRange(diagnostic.ranges[0].range)) {
           // Use the first range from the diagnostic as the range for Linter.
-          range = fixSourceRange(editor, diagnostic.ranges[0].range);
+          range = diagnostic.ranges[0].range;
         } else {
           range = getRangeFromPoint(editor, diagnostic.location.point);
         }
@@ -148,7 +144,6 @@ class ClangLinter {
           const fixit = diagnostic.fixits[0];
           if (fixit != null) {
             fix = {
-              // Do not use fixSourceRange here, since we need this to be exact.
               range: fixit.range.range,
               newText: fixit.value
             };
@@ -156,8 +151,6 @@ class ClangLinter {
         }
 
         result.push({
-          scope: 'file',
-          providerName: 'Clang',
           type: diagnostic.severity === 2 ? 'Warning' : 'Error',
           filePath,
           text: diagnostic.spelling,
@@ -168,8 +161,6 @@ class ClangLinter {
       });
     } else {
       result.push({
-        scope: 'file',
-        providerName: 'Clang',
         type: 'Warning',
         filePath: bufferPath,
         text: DEFAULT_FLAGS_WARNING,
@@ -179,7 +170,5 @@ class ClangLinter {
 
     return result;
   }
-
 }
 exports.default = ClangLinter;
-module.exports = exports['default'];

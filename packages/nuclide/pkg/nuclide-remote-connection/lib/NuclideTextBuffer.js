@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -15,10 +6,10 @@ Object.defineProperty(exports, "__esModule", {
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _atom = require('atom');
@@ -29,16 +20,28 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
+var _nuclideRpc;
+
+function _load_nuclideRpc() {
+  return _nuclideRpc = require('../../nuclide-rpc');
+}
+
+var _debounce;
+
+function _load_debounce() {
+  return _debounce = _interopRequireDefault(require('nuclide-commons/debounce'));
+}
+
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _loadingNotification;
@@ -50,7 +53,21 @@ function _load_loadingNotification() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Diffing is O(lines^2), so don't bother for files with too many lines.
-const DIFF_LINE_LIMIT = 10000;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const DIFF_LINE_LIMIT = 5000;
+
+// Matches the default in Atom 1.19.
+const CHANGE_DEBOUNCE = 200;
 
 class NuclideTextBuffer extends _atom.TextBuffer {
 
@@ -119,7 +136,7 @@ class NuclideTextBuffer extends _atom.TextBuffer {
 
     return (0, _asyncToGenerator.default)(function* () {
       if (!filePath) {
-        throw new Error('Can\'t save buffer with no file path');
+        throw new Error("Can't save buffer with no file path");
       }
 
       let success;
@@ -134,7 +151,8 @@ class NuclideTextBuffer extends _atom.TextBuffer {
         }
 
         _this._pendingSaveContents = toSaveContents;
-        yield (0, (_loadingNotification || _load_loadingNotification()).default)(file.write(toSaveContents), `Saving ${ (_nuclideUri || _load_nuclideUri()).default.nuclideUriToDisplayString(filePath) }...`, 1000);
+        yield (0, (_loadingNotification || _load_loadingNotification()).default)(file.write(toSaveContents), `Saving \`${(_nuclideUri || _load_nuclideUri()).default.nuclideUriToDisplayString(filePath)}\`...`, 1000 /* delay */
+        );
         _this.cachedDiskContents = toSaveContents;
         _this._saveID++;
         _this.conflict = false;
@@ -144,19 +162,21 @@ class NuclideTextBuffer extends _atom.TextBuffer {
       } catch (e) {
         // Timeouts occur quite frequently when the network is unstable.
         // Demote these to 'error' level.
-        const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
-        const logFunction = /timeout/i.test(e.message) ? logger.error : logger.fatal;
+        const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
+        const logFunction = e instanceof (_nuclideRpc || _load_nuclideRpc()).RpcTimeoutError ? logger.error : logger.fatal;
         logFunction('Failed to save remote file.', e);
         let message = e.message;
         // This can happen if the user triggered the save while closing the file.
         // Unfortunately, we can't interrupt the user action, but we can at least reopen the buffer.
         if (_this.destroyed) {
           message += '<br><br>Opening a new tab with your unsaved changes.';
+          // goToLocation does not support opening an untitled editor
+          // eslint-disable-next-line nuclide-internal/atom-apis
           atom.workspace.open().then(function (editor) {
             return editor.setText(toSaveContents);
           });
         }
-        atom.notifications.addError(`Failed to save remote file ${ filePath }: ${ message }`);
+        atom.notifications.addError(`Failed to save remote file ${filePath}: ${message}`);
         success = false;
       }
 
@@ -171,7 +191,7 @@ class NuclideTextBuffer extends _atom.TextBuffer {
   }
 
   updateCachedDiskContentsSync() {
-    throw new Error('updateCachedDiskContentsSync isn\'t supported in NuclideTextBuffer');
+    throw new Error("updateCachedDiskContentsSync isn't supported in NuclideTextBuffer");
   }
 
   updateCachedDiskContents(flushCache, callback) {
@@ -214,9 +234,13 @@ class NuclideTextBuffer extends _atom.TextBuffer {
       throw new Error('Cannot subscribe to no-file');
     }
 
-    this.fileSubscriptions = new _atom.CompositeDisposable();
+    const fileSubscriptions = new _atom.CompositeDisposable();
 
-    this.fileSubscriptions.add(file.onDidChange((0, _asyncToGenerator.default)(function* () {
+    fileSubscriptions.add(file.onDidChange((0, (_debounce || _load_debounce()).default)((0, _asyncToGenerator.default)(function* () {
+      // The buffer could have been destroyed during the debounce.
+      if (_this3.destroyed) {
+        return;
+      }
       const isModified = _this3._isModified();
       _this3.emitModifiedStatusChanged(isModified);
       if (isModified) {
@@ -225,6 +249,10 @@ class NuclideTextBuffer extends _atom.TextBuffer {
       const previousContents = _this3.cachedDiskContents;
       const previousSaveID = _this3._saveID;
       yield _this3.updateCachedDiskContents();
+      // The buffer could have been destroyed while waiting.
+      if (_this3.destroyed) {
+        return;
+      }
       // If any save requests finished in the meantime, previousContents is not longer accurate.
       // The most recent save request should trigger another change event, so we'll check for
       // conflicts when that happens.
@@ -240,27 +268,43 @@ class NuclideTextBuffer extends _atom.TextBuffer {
       } else {
         _this3.reload();
       }
-    })));
+    }), CHANGE_DEBOUNCE)));
 
-    this.fileSubscriptions.add(file.onDidDelete(() => {
+    fileSubscriptions.add(file.onDidDelete(() => {
       this._exists = false;
       const modified = this.getText() !== this.cachedDiskContents;
       this.wasModifiedBeforeRemove = modified;
       if (modified) {
         this.updateCachedDiskContents();
       } else {
-        this.destroy();
+        this._maybeDestroy();
       }
     }));
 
     // TODO: Not supported by RemoteFile.
-    // this.fileSubscriptions.add(file.onDidRename(() => {
+    // fileSubscriptions.add(file.onDidRename(() => {
     //   this.emitter.emit('did-change-path', this.getPath());
     // }));
 
-    this.fileSubscriptions.add(file.onWillThrowWatchError(errorObject => {
+    fileSubscriptions.add(file.onWillThrowWatchError(errorObject => {
       this.emitter.emit('will-throw-watch-error', errorObject);
     }));
+
+    this.fileSubscriptions = fileSubscriptions;
+  }
+
+  _maybeDestroy() {
+    if (this.shouldDestroyOnFileDelete == null || this.shouldDestroyOnFileDelete()) {
+      this.destroy();
+    } else {
+      if (this.fileSubscriptions != null) {
+        // Soft delete the file.
+        this.fileSubscriptions.dispose();
+      }
+      this.conflict = false;
+      this.cachedDiskContents = null;
+      this.emitModifiedStatusChanged(!this.isEmpty());
+    }
   }
 
   _isModified() {
@@ -279,4 +323,3 @@ class NuclideTextBuffer extends _atom.TextBuffer {
   }
 }
 exports.default = NuclideTextBuffer;
-module.exports = exports['default'];

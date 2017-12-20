@@ -1,13 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _atom = require('atom');
 
@@ -29,6 +24,17 @@ const GRAMMARS = ['source.objc', 'source.objcpp'];
 
 // The indentation amount depends on previous lines. If the user types a colon outside of a method
 // call, it searches the entire buffer. This hard cutoff should work for sane code.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const NUMBER_OF_PREVIOUS_LINES_TO_SEARCH_FOR_COLONS = 25;
 
 /**
@@ -44,10 +50,12 @@ class ObjectiveCColonIndenter {
     this._insertTextSubscriptionsMap = new Map();
 
     const subscriptions = this._subscriptions = new _atom.CompositeDisposable();
-    subscriptions.add({ dispose: () => {
+    subscriptions.add({
+      dispose: () => {
         this._insertTextSubscriptionsMap.forEach(subscription => subscription.dispose());
         this._insertTextSubscriptionsMap.clear();
-      } });
+      }
+    });
 
     subscriptions.add((0, (_observeLanguageTextEditors || _load_observeLanguageTextEditors()).default)(GRAMMARS, textEditor => this._enableInTextEditor(textEditor), textEditor => this._disableInTextEditor(textEditor)));
   }
@@ -61,7 +69,7 @@ class ObjectiveCColonIndenter {
 
   _enableInTextEditor(textEditor) {
     this._insertTextSubscriptionsMap.set(textEditor, textEditor.onDidInsertText(event => {
-      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('objc:indent-colon', () => {
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('objc:indent-colon', () => {
         const { range, text } = event;
 
         // Ignore the inserted text if the user is typing in a string or comment.
@@ -91,7 +99,8 @@ class ObjectiveCColonIndenter {
         const unindentedCurrentColonColumn = currentColonPosition.column - numberOfIndentCharacters;
         const totalIndentAmount = unindentedCurrentColonColumn >= colonColumn ? 0 : colonColumn - unindentedCurrentColonColumn;
         // 3. Replace the current line with the properly-indented line.
-        textEditor.setTextInBufferRange(buffer.rangeForRow(currentColonPosition.row, /* includeNewline */false), ' '.repeat(totalIndentAmount) + unindentedLine);
+        textEditor.setTextInBufferRange(buffer.rangeForRow(currentColonPosition.row,
+        /* includeNewline */false), ' '.repeat(totalIndentAmount) + unindentedLine);
 
         // Move the cursor to right after the inserted colon.
         const newCursorPosition = [currentColonPosition.row, totalIndentAmount + unindentedCurrentColonColumn + 1];
@@ -156,5 +165,4 @@ class ObjectiveCColonIndenter {
     return column;
   }
 }
-
-module.exports = ObjectiveCColonIndenter;
+exports.default = ObjectiveCColonIndenter;

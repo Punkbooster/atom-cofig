@@ -1,3 +1,16 @@
+## 0.6.2
+
+* Highlight eq and equal (#43)
+
+## 0.6.1
+
+* Verify that keyword is not a variable (#40)
+
+## 0.6.0
+
+* Verify that `expect` is not a variable (#41)
+* Highlight expect and should keywords (#38)
+
 ## 0.5.1
 
 * Fix deprecation warning about `path.basename` (#37)

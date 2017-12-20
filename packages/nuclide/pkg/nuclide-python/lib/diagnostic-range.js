@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,16 +10,27 @@ var _atom = require('atom');
 var _range;
 
 function _load_range() {
-  return _range = require('../../commons-atom/range');
+  return _range = require('nuclide-commons-atom/range');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-python');
 
 function tokenizedLineForRow(editor, line) /* atom$TokenizedLine */{
   const tokenBuffer = editor.hasOwnProperty('displayBuffer') ? editor.displayBuffer.tokenizedBuffer : editor.tokenizedBuffer;
@@ -67,7 +69,7 @@ function getModuleNameRange(message, line, editor) {
     }
     lineNumber += 1;
   }
-  logger.warn(`getModuleNameRange failed for message: ${ message }`);
+  logger.warn(`getModuleNameRange failed for message: ${message}`);
 }
 
 // Computes an appropriate underline range using the diagnostic type information.
@@ -104,12 +106,12 @@ function getDiagnosticRange(diagnostic, editor) {
       case 'E2':
         // '#' comment spacing
         if (code.startsWith('E26')) {
-          return new _atom.Range([line, column - 1], [line, trimmedEndCol]);
+          return new _atom.Range([line, column], [line, trimmedEndCol]);
         }
         const numericCode = parseInt(code.slice(1), 10);
         // Missing whitespace - underline the closest symbol
         if (numericCode >= 225 && numericCode <= 231 || numericCode === 275) {
-          return new _atom.Range([line, column - 1], [line, column]);
+          return new _atom.Range([line, column], [line, column + 1]);
         }
         // Extra whitespace - underline the offending whitespace
         const whitespace = (0, (_range || _load_range()).wordAtPosition)(editor, new _atom.Point(line, column), /\s+/g);
@@ -161,8 +163,8 @@ function getDiagnosticRange(diagnostic, editor) {
         break;
     }
   } catch (e) {
-    const diagnosticAsString = `${ diagnostic.file }:${ unsafeLine }:${ column } - ${ code }: ${ message }`;
-    logger.error(`Failed to find flake8 diagnostic range: ${ diagnosticAsString }`, e);
+    const diagnosticAsString = `${diagnostic.file}:${unsafeLine}:${column} - ${code}: ${message}`;
+    logger.error(`Failed to find flake8 diagnostic range: ${diagnosticAsString}`, e);
   }
 
   return new _atom.Range([line, trimmedStartCol], [line, trimmedEndCol]);

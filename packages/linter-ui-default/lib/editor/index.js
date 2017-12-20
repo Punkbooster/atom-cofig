@@ -24,6 +24,7 @@ class Editor {
   tooltipFollows: string;
   showDecorations: boolean;
   showProviderName: boolean;
+  ignoreTooltipInvocation: boolean;
 
   constructor(textEditor: TextEditor) {
     this.tooltip = null
@@ -32,6 +33,7 @@ class Editor {
     this.messages = new Set()
     this.textEditor = textEditor
     this.subscriptions = new CompositeDisposable()
+    this.ignoreTooltipInvocation = false
 
     this.subscriptions.add(this.emitter)
     this.subscriptions.add(atom.config.observe('linter-ui-default.showTooltip', (showTooltip) => {
@@ -67,18 +69,27 @@ class Editor {
       if (tooltipSubscription) {
         tooltipSubscription.dispose()
       }
-      tooltipSubscription = tooltipFollows === 'Mouse' ? this.listenForMouseMovement() : this.listenForKeyboardMovement()
+      tooltipSubscription = new CompositeDisposable()
+      if (tooltipFollows === 'Mouse' || tooltipFollows === 'Both') {
+        tooltipSubscription.add(this.listenForMouseMovement())
+      }
+      if (tooltipFollows === 'Keyboard' || tooltipFollows === 'Both') {
+        tooltipSubscription.add(this.listenForKeyboardMovement())
+      }
       this.removeTooltip()
     }))
     this.subscriptions.add(new Disposable(function() {
       tooltipSubscription.dispose()
     }))
-    // NOTE: The reason we are watching cursor position and not some text change event is that
-    // Some programs like gofmt setText all the time, so text changes but because they set about
-    // the same text as before so cursor position doesn't change, unless the cursor is in changed
-    // text area in which case it changes, that's why we remove the tooltip then
     this.subscriptions.add(textEditor.onDidChangeCursorPosition(() => {
+      this.ignoreTooltipInvocation = false
       if (this.tooltipFollows === 'Mouse') {
+        this.removeTooltip()
+      }
+    }))
+    this.subscriptions.add(textEditor.getBuffer().onDidChangeText(() => {
+      if (this.tooltipFollows !== 'Mouse') {
+        this.ignoreTooltipInvocation = true
         this.removeTooltip()
       }
     }))
@@ -155,6 +166,7 @@ class Editor {
       }
 
       this.cursorPosition = getBufferPositionFromMouseEvent(event, this.textEditor, editorElement)
+      this.ignoreTooltipInvocation = false
       if (this.textEditor.largeFileMode) {
         // NOTE: Ignore if file is too large
         this.cursorPosition = null
@@ -202,6 +214,9 @@ class Editor {
     }
     this.removeTooltip()
     if (!this.showTooltip) {
+      return
+    }
+    if (this.ignoreTooltipInvocation) {
       return
     }
 

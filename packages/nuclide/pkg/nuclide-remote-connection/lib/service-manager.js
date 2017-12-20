@@ -1,13 +1,13 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.setUseLocalRpc = setUseLocalRpc;
+exports.getlocalService = getlocalService;
+exports.getServiceByNuclideUri = getServiceByNuclideUri;
+exports.getServiceByConnection = getServiceByConnection;
+exports.getService = getService;
 
 var _ServerConnection;
 
@@ -18,7 +18,7 @@ function _load_ServerConnection() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _servicesConfig;
@@ -53,7 +53,17 @@ function _load_nuclideMarshalersAtom() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-let localRpcClient = null;
+let localRpcClient = null; /**
+                            * Copyright (c) 2015-present, Facebook, Inc.
+                            * All rights reserved.
+                            *
+                            * This source code is licensed under the license found in the LICENSE file in
+                            * the root directory of this source tree.
+                            *
+                            * 
+                            * @format
+                            */
+
 let knownLocalRpc = false;
 
 // Creates a local RPC client that we can use to ensure that
@@ -93,7 +103,7 @@ function getlocalService(serviceName) {
     const [serviceConfig] = (_servicesConfig || _load_servicesConfig()).default.filter(config => config.name === serviceName);
 
     if (!serviceConfig) {
-      throw new Error(`No config found for service ${ serviceName }`);
+      throw new Error(`No config found for service ${serviceName}`);
     }
     // $FlowIgnore
 
@@ -140,11 +150,3 @@ function getService(serviceName, hostname) {
     return getlocalService(serviceName);
   }
 }
-
-module.exports = {
-  getService,
-  getServiceByConnection,
-  getServiceByNuclideUri,
-  setUseLocalRpc,
-  getlocalService
-};

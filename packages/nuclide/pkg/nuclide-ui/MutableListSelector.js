@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,18 +8,30 @@ exports.MutableListSelector = undefined;
 var _Button;
 
 function _load_Button() {
-  return _Button = require('./Button');
+  return _Button = require('nuclide-commons-ui/Button');
 }
 
 var _ButtonGroup;
 
 function _load_ButtonGroup() {
-  return _ButtonGroup = require('./ButtonGroup');
+  return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
-const DELETE_BUTTON_TITLE_DEFAULT = 'Delete selected item';
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const DELETE_BUTTON_TITLE_DEFAULT = 'Delete selected item'; /**
+                                                             * Copyright (c) 2015-present, Facebook, Inc.
+                                                             * All rights reserved.
+                                                             *
+                                                             * This source code is licensed under the license found in the LICENSE file in
+                                                             * the root directory of this source tree.
+                                                             *
+                                                             * 
+                                                             * @format
+                                                             */
+
 const DELETE_BUTTON_TITLE_NONE = 'No item selected to delete';
 const DELETE_BUTTON_TITLE_UNDELETABLE = 'Selected item cannot be deleted';
 
@@ -47,15 +50,13 @@ const DELETE_BUTTON_TITLE_UNDELETABLE = 'Selected item cannot be deleted';
  *  | +  |  - |
  *   ---------
  */
-class MutableListSelector extends _reactForAtom.React.Component {
+class MutableListSelector extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
 
-  constructor(props) {
-    super(props);
-    this._onDeleteButtonClicked = this._onDeleteButtonClicked.bind(this);
-  }
-
-  _onDeleteButtonClicked() {
-    this.props.onDeleteButtonClicked(this.props.idOfSelectedItem);
+    return _temp = super(...args), this._onDeleteButtonClicked = () => {
+      this.props.onDeleteButtonClicked(this.props.idOfSelectedItem);
+    }, _temp;
   }
 
   _onItemClicked(itemId) {
@@ -74,7 +75,7 @@ class MutableListSelector extends _reactForAtom.React.Component {
         classes += ' selected';
         selectedItem = item;
       }
-      return _reactForAtom.React.createElement(
+      return _react.default.createElement(
         'li',
         {
           key: item.id,
@@ -97,25 +98,25 @@ class MutableListSelector extends _reactForAtom.React.Component {
       deleteButtonTitle = DELETE_BUTTON_TITLE_DEFAULT;
     }
 
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       null,
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'block select-list' },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'ol',
           { className: 'list-group' },
           listItems
         )
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { style: { display: 'flex', justifyContent: 'flex-end' } },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
           null,
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             (_Button || _load_Button()).Button,
             {
               disabled: selectedItem == null || selectedItem.deletable === false,
@@ -123,7 +124,7 @@ class MutableListSelector extends _reactForAtom.React.Component {
               title: deleteButtonTitle },
             '-'
           ),
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             (_Button || _load_Button()).Button,
             {
               onClick: this.props.onAddButtonClicked,

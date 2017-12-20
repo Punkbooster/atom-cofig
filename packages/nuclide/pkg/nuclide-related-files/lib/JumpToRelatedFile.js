@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -30,7 +21,13 @@ function _load_nuclideAnalytics() {
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
+}
+
+var _goToLocation;
+
+function _load_goToLocation() {
+  return _goToLocation = require('nuclide-commons-atom/go-to-location');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -40,12 +37,35 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  *
  * Clients must call `dispose()` once they're done with an instance.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class JumpToRelatedFile {
 
   constructor() {
     var _this = this;
 
     this._subscription = atom.commands.add('atom-workspace', {
+      'nuclide-related-files:switch-between-header-source': () => {
+        const editor = atom.workspace.getActiveTextEditor();
+        if (editor == null) {
+          return;
+        }
+        const path = editor.getPath();
+        if (path) {
+          (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-related-files:switch-between-header-source', (0, _asyncToGenerator.default)(function* () {
+            return _this._open((yield _this.getNextRelatedFile(path)));
+          }));
+        }
+      },
       'nuclide-related-files:jump-to-next-related-file': () => {
         const editor = atom.workspace.getActiveTextEditor();
         if (editor == null) {
@@ -53,7 +73,7 @@ class JumpToRelatedFile {
         }
         const path = editor.getPath();
         if (path) {
-          (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-related-files:jump-to-next-related-file', (0, _asyncToGenerator.default)(function* () {
+          (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-related-files:jump-to-next-related-file', (0, _asyncToGenerator.default)(function* () {
             return _this._open((yield _this.getNextRelatedFile(path)));
           }));
         }
@@ -65,7 +85,7 @@ class JumpToRelatedFile {
         }
         const path = editor.getPath();
         if (path) {
-          (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-related-files:jump-to-previous-related-file', (0, _asyncToGenerator.default)(function* () {
+          (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-related-files:jump-to-previous-related-file', (0, _asyncToGenerator.default)(function* () {
             return _this._open((yield _this.getPreviousRelatedFile(path)));
           }));
         }
@@ -118,9 +138,7 @@ class JumpToRelatedFile {
     if ((_featureConfig || _load_featureConfig()).default.get('nuclide-related-files.openInNextPane')) {
       atom.workspace.activateNextPane();
     }
-    atom.workspace.open(path, { searchAllPanes: true });
+    (0, (_goToLocation || _load_goToLocation()).goToLocation)(path);
   }
-
 }
 exports.default = JumpToRelatedFile;
-module.exports = exports['default'];

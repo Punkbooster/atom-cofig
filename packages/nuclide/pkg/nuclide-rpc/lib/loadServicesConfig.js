@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,7 +10,7 @@ var _fs = _interopRequireDefault(require('fs'));
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -27,6 +18,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /**
  * Load service configs, and resolve all of the paths to absolute paths.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function loadServicesConfig(dirname) {
   return [(_nuclideUri || _load_nuclideUri()).default.resolve(dirname, './services-3.json'), (_nuclideUri || _load_nuclideUri()).default.resolve(dirname, './fb-services-3.json')].reduce((acc, servicePath) => {
     if (_fs.default.existsSync(servicePath)) {
@@ -56,4 +58,3 @@ function createServiceConfigObject(basedir, jsonConfig) {
     };
   });
 }
-module.exports = exports['default'];

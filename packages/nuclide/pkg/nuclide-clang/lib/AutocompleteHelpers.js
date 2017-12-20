@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,10 +9,22 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _atom = require('atom');
 
+var _fuzzaldrinPlus;
+
+function _load_fuzzaldrinPlus() {
+  return _fuzzaldrinPlus = _interopRequireDefault(require('fuzzaldrin-plus'));
+}
+
+var _AutocompleteCacher;
+
+function _load_AutocompleteCacher() {
+  return _AutocompleteCacher = _interopRequireDefault(require('../../commons-atom/AutocompleteCacher'));
+}
+
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _nuclideAnalytics;
@@ -43,6 +46,17 @@ function _load_libclang() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const MAX_LINE_LENGTH = 120;
 const TAB_LENGTH = 2;
@@ -154,7 +168,7 @@ function _convertArgsToMultiLineSnippet(args) {
       throw Error('This is a bug! Spaces count is negative.');
     }
 
-    const line = `${ ' '.repeat(spacesCnt) }${ arg.text }:\${${ index + 1 }:${ arg.placeholder }}\n`;
+    const line = `${' '.repeat(spacesCnt)}${arg.text}:\${${index + 1}:${arg.placeholder}}\n`;
     if (index > 0 && line[colonPosition - arg.offset] !== ':') {
       throw Error('This is a bug! Colons are not aligned!');
     }
@@ -191,7 +205,7 @@ function getCompletionBodyInline(completion) {
       placeHolderCnt++;
       let spelling = chunk.spelling;
       if (chunk.isOptional) {
-        spelling = `[${ spelling }]`;
+        spelling = `[${spelling}]`;
       }
       body += '${' + placeHolderCnt + ':' + spelling + '}';
     } else {
@@ -215,7 +229,13 @@ function getCompletionPrefix(editor) {
 class AutocompleteHelpers {
 
   static getAutocompleteSuggestions(request) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-clang-atom.autocomplete', () => AutocompleteHelpers._getAutocompleteSuggestions(request));
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-clang-atom.autocomplete', (0, _asyncToGenerator.default)(function* () {
+      const results = yield AutocompleteHelpers._cacher.getSuggestions(request);
+      if (results != null) {
+        return [...results];
+      }
+      return [];
+    }));
   }
 
   static _getAutocompleteSuggestions(request) {
@@ -227,15 +247,21 @@ class AutocompleteHelpers {
       if (!activatedManually && prefix === '') {
         const wordPrefix = editor.getLastCursor().getCurrentWordPrefix();
         if (!VALID_EMPTY_SUFFIX.test(wordPrefix)) {
-          return [];
+          return null;
         }
       }
 
       const indentation = editor.indentationForBufferRow(row);
       const data = yield (0, (_libclang || _load_libclang()).getCompletions)(editor, prefix);
       if (data == null) {
-        return [];
+        return null;
       }
+
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('clang.autocompleteResults', {
+        path: editor.getPath(),
+        prefix: prefix.substr(0, 20), // avoid logging too much!
+        completions: data.length
+      });
 
       return data.map(function (completion) {
         let snippet;
@@ -267,15 +293,27 @@ class AutocompleteHelpers {
           type,
           leftLabel: completion.result_type,
           rightLabel,
-          description: completion.brief_comment || completion.result_type
+          description: completion.brief_comment || completion.result_type,
+          filterText: completion.typed_name
         };
       });
     })();
   }
-
 }
 
 exports.default = AutocompleteHelpers;
+AutocompleteHelpers._cacher = new (_AutocompleteCacher || _load_AutocompleteCacher()).default(AutocompleteHelpers._getAutocompleteSuggestions, {
+  updateResults(request, results) {
+    const { editor } = request;
+    const prefix = getCompletionPrefix(editor);
+    // We hit the results limit, so there may be unlisted results.
+    // Needs to match the value in clang_server.py.
+    if (results.length === 200) {
+      return null;
+    }
+    return (_fuzzaldrinPlus || _load_fuzzaldrinPlus()).default.filter(results, prefix, { key: 'filterText' }).map(result => Object.assign({}, result, { replacementPrefix: prefix }));
+  }
+});
 const __test__ = exports.__test__ = {
   getCompletionBodyMultiLine,
   getCompletionBodyInline

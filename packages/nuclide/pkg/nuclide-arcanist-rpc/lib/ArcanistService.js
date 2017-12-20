@@ -1,18 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.__TEST__ = exports.getProjectRelativePath = exports.findArcProjectIdAndDirectory = exports.findArcProjectIdOfPath = exports.readArcConfig = exports.findArcConfigDirectory = undefined;
+exports.__TEST__ = exports.getProjectRelativePath = exports.findArcProjectIdAndDirectory = exports.findArcProjectIdOfPath = exports.getArcConfigKey = exports.readArcConfig = exports.findArcConfigDirectory = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -55,85 +46,109 @@ let readArcConfig = exports.readArcConfig = (() => {
   };
 })();
 
-let findArcProjectIdOfPath = exports.findArcProjectIdOfPath = (() => {
-  var _ref3 = (0, _asyncToGenerator.default)(function* (fileName) {
-    const project = yield readArcConfig(fileName);
-    return project ? project.project_id : null;
+let getArcConfigKey = exports.getArcConfigKey = (() => {
+  var _ref3 = (0, _asyncToGenerator.default)(function* (fileName, key) {
+    return _callArcGetConfig(fileName, key).map(function (s) {
+      return s.split(':')[1].trim().replace(/"/g, '');
+    }).toPromise();
   });
 
-  return function findArcProjectIdOfPath(_x3) {
+  return function getArcConfigKey(_x3, _x4) {
     return _ref3.apply(this, arguments);
   };
 })();
 
-let findArcProjectIdAndDirectory = exports.findArcProjectIdAndDirectory = (() => {
+let findArcProjectIdOfPath = exports.findArcProjectIdOfPath = (() => {
   var _ref4 = (0, _asyncToGenerator.default)(function* (fileName) {
-    const directory = yield findArcConfigDirectory(fileName);
-    if (directory != null) {
-      // This will hit the directory map cache.
-      const projectId = yield findArcProjectIdOfPath(fileName);
-
-      if (!(projectId != null)) {
-        throw new Error('Invariant violation: "projectId != null"');
-      }
-
-      return { projectId, directory };
-    }
-    return null;
+    const project = yield readArcConfig(fileName);
+    return project ? project.project_id || project['project.name'] : null;
   });
 
-  return function findArcProjectIdAndDirectory(_x4) {
+  return function findArcProjectIdOfPath(_x5) {
     return _ref4.apply(this, arguments);
   };
 })();
 
-let getProjectRelativePath = exports.getProjectRelativePath = (() => {
+let findArcProjectIdAndDirectory = exports.findArcProjectIdAndDirectory = (() => {
   var _ref5 = (0, _asyncToGenerator.default)(function* (fileName) {
-    const arcPath = yield findArcConfigDirectory(fileName);
-    return arcPath && fileName ? (_nuclideUri || _load_nuclideUri()).default.relative(arcPath, fileName) : null;
+    const directory = yield findArcConfigDirectory(fileName);
+    if (directory != null) {
+      // This will hit the directory map cache.
+      const projectId = yield findArcProjectIdOfPath(fileName);
+      if (projectId != null) {
+        return { projectId, directory };
+      }
+    }
+    return null;
   });
 
-  return function getProjectRelativePath(_x5) {
+  return function findArcProjectIdAndDirectory(_x6) {
     return _ref5.apply(this, arguments);
   };
 })();
 
+let getProjectRelativePath = exports.getProjectRelativePath = (() => {
+  var _ref6 = (0, _asyncToGenerator.default)(function* (fileName) {
+    const arcPath = yield findArcConfigDirectory(fileName);
+    return arcPath && fileName ? (_nuclideUri || _load_nuclideUri()).default.relative(arcPath, fileName) : null;
+  });
+
+  return function getProjectRelativePath(_x7) {
+    return _ref6.apply(this, arguments);
+  };
+})();
+
 let getMercurialHeadCommitChanges = (() => {
-  var _ref6 = (0, _asyncToGenerator.default)(function* (filePath) {
+  var _ref7 = (0, _asyncToGenerator.default)(function* (filePath) {
     const hgRepoDetails = (0, (_nuclideSourceControlHelpers || _load_nuclideSourceControlHelpers()).findHgRepository)(filePath);
     if (hgRepoDetails == null) {
-      return null;
+      throw new Error('Cannot find source control root to diff from');
     }
-    const filesChanged = yield (0, (_hgRevisionStateHelpers || _load_hgRevisionStateHelpers()).fetchFilesChangedAtRevision)((0, (_hgRevisionExpressionHelpers || _load_hgRevisionExpressionHelpers()).expressionForRevisionsBeforeHead)(0), hgRepoDetails.workingDirectoryPath).refCount().toPromise();
+    const filesChanged = yield (0, (_hgRevisionStateHelpers || _load_hgRevisionStateHelpers()).fetchFilesChangedSinceRevision)((0, (_hgRevisionExpressionHelpers || _load_hgRevisionExpressionHelpers()).expressionForRevisionsBeforeHead)(1), hgRepoDetails.workingDirectoryPath).refCount().toPromise();
     if (filesChanged == null) {
       throw new Error('Failed to fetch commit changed files while diffing');
     }
     return filesChanged;
   });
 
-  return function getMercurialHeadCommitChanges(_x6) {
-    return _ref6.apply(this, arguments);
+  return function getMercurialHeadCommitChanges(_x8) {
+    return _ref7.apply(this, arguments);
   };
 })();
 
 let getCommitBasedArcConfigDirectory = (() => {
-  var _ref7 = (0, _asyncToGenerator.default)(function* (filePath) {
+  var _ref8 = (0, _asyncToGenerator.default)(function* (filePath) {
     // TODO Support other source control types file changes (e.g. `git`).
     const filesChanged = yield getMercurialHeadCommitChanges(filePath);
-    if (filesChanged == null) {
-      throw new Error('Cannot find source control root to diff from');
-    }
     let configLookupPath = null;
-    if (filesChanged.all.length > 0) {
-      configLookupPath = (_fsPromise || _load_fsPromise()).default.getCommonAncestorDirectory(filesChanged.all);
+    if (filesChanged.length > 0) {
+      configLookupPath = (_fsPromise || _load_fsPromise()).default.getCommonAncestorDirectory(filesChanged);
     } else {
       configLookupPath = filePath;
     }
-    return yield findArcConfigDirectory(configLookupPath);
+    return findArcConfigDirectory(configLookupPath);
   });
 
-  return function getCommitBasedArcConfigDirectory(_x7) {
-    return _ref7.apply(this, arguments);
+  return function getCommitBasedArcConfigDirectory(_x9) {
+    return _ref8.apply(this, arguments);
+  };
+})();
+
+let getArcExecOptions = (() => {
+  var _ref9 = (0, _asyncToGenerator.default)(function* (cwd) {
+    const options = {
+      cwd,
+      env: Object.assign({}, (yield (0, (_process || _load_process()).getOriginalEnvironment)()), {
+        // Setting the editor to a non-existant tool to prevent operations that rely
+        // on the user's default editor from attempting to open up when needed.
+        HGEDITOR: 'true'
+      })
+    };
+    return options;
+  });
+
+  return function getArcExecOptions(_x10) {
+    return _ref9.apply(this, arguments);
   };
 })();
 
@@ -144,36 +159,36 @@ exports.execArcPull = execArcPull;
 exports.execArcLand = execArcLand;
 exports.execArcPatch = execArcPatch;
 
-var _hgUtils;
-
-function _load_hgUtils() {
-  return _hgUtils = require('../../nuclide-hg-rpc/lib/hg-utils');
-}
-
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
+}
+
+var _observable;
+
+function _load_observable() {
+  return _observable = require('nuclide-commons/observable');
 }
 
 var _nice;
 
 function _load_nice() {
-  return _nice = require('../../commons-node/nice');
+  return _nice = require('nuclide-commons/nice');
 }
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _hgRevisionStateHelpers;
@@ -194,18 +209,36 @@ function _load_nuclideSourceControlHelpers() {
   return _nuclideSourceControlHelpers = require('../../nuclide-source-control-helpers');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
+}
+
+var _lruCache;
+
+function _load_lruCache() {
+  return _lruCache = _interopRequireDefault(require('lru-cache'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const ARC_CONFIG_FILE_NAME = '.arcconfig';
+const ARC_CONFIG_FILE_NAME = '.arcconfig'; /**
+                                            * Copyright (c) 2015-present, Facebook, Inc.
+                                            * All rights reserved.
+                                            *
+                                            * This source code is licensed under the license found in the LICENSE file in
+                                            * the root directory of this source tree.
+                                            *
+                                            * 
+                                            * @format
+                                            */
 
-const arcConfigDirectoryMap = new Map();
-const arcProjectMap = new Map();
+const CACHE_TIME = 30 * 1000; // 30 seconds
+const arcConfigDirectoryMap = (0, (_lruCache || _load_lruCache()).default)({
+  maxAge: CACHE_TIME
+});
+const arcProjectMap = (0, (_lruCache || _load_lruCache()).default)({ maxAge: CACHE_TIME });
 
 function findDiagnostics(path, skip) {
   return _rxjsBundlesRxMinJs.Observable.fromPromise(findArcConfigDirectory(path)).switchMap(arcDir => {
@@ -216,19 +249,9 @@ function findDiagnostics(path, skip) {
   }).publish();
 }
 
-function getArcExecOptions(cwd, hgEditor) {
-  const options = {
-    cwd,
-    env: Object.assign({}, (0, (_process || _load_process()).getOriginalEnvironment)(), {
-      ATOM_BACKUP_EDITOR: 'false'
-    })
-  };
-
-  if (hgEditor != null) {
-    options.env.HGEDITOR = hgEditor;
-  }
-
-  return options;
+function _callArcGetConfig(filePath, name) {
+  const args = ['get-config', name];
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(getArcExecOptions(filePath)).switchMap(opts => (0, (_process || _load_process()).runCommand)('arc', args, opts));
 }
 
 function _callArcDiff(filePath, extraArcDiffArgs) {
@@ -236,9 +259,22 @@ function _callArcDiff(filePath, extraArcDiffArgs) {
 
   return _rxjsBundlesRxMinJs.Observable.fromPromise(getCommitBasedArcConfigDirectory(filePath)).flatMap(arcConfigDir => {
     if (arcConfigDir == null) {
-      throw new Error('Failed to find Arcanist config.  Is this project set up for Arcanist?');
+      return _rxjsBundlesRxMinJs.Observable.throw(new Error('Failed to find Arcanist config.  Is this project set up for Arcanist?'));
     }
-    return (0, (_process || _load_process()).scriptSafeSpawnAndObserveOutput)('arc', args, getArcExecOptions(arcConfigDir));
+    return _rxjsBundlesRxMinJs.Observable.fromPromise(getArcExecOptions(arcConfigDir)).switchMap(opts => {
+      const scriptArgs = (0, (_process || _load_process()).scriptifyCommand)('arc', args, opts);
+      return (0, (_observable || _load_observable()).compact)((0, (_process || _load_process()).observeProcess)(...scriptArgs).catch(error => _rxjsBundlesRxMinJs.Observable.of({ kind: 'error', error })) // TODO(T17463635)
+      .map(event => {
+        switch (event.kind) {
+          case 'stdout':
+            return { stdout: event.data };
+          case 'stderr':
+            return { stderr: event.data };
+          default:
+            return null;
+        }
+      }));
+    });
   }).share();
 }
 
@@ -248,8 +284,8 @@ function getArcDiffParams(lintExcuse, isPrepareMode = false) {
     args.push('--prepare');
   }
 
-  if (lintExcuse != null) {
-    args.push('--nolint', '--excuse', lintExcuse);
+  if (lintExcuse != null && lintExcuse !== '') {
+    args.push('--nolint', '--nounit', '--excuse', lintExcuse);
   }
 
   return args;
@@ -260,8 +296,10 @@ function createPhabricatorRevision(filePath, isPrepareMode, lintExcuse) {
   return _callArcDiff(filePath, args).publish();
 }
 
-function updatePhabricatorRevision(filePath, message, allowUntracked, lintExcuse) {
-  const args = ['-m', message, ...getArcDiffParams(lintExcuse)];
+function updatePhabricatorRevision(filePath, message, allowUntracked, lintExcuse, verbatimModeEnabled) {
+  const baseArgs = ['-m', message, ...getArcDiffParams(lintExcuse)];
+  const args = [...(verbatimModeEnabled ? ['--verbatim'] : []), ...baseArgs];
+
   if (allowUntracked) {
     args.push('--allow-untracked');
   }
@@ -269,28 +307,39 @@ function updatePhabricatorRevision(filePath, message, allowUntracked, lintExcuse
 }
 
 function execArcPull(cwd, fetchLatest, allowDirtyChanges) {
-  return _rxjsBundlesRxMinJs.Observable.fromPromise((0, (_hgUtils || _load_hgUtils()).getEditMergeConfigs)()).switchMap(editMergeConfigs => {
-    const args = ['pull'];
-    if (fetchLatest) {
-      args.push('--latest');
-    }
+  // TODO(T17463635)
+  const args = ['pull'];
+  if (fetchLatest) {
+    args.push('--latest');
+  }
 
-    if (allowDirtyChanges) {
-      args.push('--allow-dirty');
-    }
+  if (allowDirtyChanges) {
+    args.push('--allow-dirty');
+  }
 
-    return (0, (_process || _load_process()).observeProcess)(() => (0, (_process || _load_process()).safeSpawn)('arc', args, getArcExecOptions(cwd, editMergeConfigs.hgEditor)));
-  }).publish();
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(getArcExecOptions(cwd)).switchMap(opts => (0, (_process || _load_process()).observeProcess)('arc', args, Object.assign({}, opts, {
+    /* TODO(T17353599) */isExitError: () => false
+  })).catch(error => _rxjsBundlesRxMinJs.Observable.of({ kind: 'error', error }))).publish();
 }
 
 function execArcLand(cwd) {
+  // TODO(T17463635)
   const args = ['land'];
-  return (0, (_process || _load_process()).observeProcess)(() => (0, (_process || _load_process()).safeSpawn)('arc', args, getArcExecOptions(cwd))).publish();
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(getArcExecOptions(cwd)).switchMap(opts => (0, (_process || _load_process()).observeProcess)('arc', args, Object.assign({}, opts, {
+    /* TODO(T17353599) */isExitError: () => false
+  })).catch(error => _rxjsBundlesRxMinJs.Observable.of({ kind: 'error', error }))).publish();
 }
 
 function execArcPatch(cwd, differentialRevision) {
-  const args = ['patch', differentialRevision];
-  return (0, (_process || _load_process()).observeProcess)(() => (0, (_process || _load_process()).safeSpawn)('arc', args, getArcExecOptions(cwd))).publish();
+  // TODO(T17463635)
+  const args = ['patch'];
+  if (differentialRevision.match(/^[0-9]+$/)) {
+    args.push('--nocommit', '--diff');
+  }
+  args.push(differentialRevision);
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(getArcExecOptions(cwd)).switchMap(opts => (0, (_process || _load_process()).observeProcess)('arc', args, Object.assign({}, opts, {
+    /* TODO(T17353599) */isExitError: () => false
+  })).catch(error => _rxjsBundlesRxMinJs.Observable.of({ kind: 'error', error }))).publish();
 }
 
 function execArcLint(cwd, filePaths, skip) {
@@ -298,7 +347,9 @@ function execArcLint(cwd, filePaths, skip) {
   if (skip.length > 0) {
     args.push('--skip', skip.join(','));
   }
-  return _rxjsBundlesRxMinJs.Observable.fromPromise((0, (_nice || _load_nice()).niceSafeSpawn)('arc', args, getArcExecOptions(cwd))).switchMap(arcProcess => (0, (_process || _load_process()).getOutputStream)(arcProcess, /* killTreeOnComplete */true)).mergeMap(event => {
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(getArcExecOptions(cwd)).switchMap(opts => (0, (_nice || _load_nice()).niceObserveProcess)('arc', args, Object.assign({}, opts, {
+    killTreeWhenDone: true
+  })).catch(error => _rxjsBundlesRxMinJs.Observable.of({ kind: 'error', error }))).mergeMap(event => {
     if (event.kind === 'error') {
       return _rxjsBundlesRxMinJs.Observable.throw(event.error);
     } else if (event.kind === 'exit') {
@@ -318,7 +369,7 @@ function execArcLint(cwd, filePaths, skip) {
     try {
       json = JSON.parse(stdout);
     } catch (error) {
-      (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().warn('Error parsing `arc lint` JSON output', stdout);
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-arcanist-rpc').warn('Error parsing `arc lint` JSON output', stdout);
       return _rxjsBundlesRxMinJs.Observable.empty();
     }
     const output = new Map();
@@ -386,7 +437,7 @@ const __TEST__ = exports.__TEST__ = {
   arcConfigDirectoryMap,
   arcProjectMap,
   reset() {
-    arcConfigDirectoryMap.clear();
-    arcProjectMap.clear();
+    arcConfigDirectoryMap.reset();
+    arcProjectMap.reset();
   }
 };

@@ -1,23 +1,8 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _DebuggingActivation;
-
-function _load_DebuggingActivation() {
-  return _DebuggingActivation = require('./debugging/DebuggingActivation');
-}
 
 var _PackagerActivation;
 
@@ -36,7 +21,7 @@ var _atom = require('atom');
 class Activation {
 
   constructor(state) {
-    this._disposables = new _atom.CompositeDisposable(this._debuggingActivation = new (_DebuggingActivation || _load_DebuggingActivation()).DebuggingActivation(), this._packagerActivation = new (_PackagerActivation || _load_PackagerActivation()).PackagerActivation(), new (_ShellActivation || _load_ShellActivation()).ShellActivation());
+    this._disposables = new _atom.CompositeDisposable(this._packagerActivation = new (_PackagerActivation || _load_PackagerActivation()).PackagerActivation(), new (_ShellActivation || _load_ShellActivation()).ShellActivation());
   }
 
   dispose() {
@@ -50,7 +35,14 @@ class Activation {
   consumeCwdApi(api) {
     return this._packagerActivation.consumeCwdApi(api);
   }
-
 }
-exports.default = Activation;
-module.exports = exports['default'];
+exports.default = Activation; /**
+                               * Copyright (c) 2015-present, Facebook, Inc.
+                               * All rights reserved.
+                               *
+                               * This source code is licensed under the license found in the LICENSE file in
+                               * the root directory of this source tree.
+                               *
+                               * 
+                               * @format
+                               */

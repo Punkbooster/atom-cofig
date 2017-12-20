@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -31,17 +22,26 @@ function _load_nuclideRemoteConnection() {
   return _nuclideRemoteConnection = require('../../nuclide-remote-connection');
 }
 
+var _featureConfig;
+
+function _load_featureConfig() {
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// eslint-disable-next-line nuclide-internal/no-commonjs
 module.exports = {
   name: 'nuclide-ocaml',
   grammarScopes: Array.from((_constants || _load_constants()).GRAMMARS),
   scope: 'file',
   lintOnFly: false,
-  invalidateOnClose: true,
 
   lint(textEditor) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-ocaml.lint', (0, _asyncToGenerator.default)(function* () {
+    if (!(_featureConfig || _load_featureConfig()).default.get('nuclide-ocaml.enableDiagnostics')) {
+      return Promise.resolve([]);
+    }
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-ocaml.lint', (0, _asyncToGenerator.default)(function* () {
       const filePath = textEditor.getPath();
       if (filePath == null) {
         return [];
@@ -53,7 +53,7 @@ module.exports = {
       }
       yield instance.pushNewBuffer(filePath, textEditor.getText());
       const diagnostics = yield instance.errors(filePath);
-      if (diagnostics == null) {
+      if (diagnostics == null || textEditor.isDestroyed()) {
         return [];
       }
       return diagnostics.map(function (diagnostic) {
@@ -61,10 +61,19 @@ module.exports = {
         return {
           type: diagnostic.type === 'warning' ? 'Warning' : 'Error',
           filePath,
-          text: diagnostic.message,
+          html: '<pre>' + diagnostic.message + '</pre>',
           range: new _atom.Range(start == null ? [0, 0] : [start.line - 1, start.col], end == null ? [0, 0] : [end.line - 1, end.col])
         };
       });
     }));
   }
-};
+}; /**
+    * Copyright (c) 2015-present, Facebook, Inc.
+    * All rights reserved.
+    *
+    * This source code is licensed under the license found in the LICENSE file in
+    * the root directory of this source tree.
+    *
+    * 
+    * @format
+    */

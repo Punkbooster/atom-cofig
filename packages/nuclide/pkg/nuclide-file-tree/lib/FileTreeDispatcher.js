@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,6 +13,17 @@ function _load_Dispatcher() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const ActionTypes = exports.ActionTypes = Object.freeze({
   COLLAPSE_NODE: 'COLLAPSE_NODE',
   COLLAPSE_NODE_DEEP: 'COLLAPSE_NODE_DEEP',
@@ -31,14 +33,17 @@ const ActionTypes = exports.ActionTypes = Object.freeze({
   EXPAND_NODE_DEEP: 'EXPAND_NODE_DEEP',
   SET_CWD: 'SET_CWD',
   SET_HIDE_IGNORED_NAMES: 'SET_HIDE_IGNORED_NAMES',
+  SET_IS_CALCULATING_CHANGES: 'SET_IS_CALCULATING_CHANGES',
   SET_IGNORED_NAMES: 'SET_IGNORED_NAMES',
   SET_ROOT_KEYS: 'SET_ROOT_KEYS',
   SET_TRACKED_NODE: 'SET_TRACKED_NODE',
   CLEAR_TRACKED_NODE: 'CLEAR_TRACKED_NODE',
+  CLEAR_TRACKED_NODE_IF_NOT_LOADING: 'CLEAR_TRACKED_NODE_IF_NOT_LOADING',
   MOVE_TO_NODE: 'MOVE_TO_NODE',
   SET_DROP_TARGET_NODE: 'SET_DROP_TARGET_NODE',
   SET_USE_PREVIEW_TABS: 'SET_USE_PREVIEW_TABS',
   SET_USE_PREFIX_NAV: 'SET_USE_PREFIX_NAV',
+  SET_AUTO_EXPAND_SINGLE_CHILD: 'SET_AUTO_EXPAND_SINGLE_CHILD',
   SET_VCS_STATUSES: 'SET_VCS_STATUSES',
   SET_REPOSITORIES: 'SET_REPOSITORIES',
   SET_WORKING_SET: 'SET_WORKING_SET',
@@ -63,8 +68,11 @@ const ActionTypes = exports.ActionTypes = Object.freeze({
   MOVE_SELECTION_TO_BOTTOM: 'MOVE_SELECTION_TO_BOTTOM',
   ENSURE_CHILD_NODE: 'ENSURE_CHILD_NODE',
   CLEAR_FILTER: 'CLEAR_FILTER',
+  ADD_EXTRA_PROJECT_SELECTION_CONTENT: 'ADD_EXTRA_PROJECT_SELECTION_CONTENT',
+  REMOVE_EXTRA_PROJECT_SELECTION_CONTENT: 'REMOVE_EXTRA_PROJECT_SELECTION_CONTENT',
   SET_OPEN_FILES_EXPANDED: 'SET_OPEN_FILES_EXPANDED',
   SET_UNCOMMITTED_CHANGES_EXPANDED: 'SET_UNCOMMITTED_CHANGES_EXPANDED',
+  SET_FOLDERS_EXPANDED: 'SET_FOLDERS_EXPANDED',
   INVALIDATE_REMOVED_FOLDER: 'INVALIDATE_REMOVED_FOLDER'
 });
 

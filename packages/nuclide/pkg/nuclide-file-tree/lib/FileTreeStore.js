@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -54,10 +45,10 @@ function _load_immutable() {
 
 var _atom = require('atom');
 
-var _constants;
+var _nuclideVcsBase;
 
-function _load_constants() {
-  return _constants = require('../../nuclide-hg-git-bridge/lib/constants');
+function _load_nuclideVcsBase() {
+  return _nuclideVcsBase = require('../../nuclide-vcs-base');
 }
 
 var _FileTreeFilterHelper;
@@ -72,10 +63,10 @@ function _load_minimatch() {
   return _minimatch = require('minimatch');
 }
 
-var _nuclideHgGitBridge;
+var _observable;
 
-function _load_nuclideHgGitBridge() {
-  return _nuclideHgGitBridge = require('../../nuclide-hg-git-bridge');
+function _load_observable() {
+  return _observable = require('nuclide-commons/observable');
 }
 
 var _hgConstants;
@@ -84,10 +75,10 @@ function _load_hgConstants() {
   return _hgConstants = require('../../nuclide-hg-rpc/lib/hg-constants');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _nuclideWorkingSetsCommon;
@@ -105,7 +96,7 @@ function _load_nuclideAnalytics() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _FileTreeSelectionRange;
@@ -117,11 +108,23 @@ function _load_FileTreeSelectionRange() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Used to ensure the version we serialized is the same version we are deserializing.
-const VERSION = 1;const DEFAULT_CONF = exports.DEFAULT_CONF = {
+const VERSION = 1; /**
+                    * Copyright (c) 2015-present, Facebook, Inc.
+                    * All rights reserved.
+                    *
+                    * This source code is licensed under the license found in the LICENSE file in
+                    * the root directory of this source tree.
+                    *
+                    * 
+                    * @format
+                    */
+
+const DEFAULT_CONF = exports.DEFAULT_CONF = {
   vcsStatuses: new (_immutable || _load_immutable()).default.Map(),
   workingSet: new (_nuclideWorkingSetsCommon || _load_nuclideWorkingSetsCommon()).WorkingSet(),
   editedWorkingSet: new (_nuclideWorkingSetsCommon || _load_nuclideWorkingSetsCommon()).WorkingSet(),
   hideIgnoredNames: true,
+  isCalculatingChanges: false,
   excludeVcsIgnoredPaths: true,
   ignoredPatterns: new (_immutable || _load_immutable()).default.Set(),
   usePreviewTabs: false,
@@ -139,14 +142,13 @@ let instance;
  * dispatcher is a mechanism through which FileTreeActions interfaces with FileTreeStore.
  */
 class FileTreeStore {
-
+  // The configuration for the file-tree. Avoid direct writing.
   static getInstance() {
     if (!instance) {
       instance = new FileTreeStore();
     }
     return instance;
-  } // The configuration for the file-tree. Avoid direct writing.
-
+  }
 
   static dispose() {
     if (instance != null) {
@@ -161,17 +163,18 @@ class FileTreeStore {
     this._dispatcher = (_FileTreeDispatcher || _load_FileTreeDispatcher()).default.getInstance();
     this._emitter = new _atom.Emitter();
     this._dispatcher.register(this._onDispatch.bind(this));
-    this._logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+    this._logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-file-tree');
     this._fileChanges = new (_immutable || _load_immutable()).default.Map();
 
     this._usePrefixNav = false;
+    this._autoExpandSingleChild = true;
     this._isLoadingMap = new (_immutable || _load_immutable()).default.Map();
     this._repositories = new (_immutable || _load_immutable()).default.Set();
 
     this._conf = DEFAULT_CONF;
-    global.FTConf = this._conf;
-    this._suppressChanges = false;
     this._filter = '';
+    this._extraProjectSelectionContent = new (_immutable || _load_immutable()).default.List();
+    this.foldersExpanded = true;
     this.openFilesExpanded = true;
     this.uncommittedChangesExpanded = true;
     this._selectionRange = null;
@@ -224,7 +227,8 @@ class FileTreeStore {
       rootKeys,
       selectedKeysByRoot,
       openFilesExpanded: this.openFilesExpanded,
-      uncommittedChangesExpanded: this.uncommittedChangesExpanded
+      uncommittedChangesExpanded: this.uncommittedChangesExpanded,
+      foldersExpanded: this.foldersExpanded
     };
   }
 
@@ -272,6 +276,10 @@ class FileTreeStore {
       this.uncommittedChangesExpanded = data.uncommittedChangesExpanded;
     }
 
+    if (data.foldersExpanded != null) {
+      this.foldersExpanded = data.foldersExpanded;
+    }
+
     const normalizedAtomPaths = atom.project.getPaths().map((_nuclideUri || _load_nuclideUri()).default.ensureTrailingSeparator);
     const normalizedDataPaths = data.rootKeys.map((_nuclideUri || _load_nuclideUri()).default.ensureTrailingSeparator).filter(rootUri => (_nuclideUri || _load_nuclideUri()).default.isRemote(rootUri) || normalizedAtomPaths.indexOf(rootUri) >= 0);
     const pathsMissingInData = normalizedAtomPaths.filter(rootUri => normalizedDataPaths.indexOf(rootUri) === -1);
@@ -292,6 +300,12 @@ class FileTreeStore {
     });
   }
 
+  _setIsCalculatingChanges(isCalculatingChanges) {
+    this._updateConf(conf => {
+      conf.isCalculatingChanges = isCalculatingChanges;
+    });
+  }
+
   /**
    * Given a list of names to ignore, compile them into minimatch patterns and
    * update the store with them.
@@ -304,7 +318,7 @@ class FileTreeStore {
       try {
         return new (_minimatch || _load_minimatch()).Minimatch(ignoredName, { matchBase: true, dot: true });
       } catch (error) {
-        atom.notifications.addWarning(`Error parsing pattern '${ ignoredName }' from "Settings" > "Ignored Names"`, { detail: error.message });
+        atom.notifications.addWarning(`Error parsing pattern '${ignoredName}' from "Settings" > "Ignored Names"`, { detail: error.message });
         return null;
       }
     }).filter(pattern => pattern != null);
@@ -326,6 +340,9 @@ class FileTreeStore {
         break;
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.CLEAR_TRACKED_NODE:
         this._clearTrackedNode();
+        break;
+      case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.CLEAR_TRACKED_NODE_IF_NOT_LOADING:
+        this._clearTrackedNodeIfNotLoading();
         break;
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.MOVE_TO_NODE:
         this._moveToNode(payload.rootKey, payload.nodeKey);
@@ -351,11 +368,17 @@ class FileTreeStore {
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_USE_PREFIX_NAV:
         this._setUsePrefixNav(payload.usePrefixNav);
         break;
+      case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_AUTO_EXPAND_SINGLE_CHILD:
+        this._setAutoExpandSingleChild(payload.autoExpandSingleChild);
+        break;
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.COLLAPSE_NODE_DEEP:
         this._collapseNodeDeep(payload.rootKey, payload.nodeKey);
         break;
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_HIDE_IGNORED_NAMES:
         this._setHideIgnoredNames(payload.hideIgnoredNames);
+        break;
+      case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_IS_CALCULATING_CHANGES:
+        this._setIsCalculatingChanges(payload.isCalculatingChanges);
         break;
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_IGNORED_NAMES:
         this._setIgnoredNames(payload.ignoredNames);
@@ -433,11 +456,20 @@ class FileTreeStore {
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.CLEAR_FILTER:
         this.clearFilter();
         break;
+      case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.ADD_EXTRA_PROJECT_SELECTION_CONTENT:
+        this.addExtraProjectSelectionContent(payload.content);
+        break;
+      case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.REMOVE_EXTRA_PROJECT_SELECTION_CONTENT:
+        this.removeExtraProjectSelectionContent(payload.content);
+        break;
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_OPEN_FILES_EXPANDED:
         this._setOpenFilesExpanded(payload.openFilesExpanded);
         break;
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_UNCOMMITTED_CHANGES_EXPANDED:
         this._setUncommittedChangesExpanded(payload.uncommittedChangesExpanded);
+        break;
+      case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_FOLDERS_EXPANDED:
+        this._setFoldersExpanded(payload.foldersExpanded);
         break;
       case (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.INVALIDATE_REMOVED_FOLDER:
         this._invalidateRemovedFolder();
@@ -485,7 +517,6 @@ class FileTreeStore {
   * Update a node or a branch under any of the roots it was found at
   */
   _updateNodeAtAllRoots(nodeKey, predicate) {
-
     const roots = this.roots.map(root => {
       const node = root.find(nodeKey);
       if (node == null) {
@@ -546,24 +577,17 @@ class FileTreeStore {
   }
 
   _emitChange() {
-    if (this._suppressChanges) {
-      return;
+    if (this._animationFrameRequestSubscription != null) {
+      this._animationFrameRequestSubscription.unsubscribe();
     }
 
-    if (this._animationFrameRequestId != null) {
-      window.cancelAnimationFrame(this._animationFrameRequestId);
-    }
-
-    this._animationFrameRequestId = window.requestAnimationFrame(() => {
+    this._animationFrameRequestSubscription = (_observable || _load_observable()).nextAnimationFrame.subscribe(() => {
       const { performance } = global;
       const renderStart = performance.now();
-      const childrenCount = this.roots.reduce((sum, root) => sum + root.shownChildrenBelow, 0);
+      const childrenCount = this.roots.reduce((sum, root) => sum + root.shownChildrenCount, 0);
 
       this._emitter.emit('change');
-      this._suppressChanges = true;
-      this._checkTrackedNode();
-      this._suppressChanges = false;
-      this._animationFrameRequestId = null;
+      this._animationFrameRequestSubscription = null;
 
       const duration = (performance.now() - renderStart).toString();
       (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('filetree-root-node-component-render', {
@@ -630,6 +654,10 @@ class FileTreeStore {
     return this.roots.toArray().map(root => root.uri);
   }
 
+  getCwdKey() {
+    return this._cwdKey;
+  }
+
   /**
    * Returns true if the store has no data, i.e. no roots, no children.
    */
@@ -639,6 +667,10 @@ class FileTreeStore {
 
   getFileChanges() {
     return this._fileChanges;
+  }
+
+  getIsCalculatingChanges() {
+    return this._conf.isCalculatingChanges;
   }
 
   _invalidateRemovedFolder() {
@@ -662,7 +694,7 @@ class FileTreeStore {
     const fileChanges = new Map();
     Object.keys(vcsStatuses).forEach(filePath => {
       const statusCode = vcsStatuses[filePath];
-      fileChanges.set(filePath, (_constants || _load_constants()).HgStatusToFileChangeStatus[statusCode]);
+      fileChanges.set(filePath, (_nuclideVcsBase || _load_nuclideVcsBase()).HgStatusToFileChangeStatus[statusCode]);
     });
 
     this._fileChanges = this._fileChanges.set(rootKey, fileChanges);
@@ -706,7 +738,7 @@ class FileTreeStore {
           // An invalid URI might cause an exception to be thrown
           ensurePresentParents(uri);
         } catch (e) {
-          this._logger.error(`Error enriching the VCS statuses for ${ uri }`, e);
+          this._logger.error(`Error enriching the VCS statuses for ${uri}`, e);
         }
       }
     });
@@ -747,6 +779,10 @@ class FileTreeStore {
 
   usePrefixNav() {
     return this._usePrefixNav;
+  }
+
+  _setAutoExpandSingleChild(autoExpandSingleChild) {
+    this._autoExpandSingleChild = autoExpandSingleChild;
   }
 
   /**
@@ -821,6 +857,11 @@ class FileTreeStore {
     return rootNode.find(nodeKey);
   }
 
+  getRootForPath(nodeKey) {
+    const rootNode = this.roots.find(root => nodeKey.startsWith(root.uri));
+    return rootNode || null;
+  }
+
   isEditingWorkingSet() {
     return this._conf.isEditingWorkingSet;
   }
@@ -854,7 +895,7 @@ class FileTreeStore {
     }
 
     const promise = (_FileTreeHelpers || _load_FileTreeHelpers()).default.fetchChildren(nodeKey).then(childrenKeys => this._setFetchedKeys(nodeKey, childrenKeys), error => {
-      this._logger.error(`Unable to fetch children for "${ nodeKey }".`);
+      this._logger.error(`Unable to fetch children for "${nodeKey}".`);
       this._logger.error('Original error: ', error);
 
       // Unless the contents were already fetched in the past
@@ -865,7 +906,11 @@ class FileTreeStore {
           return node.setIsLoading(false);
         }
 
-        return node.set({ isExpanded: false, isLoading: false, children: new (_immutable || _load_immutable()).default.OrderedMap() });
+        return node.set({
+          isExpanded: false,
+          isLoading: false,
+          children: new (_immutable || _load_immutable()).default.OrderedMap()
+        });
       });
 
       this._clearLoading(nodeKey);
@@ -877,6 +922,8 @@ class FileTreeStore {
 
   _setFetchedKeys(nodeKey, childrenKeys = []) {
     const directory = (_FileTreeHelpers || _load_FileTreeHelpers()).default.getDirectoryByKey(nodeKey);
+
+    const nodesToAutoExpand = [];
 
     // The node with URI === nodeKey might be present at several roots - update them all
     this._updateNodeAtAllRoots(nodeKey, node => {
@@ -895,6 +942,10 @@ class FileTreeStore {
         }, this._conf);
       });
 
+      if (this._autoExpandSingleChild && childrenNodes.length === 1 && childrenNodes[0].isContainer) {
+        nodesToAutoExpand.push(childrenNodes[0]);
+      }
+
       const children = (_FileTreeNode || _load_FileTreeNode()).FileTreeNode.childrenFromArray(childrenNodes);
       const subscription = node.subscription || this._makeSubscription(nodeKey, directory);
 
@@ -911,10 +962,18 @@ class FileTreeStore {
         });
       });
 
-      return node.set({ isLoading: false, wasFetched: true, children, subscription });
+      return node.set({
+        isLoading: false,
+        wasFetched: true,
+        children,
+        subscription
+      });
     });
 
     this._clearLoading(nodeKey);
+    nodesToAutoExpand.forEach(node => {
+      this._expandNode(node.rootUri, node.uri);
+    });
   }
 
   _makeSubscription(nodeKey, directory) {
@@ -957,7 +1016,7 @@ class FileTreeStore {
        * Log error and mark the directory as dirty so the failed subscription will be attempted
        * again next time the directory is expanded.
        */
-      this._logger.error(`Cannot subscribe to directory "${ nodeKey }"`, ex);
+      this._logger.error(`Cannot subscribe to directory "${nodeKey}"`, ex);
       return null;
     }
   }
@@ -1027,6 +1086,24 @@ class FileTreeStore {
     }
   }
 
+  getExtraProjectSelectionContent() {
+    return this._extraProjectSelectionContent;
+  }
+
+  addExtraProjectSelectionContent(content) {
+    this._extraProjectSelectionContent = this._extraProjectSelectionContent.push(content);
+    this._emitChange();
+  }
+
+  removeExtraProjectSelectionContent(content) {
+    const index = this._extraProjectSelectionContent.indexOf(content);
+    if (index === -1) {
+      return;
+    }
+    this._extraProjectSelectionContent = this._extraProjectSelectionContent.remove(index);
+    this._emitChange();
+  }
+
   getFilterFound() {
     return this.roots.some(root => root.containsFilterMatches);
   }
@@ -1035,7 +1112,7 @@ class FileTreeStore {
    * Resets the node to be kept in view if no more data is being awaited. Safe to call many times
    * because it only changes state if a node is being tracked.
    */
-  _checkTrackedNode() {
+  _clearTrackedNodeIfNotLoading() {
     if (
     /*
      * The loading map being empty is a heuristic for when loading has completed. It is inexact
@@ -1089,8 +1166,22 @@ class FileTreeStore {
   }
 
   _expandNode(rootKey, nodeKey) {
-    this._updateNodeAtRoot(rootKey, nodeKey, node => {
-      return node.setIsExpanded(true).setRecursive(n => !n.isContainer || !n.isExpanded ? n : null, n => {
+    const recursivelyExpandNode = node => {
+      return node.setIsExpanded(true).setRecursive(n => {
+        if (!n.isContainer) {
+          return n;
+        }
+
+        if (this._autoExpandSingleChild && n.children.size === 1) {
+          if (!n.isExpanded) {
+            return recursivelyExpandNode(n);
+          }
+
+          return null;
+        }
+
+        return !n.isExpanded ? n : null;
+      }, n => {
         if (n.isContainer && n.isExpanded) {
           this._fetchChildKeys(n.uri);
           return n.setIsLoading(true);
@@ -1098,7 +1189,9 @@ class FileTreeStore {
 
         return n;
       });
-    });
+    };
+
+    this._updateNodeAtRoot(rootKey, nodeKey, recursivelyExpandNode);
   }
 
   /**
@@ -1107,7 +1200,8 @@ class FileTreeStore {
    */
   _expandNodeDeep(rootKey, nodeKey) {
     // Stop the traversal after 100 nodes were added to the tree
-    const itNodes = new FileTreeStoreBfsIterator(this, rootKey, nodeKey, /* limit */100);
+    const itNodes = new FileTreeStoreBfsIterator(this, rootKey, nodeKey,
+    /* limit */100);
     const promise = new Promise(resolve => {
       const expand = () => {
         const traversedNodeKey = itNodes.traversedNode();
@@ -1153,14 +1247,17 @@ class FileTreeStore {
 
   _collapseNodeDeep(rootKey, nodeKey) {
     this._updateNodeAtRoot(rootKey, nodeKey, node => {
-      return node.setRecursive(
-      /* prePredicate */null, childNode => {
+      return node.setRecursive( /* prePredicate */null, childNode => {
         if (childNode.subscription != null) {
           childNode.subscription.dispose();
         }
 
         if (childNode.uri !== node.uri) {
-          return childNode.set({ isExpanded: false, isSelected: false, subscription: null });
+          return childNode.set({
+            isExpanded: false,
+            isSelected: false,
+            subscription: null
+          });
         } else {
           return childNode.set({ isExpanded: false, subscription: null });
         }
@@ -1229,7 +1326,6 @@ class FileTreeStore {
    * When this function returns, the selection range always contains valid data.
    */
   _refreshSelectionRange() {
-
     const invalidate = () => {
       this._selectionRange = null;
       return null;
@@ -1258,7 +1354,14 @@ class FileTreeStore {
 
     selectionRange = new (_FileTreeSelectionRange || _load_FileTreeSelectionRange()).SelectionRange((_FileTreeSelectionRange || _load_FileTreeSelectionRange()).RangeKey.of(anchorNode), (_FileTreeSelectionRange || _load_FileTreeSelectionRange()).RangeKey.of(rangeNode));
     this._setSelectionRange(selectionRange);
-    return { selectionRange, anchorNode, rangeNode, anchorIndex, rangeIndex, direction };
+    return {
+      selectionRange,
+      anchorNode,
+      rangeNode,
+      anchorIndex,
+      rangeIndex,
+      direction
+    };
   }
 
   /**
@@ -1293,16 +1396,16 @@ class FileTreeStore {
       if (!node.shouldBeShown) {
         return node;
       }
-      if (node.shownChildrenBelow === 1) {
+      if (node.shownChildrenCount === 1) {
         beginIndex++;
         return node;
       }
-      const endIndex = beginIndex + node.shownChildrenBelow - 1;
+      const endIndex = beginIndex + node.shownChildrenCount - 1;
       if (beginIndex <= modMaxIndex && modMinIndex <= endIndex) {
         beginIndex++;
         return null;
       }
-      beginIndex += node.shownChildrenBelow;
+      beginIndex += node.shownChildrenCount;
       return node;
     },
     // flip the isSelected flag accordingly, based on previous and current range.
@@ -1310,7 +1413,7 @@ class FileTreeStore {
       if (!node.shouldBeShown) {
         return node;
       }
-      const curIndex = beginIndex - node.shownChildrenBelow;
+      const curIndex = beginIndex - node.shownChildrenCount;
       const inOldRange = Math.sign(curIndex - anchorIndex) * Math.sign(curIndex - rangeIndex) !== 1;
       const inNewRange = Math.sign(curIndex - anchorIndex) * Math.sign(curIndex - nextRangeIndex) !== 1;
       if (inOldRange && inNewRange || !inOldRange && !inNewRange) {
@@ -1531,7 +1634,7 @@ class FileTreeStore {
 
   /**
   * Makes sure a certain child node is present in the file tree, creating all its ancestors, if
-  * needed and scheduling a chilld key fetch. Used by the reveal active file functionality.
+  * needed and scheduling a child key fetch. Used by the reveal active file functionality.
   */
   _ensureChildNode(nodeKey) {
     let firstRootUri;
@@ -1595,6 +1698,7 @@ class FileTreeStore {
       return this._bubbleUp(deepest, deepest.set({
         isLoading: true,
         isExpanded: true,
+        isPendingLoad: true,
         children: deepest.children.set(currentChild.name, currentChild)
       }), expandNode);
     });
@@ -1624,7 +1728,7 @@ class FileTreeStore {
     this._updateConf(conf => {
       const reposByRoot = {};
       this.roots.forEach(root => {
-        reposByRoot[root.uri] = (0, (_nuclideHgGitBridge || _load_nuclideHgGitBridge()).repositoryForPath)(root.uri);
+        reposByRoot[root.uri] = (0, (_nuclideVcsBase || _load_nuclideVcsBase()).repositoryForPath)(root.uri);
       });
       conf.reposByRoot = reposByRoot;
     });
@@ -1637,6 +1741,12 @@ class FileTreeStore {
   }
 
   _setOpenFilesWorkingSet(openFilesWorkingSet) {
+    // Optimization: with an empty working set, we don't need a full tree refresh.
+    if (this._conf.workingSet.isEmpty()) {
+      this._conf.openFilesWorkingSet = openFilesWorkingSet;
+      this._emitChange();
+      return;
+    }
     this._updateConf(conf => {
       conf.openFilesWorkingSet = openFilesWorkingSet;
     });
@@ -1726,6 +1836,11 @@ class FileTreeStore {
 
   _setUncommittedChangesExpanded(uncommittedChangesExpanded) {
     this.uncommittedChangesExpanded = uncommittedChangesExpanded;
+    this._emitChange();
+  }
+
+  _setFoldersExpanded(foldersExpanded) {
+    this.foldersExpanded = foldersExpanded;
     this._emitChange();
   }
 

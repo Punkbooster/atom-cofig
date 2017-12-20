@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -15,6 +6,17 @@ Object.defineProperty(exports, "__esModule", {
 exports.runSingleCommand = exports.occurrences = exports.cases = exports.outline = exports.errors = exports.complete = exports.enclosingType = exports.locate = exports.pushNewBuffer = exports.pushDotMerlinPath = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 let pushDotMerlinPath = exports.pushDotMerlinPath = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (path) {
@@ -41,7 +43,7 @@ let pushNewBuffer = exports.pushNewBuffer = (() => {
 let locate = exports.locate = (() => {
   var _ref3 = (0, _asyncToGenerator.default)(function* (path, line, col, kind) {
     const instance = yield (0, (_MerlinProcess || _load_MerlinProcess()).getInstance)(path);
-    return instance ? yield instance.locate(path, line, col, kind) : null;
+    return instance ? instance.locate(path, line, col, kind) : null;
   });
 
   return function locate(_x4, _x5, _x6, _x7) {
@@ -58,7 +60,7 @@ let locate = exports.locate = (() => {
 let enclosingType = exports.enclosingType = (() => {
   var _ref4 = (0, _asyncToGenerator.default)(function* (path, line, col) {
     const instance = yield (0, (_MerlinProcess || _load_MerlinProcess()).getInstance)(path);
-    return instance ? yield instance.enclosingType(path, line, col) : null;
+    return instance ? instance.enclosingType(path, line, col) : null;
   });
 
   return function enclosingType(_x8, _x9, _x10) {

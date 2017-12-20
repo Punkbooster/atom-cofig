@@ -775,8 +775,8 @@ var obj: {a: boolean; b: string; c: Foo} = {a: true, b: "Hi", c: new Foo()};
 //                                  ^^^                                       support.type.class.flowtype
 //                                     ^                                      meta.brace.curly.close.flowtype
 //                                       ^                                    keyword.operator.assignment.js
-//                                         ^                              ^   meta.brace.curly.js
-//                                          ^^       ^^       ^^              constant.other.object.key.js
+//                                         ^                              ^   meta.brace.curly.litobj.js
+//                                          ^        ^        ^               constant.other.object.key.js
 //                                          ^        ^        ^               string.unquoted.js
 //                                           ^        ^        ^              punctuation.separator.key-value.js
 //                                             ^^^^                           constant.language.boolean.true.js
@@ -812,8 +812,8 @@ var obj: { a: string; b?: number } = { a: "hello" };
 //                     ^                              keyword.operator.optional.parameter.flowtype
 //                               ^                    meta.brace.curly.close.flowtype
 //                                 ^                  keyword.operator.assignment.js
-//                                   ^            ^   meta.brace.curly.js
-//                                     ^^             constant.other.object.key.js
+//                                   ^            ^   meta.brace.curly.litobj.js
+//                                     ^              constant.other.object.key.js
 //                                     ^              string.unquoted.js
 //                                      ^             punctuation.separator.key-value.js
 //                                        ^^^^^^^     string.quoted.double.js
@@ -1089,8 +1089,8 @@ var b: { f: typeof Foo } = { f : Foo };
 //                 ^^^                   support.type.class.flowtype
 //                     ^                 meta.brace.curly.close.flowtype
 //                       ^               keyword.operator.assignment.js
-//                         ^         ^   meta.brace.curly.js
-//                           ^ ^         constant.other.object.key.js
+//                         ^         ^   meta.brace.curly.litobj.js
+//                           ^           constant.other.object.key.js
 //                           ^           string.unquoted.js
 //                             ^         punctuation.separator.key-value.js
 //                                    ^  punctuation.terminator.statement.js
@@ -1370,9 +1370,9 @@ declare class Object {
   [key:any]: any;
 //^^^^^^^^^^ ^^^^  meta.class.body.js
 //^       ^        meta.brace.square.js
-// ^^^ ^^^         variable.other.readwrite.js
+// ^^^             variable.other.readwrite.js
+//     ^^^   ^^^   support.type.builtin.primitive.flowtype
 //         ^       punctuation.type.flowtype
-//           ^^^   support.type.builtin.primitive.flowtype
 //              ^  punctuation.terminator.statement.js
   apply(thisArg: any, argArray?: any): any;
 //^^^^^^^^^^^^^^ ^^^^ ^^^^^^^^^^ ^^^^^ ^^^^  meta.class.body.js

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,16 +7,27 @@ Object.defineProperty(exports, "__esModule", {
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const FETCH_REVISIONS_DEBOUNCE_MS = 100;
 // The request timeout is 60 seconds anyways.
@@ -60,13 +62,18 @@ class RevisionsCache {
     // Using `defer` will guarantee a fresh subscription / execution on retries,
     // even though `_fetchSmartlogRevisions` returns a `refCount`ed shared Observable.
     _rxjsBundlesRxMinJs.Observable.defer(() => this._fetchSmartlogRevisions()).retry(FETCH_REVISIONS_RETRY_COUNT).catch(error => {
-      (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error('RevisionsCache Error:', error);
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-hg-repository-client').error('RevisionsCache Error:', error);
       return _rxjsBundlesRxMinJs.Observable.empty();
     })).distinctUntilChanged(isEqualRevisions).do(revisions => this._revisions.next(revisions)).share();
   }
 
   _fetchSmartlogRevisions() {
-    return this._hgService.fetchSmartlogRevisions().refCount().timeout(FETCH_REVISIONS_TIMEOUT_MS, new Error('Timed out fetching smartlog revisions'));
+    return this._hgService.fetchSmartlogRevisions().refCount().timeout(FETCH_REVISIONS_TIMEOUT_MS).catch(err => {
+      if (err instanceof _rxjsBundlesRxMinJs.TimeoutError) {
+        throw new Error('Timed out fetching smartlog revisions');
+      }
+      throw err;
+    });
   }
 
   refreshRevisions() {
@@ -80,7 +87,5 @@ class RevisionsCache {
   observeRevisionChanges() {
     return this._lazyRevisionFetcher.startWith(this.getCachedRevisions());
   }
-
 }
 exports.default = RevisionsCache;
-module.exports = exports['default'];

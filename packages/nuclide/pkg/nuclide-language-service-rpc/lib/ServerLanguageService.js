@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,11 +7,15 @@ exports.ServerLanguageService = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+exports.ensureInvalidations = ensureInvalidations;
+
 var _nuclideOpenFilesRpc;
 
 function _load_nuclideOpenFilesRpc() {
   return _nuclideOpenFilesRpc = require('../../nuclide-open-files-rpc');
 }
+
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -39,6 +34,10 @@ class ServerLanguageService {
     this._service = service;
   }
 
+  getSingleFileLanguageService() {
+    return this._service;
+  }
+
   getDiagnostics(fileVersion) {
     var _this = this;
 
@@ -48,7 +47,7 @@ class ServerLanguageService {
       if (buffer == null) {
         return null;
       }
-      return yield _this._service.getDiagnostics(filePath, buffer);
+      return _this._service.getDiagnostics(filePath, buffer);
     })();
   }
 
@@ -56,16 +55,17 @@ class ServerLanguageService {
     return this._service.observeDiagnostics().publish();
   }
 
-  getAutocompleteSuggestions(fileVersion, position, activatedManually) {
+  getAutocompleteSuggestions(fileVersion, position, request) {
     var _this2 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
       const filePath = fileVersion.filePath;
       const buffer = yield (0, (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).getBufferAtVersion)(fileVersion);
       if (buffer == null) {
-        return [];
+        // TODO: this should return null so the empty list doesn't get cached
+        return { isIncomplete: false, items: [] };
       }
-      return yield _this2._service.getAutocompleteSuggestions(filePath, buffer, position, activatedManually);
+      return _this2._service.getAutocompleteSuggestions(filePath, buffer, position, request.activatedManually, request.prefix);
     })();
   }
 
@@ -78,12 +78,8 @@ class ServerLanguageService {
       if (buffer == null) {
         return null;
       }
-      return yield _this3._service.getDefinition(filePath, buffer, position);
+      return _this3._service.getDefinition(filePath, buffer, position);
     })();
-  }
-
-  getDefinitionById(file, id) {
-    return this._service.getDefinitionById(file, id);
   }
 
   findReferences(fileVersion, position) {
@@ -95,7 +91,7 @@ class ServerLanguageService {
       if (buffer == null) {
         return null;
       }
-      return yield _this4._service.findReferences(filePath, buffer, position);
+      return _this4._service.findReferences(filePath, buffer, position);
     })();
   }
 
@@ -112,7 +108,7 @@ class ServerLanguageService {
       if (buffer == null) {
         return null;
       }
-      return yield _this5._service.getOutline(filePath, buffer);
+      return _this5._service.getOutline(filePath, buffer);
     })();
   }
 
@@ -125,7 +121,7 @@ class ServerLanguageService {
       if (buffer == null) {
         return null;
       }
-      return yield _this6._service.typeHint(filePath, buffer, position);
+      return _this6._service.typeHint(filePath, buffer, position);
     })();
   }
 
@@ -138,11 +134,11 @@ class ServerLanguageService {
       if (buffer == null) {
         return [];
       }
-      return yield _this7._service.highlight(filePath, buffer, position);
+      return _this7._service.highlight(filePath, buffer, position);
     })();
   }
 
-  formatSource(fileVersion, range) {
+  formatSource(fileVersion, range, options) {
     var _this8 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
@@ -151,11 +147,11 @@ class ServerLanguageService {
       if (buffer == null) {
         return null;
       }
-      return yield _this8._service.formatSource(filePath, buffer, range);
+      return _this8._service.formatSource(filePath, buffer, range, options);
     })();
   }
 
-  getEvaluationExpression(fileVersion, position) {
+  formatEntireFile(fileVersion, range, options) {
     var _this9 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
@@ -164,8 +160,45 @@ class ServerLanguageService {
       if (buffer == null) {
         return null;
       }
-      return yield _this9._service.getEvaluationExpression(filePath, buffer, position);
+      return _this9._service.formatEntireFile(filePath, buffer, range, options);
     })();
+  }
+
+  formatAtPosition(fileVersion, position, triggerCharacter, options) {
+    var _this10 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const filePath = fileVersion.filePath;
+      const buffer = yield (0, (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).getBufferAtVersion)(fileVersion);
+      if (buffer == null) {
+        return null;
+      }
+      return _this10._service.formatAtPosition(filePath, buffer, position, triggerCharacter, options);
+    })();
+  }
+
+  getEvaluationExpression(fileVersion, position) {
+    var _this11 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const filePath = fileVersion.filePath;
+      const buffer = yield (0, (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).getBufferAtVersion)(fileVersion);
+      if (buffer == null) {
+        return null;
+      }
+      return _this11._service.getEvaluationExpression(filePath, buffer, position);
+    })();
+  }
+
+  supportsSymbolSearch(directories) {
+    return Promise.resolve(false);
+    // A single-file language service by definition cannot offer
+    // "project-wide symbol search". If you want your language to offer
+    // symbols, you'll have to implement LanguageService directly.
+  }
+
+  symbolSearch(query, directories) {
+    return Promise.resolve(null);
   }
 
   getProjectRoot(fileUri) {
@@ -173,10 +206,10 @@ class ServerLanguageService {
   }
 
   isFileInProject(fileUri) {
-    var _this10 = this;
+    var _this12 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return _this10._service.isFileInProject(fileUri);
+      return _this12._service.isFileInProject(fileUri);
     })();
   }
 
@@ -184,4 +217,46 @@ class ServerLanguageService {
     this._service.dispose();
   }
 }
-exports.ServerLanguageService = ServerLanguageService;
+
+exports.ServerLanguageService = ServerLanguageService; // Assert that ServerLanguageService satisifes the LanguageService interface:
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+null;
+
+function ensureInvalidations(logger, diagnostics) {
+  const filesWithErrors = new Set();
+  const trackedDiagnostics = diagnostics.do(diagnosticArray => {
+    for (const diagnostic of diagnosticArray) {
+      const filePath = diagnostic.filePath;
+      if (diagnostic.messages.length === 0) {
+        logger.debug(`Removing ${filePath} from files with errors`);
+        filesWithErrors.delete(filePath);
+      } else {
+        logger.debug(`Adding ${filePath} to files with errors`);
+        filesWithErrors.add(filePath);
+      }
+    }
+  });
+
+  const fileInvalidations = _rxjsBundlesRxMinJs.Observable.defer(() => {
+    logger.debug('Clearing errors after stream closed');
+    return _rxjsBundlesRxMinJs.Observable.of(Array.from(filesWithErrors).map(file => {
+      logger.debug(`Clearing errors for ${file} after connection closed`);
+      return {
+        filePath: file,
+        messages: []
+      };
+    }));
+  });
+
+  return trackedDiagnostics.concat(fileInvalidations);
+}

@@ -1,16 +1,19 @@
-'use strict';
-/* @noflow */
-
-/*
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * @noflow
  */
+'use strict';
 
-/* NON-TRANSPILED FILE */
-/* eslint comma-dangle: [1, always-multiline], prefer-object-spread/prefer-object-spread: 0 */
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
 
 /* eslint-disable no-console */
 
@@ -26,6 +29,14 @@ const COMMAND_NAME_MATCHER = /^(\w+)/;
 const port = process.argv[2] || 9000;
 
 console.log('Attempting to connect on port: ' + port);
+
+const readline = require('readline');
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: true,
+  prompt: 'xdebug> ',
+});
 
 let socket = null;
 
@@ -43,26 +54,16 @@ const server = net.createServer(
       const components = data.toString().split('\x00');
       console.log('components count: ' + components.length);
       console.log('message content length: ' + components[1].length);
-      process.stdout.write(DBG_PROMPT_TEXT);
+      rl.prompt();
     });
   });
 
 server.listen(port, () => { // 'listening' listener
-  console.log('server bound');
-});
-
-const readline = require('readline');
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  terminal: false,
+  console.log('server bound... waiting for connection from debugger');
 });
 
 let commandId = 0;
-const DBG_PROMPT_TEXT = 'xdebug> ';
-process.stdout.write(DBG_PROMPT_TEXT);
 rl.on('line', line_ => {
-  process.stdout.write(DBG_PROMPT_TEXT);
   if (socket == null) {
     return;
   }

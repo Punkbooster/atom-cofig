@@ -7,24 +7,8 @@
           "label": "Buck",
           "submenu": [
             {
-              "label": "Toggle Buck Toolbar",
-              "command": "nuclide-task-runner:toggle-Buck-toolbar"
-            },
-            {
-              "label": "Build",
-              "command": "nuclide-task-runner:Buck-build"
-            },
-            {
-              "label": "Run",
-              "command": "nuclide-task-runner:Buck-run"
-            },
-            {
-              "label": "Test",
-              "command": "nuclide-task-runner:Buck-test"
-            },
-            {
-              "label": "Debug",
-              "command": "nuclide-task-runner:Buck-debug"
+              "label": "Open nearest BUCK file",
+              "command": "nuclide-buck:open-nearest-build-file"
             }
           ]
         }

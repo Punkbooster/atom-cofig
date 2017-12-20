@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,7 +8,7 @@ exports.default = syncAtomCommands;
 var _observable;
 
 function _load_observable() {
-  return _observable = require('../commons-node/observable');
+  return _observable = require('nuclide-commons/observable');
 }
 
 var _atom = require('atom');
@@ -30,6 +21,17 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
  * result (commands), we diff the input (sets) since it's easier and less likely to contain
  * functions (which are unlikely to be able to be safely compared using `===`).
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function syncAtomCommands(source, project, hash) {
   // Add empty sets before completing and erroring to make sure that we remove remaining commands
   // in both cases.
@@ -41,4 +43,3 @@ function syncAtomCommands(source, project, hash) {
     return new _atom.CompositeDisposable(...disposables);
   }, hash);
 }
-module.exports = exports['default'];

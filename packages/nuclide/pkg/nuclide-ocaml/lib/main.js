@@ -1,25 +1,50 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.deactivate = exports.activate = undefined;
+
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+let activate = exports.activate = (() => {
+  var _ref = (0, _asyncToGenerator.default)(function* () {
+    if (yield (0, (_OCamlService || _load_OCamlService()).getUseLspConnection)()) {
+      const ocamlLspLanguageService = (0, (_OCamlLanguage || _load_OCamlLanguage()).createLanguageService)();
+      ocamlLspLanguageService.activate();
+      disposables.add(ocamlLspLanguageService);
+    } else {
+      disposables.add(atom.commands.add('atom-workspace', 'nuclide-ocaml:destructure', function () {
+        const editor = atom.workspace.getActiveTextEditor();
+        if (editor) {
+          (0, (_DestructureHelpers || _load_DestructureHelpers()).cases)(editor, editor.getCursorScreenPosition());
+        }
+      }), atom.packages.serviceHub.provide('outline-view', '0.1.0', provideOutlines()), atom.packages.serviceHub.provide('nuclide-type-hint.provider', '0.0.0', createTypeHintProvider()), atom.packages.serviceHub.provide('autocomplete.provider', '2.0.0', createAutocompleteProvider()), atom.packages.serviceHub.provide('hyperclick', '0.1.0', getHyperclickProvider()), atom.packages.serviceHub.provide('linter', '1.0.0', provideLinter()), atom.packages.serviceHub.provide('code-format.file', '0.1.0', createCodeFormatProvider()));
+    }
+  });
+
+  return function activate() {
+    return _ref.apply(this, arguments);
+  };
+})();
+
+let deactivate = exports.deactivate = (() => {
+  var _ref2 = (0, _asyncToGenerator.default)(function* () {
+    disposables.dispose();
+    disposables = new _atom.CompositeDisposable();
+  });
+
+  return function deactivate() {
+    return _ref2.apply(this, arguments);
+  };
+})();
+
 exports.getHyperclickProvider = getHyperclickProvider;
 exports.createAutocompleteProvider = createAutocompleteProvider;
 exports.provideLinter = provideLinter;
 exports.provideOutlines = provideOutlines;
 exports.createTypeHintProvider = createTypeHintProvider;
 exports.createCodeFormatProvider = createCodeFormatProvider;
-exports.activate = activate;
-exports.deactivate = deactivate;
 
 var _nuclideAnalytics;
 
@@ -77,7 +102,30 @@ function _load_CodeFormatHelpers() {
 
 var _atom = require('atom');
 
+var _OCamlLanguage;
+
+function _load_OCamlLanguage() {
+  return _OCamlLanguage = require('./OCamlLanguage');
+}
+
+var _OCamlService;
+
+function _load_OCamlService() {
+  return _OCamlService = require('../../nuclide-ocaml-rpc/lib/OCamlService');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 function getHyperclickProvider() {
   return (_HyperclickProvider || _load_HyperclickProvider()).default;
@@ -85,7 +133,7 @@ function getHyperclickProvider() {
 
 function createAutocompleteProvider() {
   const getSuggestions = request => {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-ocaml:getAutocompleteSuggestions', () => (_AutoComplete || _load_AutoComplete()).default.getAutocompleteSuggestions(request));
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-ocaml:getAutocompleteSuggestions', () => (_AutoComplete || _load_AutoComplete()).default.getAutocompleteSuggestions(request));
   };
   return {
     selector: '.source.ocaml, .source.reason',
@@ -123,28 +171,10 @@ function createTypeHintProvider() {
 
 function createCodeFormatProvider() {
   return {
-    selector: Array.from((_constants || _load_constants()).GRAMMARS).join(', '),
-    inclusionPriority: 1,
+    grammarScopes: Array.from((_constants || _load_constants()).GRAMMARS),
+    priority: 1,
     formatEntireFile: (editor, range) => (0, (_CodeFormatHelpers || _load_CodeFormatHelpers()).getEntireFormatting)(editor, range)
   };
 }
 
-let disposables;
-
-function activate() {
-  if (!disposables) {
-    disposables = new _atom.CompositeDisposable();
-
-    disposables.add(atom.commands.add('atom-workspace', 'nuclide-ocaml:destructure', () => {
-      const editor = atom.workspace.getActiveTextEditor();
-      if (editor) {
-        (0, (_DestructureHelpers || _load_DestructureHelpers()).cases)(editor, editor.getCursorScreenPosition());
-      }
-    }));
-  }
-}
-
-function deactivate() {
-  disposables && disposables.dispose();
-  disposables = null;
-}
+let disposables = new _atom.CompositeDisposable();

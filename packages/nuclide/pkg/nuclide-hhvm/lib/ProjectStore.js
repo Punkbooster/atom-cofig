@@ -1,13 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -30,13 +25,13 @@ function _load_nuclideAnalytics() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -48,13 +43,17 @@ class ProjectStore {
     this._emitter = new _atom.Emitter();
     this._currentFilePath = '';
     this._projectRoot = new _rxjsBundlesRxMinJs.BehaviorSubject();
-    this._projectType = 'Other';
+    this._isHHVMProject = null;
     this._debugMode = 'webserver';
     this._filePathsToScriptCommand = new Map();
 
     const onDidChange = this._onDidChangeActivePaneItem.bind(this);
-    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._projectRoot.switchMap(root => this._isFileHHVMProject(root)).subscribe(isHHVM => {
-      this._projectType = isHHVM ? 'Hhvm' : 'Other';
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._projectRoot.do(() => {
+      // Set the project type to a "loading" state.
+      this._isHHVMProject = null;
+      this._emitter.emit('change');
+    }).switchMap(root => this._isFileHHVMProject(root)).subscribe(isHHVM => {
+      this._isHHVMProject = isHHVM;
       this._emitter.emit('change');
     }), atom.workspace.onDidStopChangingActivePaneItem(onDidChange));
     onDidChange();
@@ -75,8 +74,8 @@ class ProjectStore {
   }
 
   _isFileHHVMProject(fileUri) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('toolbar.isFileHHVMProject', (0, _asyncToGenerator.default)(function* () {
-      return fileUri != null && (_nuclideUri || _load_nuclideUri()).default.isRemote(fileUri) && (yield (0, (_HackLanguage || _load_HackLanguage()).isFileInHackProject)(fileUri));
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('toolbar.isFileHHVMProject', (0, _asyncToGenerator.default)(function* () {
+      return fileUri != null && (_nuclideUri || _load_nuclideUri()).default.isRemote(fileUri) && (0, (_HackLanguage || _load_HackLanguage()).isFileInHackProject)(fileUri);
     }));
   }
 
@@ -108,8 +107,8 @@ class ProjectStore {
     return this._projectRoot.getValue();
   }
 
-  getProjectType() {
-    return this._projectType;
+  isHHVMProject() {
+    return this._isHHVMProject;
   }
 
   getDebugMode() {
@@ -123,7 +122,7 @@ class ProjectStore {
 
   getDebugTarget() {
     const filePath = this._currentFilePath;
-    if (this._debugMode === 'script') {
+    if (this._debugMode !== 'webserver') {
       const localPath = (_nuclideUri || _load_nuclideUri()).default.getPath(filePath);
       const lastScriptCommand = this.getLastScriptCommand(localPath);
       return lastScriptCommand === '' ? localPath : lastScriptCommand;
@@ -142,5 +141,13 @@ class ProjectStore {
     this._disposables.dispose();
   }
 }
-
-module.exports = ProjectStore;
+exports.default = ProjectStore; /**
+                                 * Copyright (c) 2015-present, Facebook, Inc.
+                                 * All rights reserved.
+                                 *
+                                 * This source code is licensed under the license found in the LICENSE file in
+                                 * the root directory of this source tree.
+                                 *
+                                 * 
+                                 * @format
+                                 */

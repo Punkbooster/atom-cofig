@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -31,24 +22,24 @@ exports.trackImmediate = trackImmediate;
 exports.trackEvent = trackEvent;
 exports.trackEvents = trackEvents;
 exports.startTracking = startTracking;
-exports.trackOperationTiming = trackOperationTiming;
+exports.trackTiming = trackTiming;
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
 var _performanceNow;
 
 function _load_performanceNow() {
-  return _performanceNow = _interopRequireDefault(require('../../commons-node/performanceNow'));
+  return _performanceNow = _interopRequireDefault(require('nuclide-commons/performanceNow'));
 }
 
 var _track;
@@ -130,11 +121,11 @@ function startTracking(eventName) {
  *
  * Usage:
  *
- * analytics.trackOperationTiming('my-package-some-long-operation' () => doit());
+ * analytics.trackTiming('my-package-some-long-operation' () => doit());
  *
  * Returns (or throws) the result of the operation.
  */
-function trackOperationTiming(eventName, operation) {
+function trackTiming(eventName, operation) {
   const tracker = startTracking(eventName);
 
   try {

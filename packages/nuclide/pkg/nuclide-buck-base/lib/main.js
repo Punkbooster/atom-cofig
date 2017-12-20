@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -48,7 +39,7 @@ exports.getBuckService = getBuckService;
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _nuclideRemoteConnection;
@@ -59,7 +50,18 @@ function _load_nuclideRemoteConnection() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const buckProjectDirectoryByPath = new Map();function isBuckFile(filePath) {
+const buckProjectDirectoryByPath = new Map(); /**
+                                               * Copyright (c) 2015-present, Facebook, Inc.
+                                               * All rights reserved.
+                                               *
+                                               * This source code is licensed under the license found in the LICENSE file in
+                                               * the root directory of this source tree.
+                                               *
+                                               * 
+                                               * @format
+                                               */
+
+function isBuckFile(filePath) {
   // TODO(mbolin): Buck does have an option where the user can customize the
   // name of the build file: https://github.com/facebook/buck/issues/238.
   // This function will not work for those who use that option.

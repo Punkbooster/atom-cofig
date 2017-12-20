@@ -1,13 +1,33 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.ActionsObservable = undefined;
+exports.combineEpics = combineEpics;
+exports.createEpicMiddleware = createEpicMiddleware;
+
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+
+// This should be { type: readonly string } when we get readonly props. Because this is used with
+// disjoint unions we can't use `string` here due to mutation concerns. Flow doesn't know that we
+// aren't going to mutate the objects with a random string value so it can't allow us to pass a
+// specific action type into something of type { type: string }
+function combineEpics(...epics) {
+  return (actions, store, extra) => {
+    const streams = epics.map(epic => epic(actions, store, extra));
+    return _rxjsBundlesRxMinJs.Observable.merge(...streams);
+  };
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 // Derived from <https://github.com/redux-observable/redux-observable/> because their version
 // imports an Rx operator module and we use a bundle. Original license follows:
@@ -34,25 +54,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.ActionsObservable = undefined;
-exports.combineEpics = combineEpics;
-exports.createEpicMiddleware = createEpicMiddleware;
-
-var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
-
-// This should be { type: readonly string } when we get readonly props. Because this is used with
-// disjoint unions we can't use `string` here due to mutation concerns. Flow doesn't know that we
-// aren't going to mutate the objects with a random string value so it can't allow us to pass a
-// specific action type into something of type { type: string }
-function combineEpics(...epics) {
-  return (actions, store) => {
-    const streams = epics.map(epic => epic(actions, store));
-    return _rxjsBundlesRxMinJs.Observable.merge(...streams);
-  };
-}function createEpicMiddleware(rootEpic) {
+function createEpicMiddleware(rootEpic) {
   const actions = new _rxjsBundlesRxMinJs.Subject();
   const actionsObs = new ActionsObservable(actions);
 

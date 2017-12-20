@@ -1,16 +1,19 @@
-'use strict';
-/* @noflow */
-
-/*
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * @noflow
  */
+'use strict';
 
-/* NON-TRANSPILED FILE */
-/* eslint comma-dangle: [1, always-multiline], prefer-object-spread/prefer-object-spread: 0 */
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
 
 const assert = require('assert');
 const Module = require('module');
@@ -30,7 +33,6 @@ let stopTime = null;
 
 // This function shows up in stack traces - make the name distinct.
 function profile_require_time(request, parent, isMain) {
-
   // https://github.com/nodejs/node/blob/v4.1.1/lib/module.js#L276
   if (request === 'internal/repl' || request === 'repl') {
     return _real_ModuleLoad.call(Module, request, parent, isMain);

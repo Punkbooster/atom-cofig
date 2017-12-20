@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -29,7 +20,7 @@ function _load_eventKit() {
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
 class SocketTransport extends (_StreamTransport || _load_StreamTransport()).StreamTransport {
@@ -37,7 +28,6 @@ class SocketTransport extends (_StreamTransport || _load_StreamTransport()).Stre
   constructor(socket, messageLogger = (direction, message) => {
     return;
   }) {
-    // $FlowIssue: Sockets are a stream$Duplex, but flow doesn't handle this.
     super(socket, socket, messageLogger);
     this._socket = socket;
     this._emitter = new (_eventKit || _load_eventKit()).Emitter();
@@ -75,4 +65,13 @@ class SocketTransport extends (_StreamTransport || _load_StreamTransport()).Stre
     this._emitter.dispose();
   }
 }
-exports.SocketTransport = SocketTransport;
+exports.SocketTransport = SocketTransport; /**
+                                            * Copyright (c) 2015-present, Facebook, Inc.
+                                            * All rights reserved.
+                                            *
+                                            * This source code is licensed under the license found in the LICENSE file in
+                                            * the root directory of this source tree.
+                                            *
+                                            * 
+                                            * @format
+                                            */

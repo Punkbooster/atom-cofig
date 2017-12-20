@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -54,7 +45,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * Note that 0 pid also does not filter on process id.
  */
 
-const DBGP_ATTACH_EVENT = 'dbgp-attach-event';
+const DBGP_ATTACH_EVENT = 'dbgp-attach-event'; /**
+                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                * All rights reserved.
+                                                *
+                                                * This source code is licensed under the license found in the LICENSE file in
+                                                * the root directory of this source tree.
+                                                *
+                                                * 
+                                                * @format
+                                                */
+
 const DBGP_CLOSE_EVENT = 'dbgp-close-event';
 const DBGP_ERROR_EVENT = 'dbgp-error-event';
 
@@ -74,7 +75,7 @@ class DbgpConnector {
   constructor(port) {
     this._server = null;
     this._emitter = new (_eventKit || _load_eventKit()).Emitter();
-    this._messageHandler = (0, (_DbgpMessageHandler || _load_DbgpMessageHandler()).getDbgpMessageHandlerInstance)();
+    this._messageHandler = new (_DbgpMessageHandler || _load_DbgpMessageHandler()).DbgpMessageHandler();
     this._port = port;
   }
 
@@ -91,26 +92,28 @@ class DbgpConnector {
   }
 
   listen() {
-    (_utils || _load_utils()).default.log('Creating debug server on port ' + this._port);
+    (_utils || _load_utils()).default.debug('Creating debug server on port ' + this._port);
 
     const server = _net.default.createServer();
 
-    server.on('close', socket => (_utils || _load_utils()).default.log('Closing port ' + this._port));
+    server.on('close', socket => (_utils || _load_utils()).default.debug('Closing port ' + this._port));
     server.listen(this._port, undefined, // Hostname.
     undefined, // Backlog -- the maximum length of the queue of pending connections.
-    () => (_utils || _load_utils()).default.log('Listening on port ' + this._port));
+    () => (_utils || _load_utils()).default.debug('Listening on port ' + this._port));
 
     server.on('error', error => this._onServerError(error));
     server.on('connection', socket => this._onSocketConnection(socket));
     server.on('close', () => {
-      (_utils || _load_utils()).default.log('DBGP Server closed.');
+      (_utils || _load_utils()).default.debug('DBGP Server closed.');
     });
 
     this._server = server;
   }
 
   _onSocketConnection(socket) {
-    (_utils || _load_utils()).default.log('Connection on port ' + this._port);
+    // Xdebug encodes XML messages as iso-8859-1, which is the same as 'latin1'.
+    socket.setEncoding('latin1');
+    (_utils || _load_utils()).default.debug('Connection on port ' + this._port);
     if (!this._checkListening(socket, 'Connection')) {
       return;
     }
@@ -120,12 +123,12 @@ class DbgpConnector {
   _onServerError(error) {
     let errorMessage;
     if (error.code === 'EADDRINUSE') {
-      errorMessage = `Can't start debugging because port ${ this._port } is being used by another process. ` + "Try running 'killall node' on your devserver and then restarting Nuclide.";
+      errorMessage = `Can't start debugging because port ${this._port} is being used by another process. ` + "Try running 'killall node' on your devserver and then restarting Nuclide.";
     } else {
-      errorMessage = `Unknown debugger socket error: ${ error.code }.`;
+      errorMessage = `Unknown debugger socket error: ${error.code}.`;
     }
 
-    (_utils || _load_utils()).default.logError(errorMessage);
+    (_utils || _load_utils()).default.error(errorMessage);
     this._emitter.emit(DBGP_ERROR_EVENT, errorMessage);
 
     this.dispose();
@@ -163,7 +166,7 @@ class DbgpConnector {
    */
   _checkListening(socket, message) {
     if (!this.isListening()) {
-      (_utils || _load_utils()).default.log('Ignoring ' + message + ' on port ' + this._port + ' after stopped connection.');
+      (_utils || _load_utils()).default.debug('Ignoring ' + message + ' on port ' + this._port + ' after stopped connection.');
       return false;
     }
     return true;

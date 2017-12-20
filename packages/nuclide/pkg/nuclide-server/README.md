@@ -23,20 +23,11 @@ client machine, and that you know the credentials required.
 
 ## Installing Nuclide Server
 
-Ensure that the Nuclide project is checked out onto the remote server. Run the
-following command from the root of the repository to install Nuclide's server
-dependencies:
-
-```
-./scripts/dev/setup --no-atom
-```
-
-Note that the `--no-atom` flag ensures that only Nuclide's Node packages are
-installed on the server, and not those used by the Atom client itself.
+Ensure that the Nuclide project is checked out onto the remote server. From the root of the Nuclide check out, run `npm install` to install dependencies.
 
 ## Running Nuclide Server
 
-You do not need to explicitly start the server since the Nuclide client will attempt to do so when it first connects over SSH, as explained in [Remote Projects README](../remote-projects/README.md).
+You do not need to explicitly start the server since the Nuclide client will attempt to do so when it first connects over SSH, as explained in [Remote Projects README](../nuclide-remote-projects/README.md).
 
 ## Troubleshooting
 

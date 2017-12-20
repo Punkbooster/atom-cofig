@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,7 +9,7 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 var _goToLocation;
 
 function _load_goToLocation() {
-  return _goToLocation = require('../../commons-atom/go-to-location');
+  return _goToLocation = require('nuclide-commons-atom/go-to-location');
 }
 
 var _nuclideRemoteConnection;
@@ -30,7 +21,7 @@ function _load_nuclideRemoteConnection() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _utils;
@@ -40,6 +31,17 @@ function _load_utils() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const LIMIT = 100;
 const QUALIFYING_FIELDS = ['class', 'namespace', 'struct', 'enum', 'Module'];
@@ -64,7 +66,6 @@ function commonPrefixLength(a, b) {
 }
 
 class HyperclickHelpers {
-
   static getSuggestionForWord(textEditor, text, range) {
     return (0, _asyncToGenerator.default)(function* () {
       const path = textEditor.getPath();
@@ -72,12 +73,7 @@ class HyperclickHelpers {
         return null;
       }
 
-      const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getServiceByNuclideUri)('CtagsService', path);
-
-      if (!service) {
-        throw new Error('Invariant violation: "service"');
-      }
-
+      const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getCtagsServiceByNuclideUri)(path);
       const ctagsService = yield service.getCtagsService(path);
 
       if (ctagsService == null) {
@@ -109,7 +105,7 @@ class HyperclickHelpers {
           callback: tags.map(function (tag) {
             const { file, fields, kind } = tag;
             const relpath = (_nuclideUri || _load_nuclideUri()).default.relative(tagsDir, file);
-            let title = `${ tag.name } (${ relpath })`;
+            let title = `${tag.name} (${relpath})`;
             if (fields != null) {
               // Python uses a.b.c; most other langauges use a::b::c.
               // There are definitely other cases, but it's not a big issue.
@@ -136,7 +132,5 @@ class HyperclickHelpers {
       }
     })();
   }
-
 }
 exports.default = HyperclickHelpers;
-module.exports = exports['default'];

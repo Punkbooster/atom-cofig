@@ -4,7 +4,7 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Allows jumping between related files in a project (e.g. header/source files)",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "configMetadata": {
       "pathComponents": [
@@ -46,5 +46,12 @@
     },
     "packageType": "Atom",
     "testRunner": "apm"
+  },
+  "consumedServices": {
+    "nuclide.related-files.provider": {
+      "versions": {
+        "0.0.0": "consumeRelatedFilesProvider"
+      }
+    }
   }
 }

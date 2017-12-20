@@ -1,21 +1,25 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.__test__ = exports.ServerConnection = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+var _event;
+
+function _load_event() {
+  return _event = require('nuclide-commons/event');
+}
 
 var _nuclideRpc;
 
 function _load_nuclideRpc() {
   return _nuclideRpc = require('../../nuclide-rpc');
 }
+
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 var _servicesConfig;
 
@@ -58,7 +62,13 @@ var _atom = require('atom');
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
+
+var _promise;
+
+function _load_promise() {
+  return _promise = require('nuclide-commons/promise');
 }
 
 var _SharedObservableCache;
@@ -73,10 +83,22 @@ function _load_NuclideSocket() {
   return _NuclideSocket = require('../../nuclide-server/lib/NuclideSocket');
 }
 
+var _log4js;
+
+function _load_log4js() {
+  return _log4js = require('log4js');
+}
+
 var _nuclideVersion;
 
 function _load_nuclideVersion() {
   return _nuclideVersion = require('../../nuclide-version');
+}
+
+var _lookupPreferIpV;
+
+function _load_lookupPreferIpV() {
+  return _lookupPreferIpV = _interopRequireDefault(require('./lookup-prefer-ip-v6'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -90,6 +112,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 //
 // A ServerConnection keeps a list of RemoteConnections - one for each open directory on the remote
 // machine. Once all RemoteConnections have been closed, then the ServerConnection will close.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class ServerConnection {
 
   static getOrCreate(config) {
@@ -114,9 +147,16 @@ class ServerConnection {
   // RemoteConnections first! This is extremely unsafe and
   // should only be used to forcibly kill Nuclide servers before restarting.
   static forceShutdownAllServers() {
+    return ServerConnection.closeAll(true);
+  }
+
+  // WARNING: This shuts down all Nuclide servers _without_ closing their
+  // RemoteConnections first! This is extremely unsafe and
+  // should only be Called during shutdown, reload, or before autoupdate.
+  static closeAll(shutdown) {
     return (0, _asyncToGenerator.default)(function* () {
       yield Promise.all(Array.from(ServerConnection._connections).map(function ([_, connection]) {
-        return connection._closeServerConnection(true);
+        return connection._closeServerConnection(shutdown);
       }));
     })();
   }
@@ -165,8 +205,16 @@ class ServerConnection {
     this._healthNotifier = new (_ConnectionHealthNotifier || _load_ConnectionHealthNotifier()).ConnectionHealthNotifier(this._config.host, this.getSocket());
   }
 
+  setOnHeartbeatError(onHeartbeatError) {
+    if (!(this._healthNotifier != null)) {
+      throw new Error('Invariant violation: "this._healthNotifier != null"');
+    }
+
+    this._healthNotifier.setOnHeartbeatError(onHeartbeatError);
+  }
+
   getUriOfRemotePath(remotePath) {
-    return `nuclide://${ this.getRemoteHostname() }${ remotePath }`;
+    return `nuclide://${this.getRemoteHostname()}${remotePath}`;
   }
 
   getPathOfUri(uri) {
@@ -176,7 +224,9 @@ class ServerConnection {
   createDirectory(uri, hgRepositoryDescription, symlink = false) {
     let { path } = (_nuclideUri || _load_nuclideUri()).default.parse(uri);
     path = (_nuclideUri || _load_nuclideUri()).default.normalize(path);
-    return new (_RemoteDirectory || _load_RemoteDirectory()).RemoteDirectory(this, this.getUriOfRemotePath(path), symlink, { hgRepositoryDescription });
+    return new (_RemoteDirectory || _load_RemoteDirectory()).RemoteDirectory(this, this.getUriOfRemotePath(path), symlink, {
+      hgRepositoryDescription
+    });
   }
 
   createFile(uri, symlink = false) {
@@ -202,7 +252,7 @@ class ServerConnection {
       const clientVersion = (0, (_nuclideVersion || _load_nuclideVersion()).getVersion)();
 
       function throwVersionMismatch(version) {
-        const err = new Error(`Version mismatch. Client at ${ clientVersion } while server at ${ version }.`);
+        const err = new Error(`Version mismatch. Client at ${clientVersion} while server at ${version}.`);
         err.name = 'VersionMismatchError';
         throw err;
       }
@@ -210,7 +260,7 @@ class ServerConnection {
       // Test connection first. First time we get here we're checking to reestablish
       // connection using cached credentials. This will fail fast (faster than infoService)
       // when we don't have cached credentials yet.
-      const heartbeatVersion = yield client.getTransport().testConnection();
+      const [heartbeatVersion, ip] = yield Promise.all([client.getTransport().testConnection(), (0, (_lookupPreferIpV || _load_lookupPreferIpV()).default)(_this._config.host)]);
       if (clientVersion !== heartbeatVersion) {
         throwVersionMismatch(heartbeatVersion);
       }
@@ -224,7 +274,7 @@ class ServerConnection {
       _this._monitorConnectionHeartbeat();
 
       ServerConnection._connections.set(_this.getRemoteHostname(), _this);
-      (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).setConnectionConfig)(_this._config);
+      (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).setConnectionConfig)(_this._config, ip.address);
       ServerConnection._emitter.emit('did-add', _this);
     })();
   }
@@ -278,16 +328,19 @@ class ServerConnection {
       options = {
         ca: this._config.certificateAuthorityCertificate,
         cert: this._config.clientCertificate,
-        key: this._config.clientKey
+        key: this._config.clientKey,
+        family: this._config.family
       };
-      uri = `https://${ this.getRemoteHostname() }:${ this.getPort() }`;
+      uri = `https://${this.getRemoteHostname()}:${this.getPort()}`;
     } else {
-      options = null;
-      uri = `http://${ this.getRemoteHostname() }:${ this.getPort() }`;
+      options = { family: this._config.family };
+      uri = `http://${this.getRemoteHostname()}:${this.getPort()}`;
     }
 
     const socket = new (_NuclideSocket || _load_NuclideSocket()).NuclideSocket(uri, options);
-    const client = (_nuclideRpc || _load_nuclideRpc()).RpcConnection.createRemote(socket, (0, (_nuclideMarshalersAtom || _load_nuclideMarshalersAtom()).getAtomSideMarshalers)(this.getRemoteHostname()), (_servicesConfig || _load_servicesConfig()).default);
+    const client = (_nuclideRpc || _load_nuclideRpc()).RpcConnection.createRemote(socket, (0, (_nuclideMarshalersAtom || _load_nuclideMarshalersAtom()).getAtomSideMarshalers)(this.getRemoteHostname()), (_servicesConfig || _load_servicesConfig()).default,
+    // Track calls with a sampling rate of 1/10.
+    { trackSampleRate: 10 });
 
     this._client = client;
   }
@@ -355,6 +408,10 @@ class ServerConnection {
     return ServerConnection.onDidAddServerConnection(handler);
   }
 
+  static toDebugString(connection) {
+    return connection == null ? 'local' : connection.getRemoteHostname();
+  }
+
   getRemoteConnectionForUri(uri) {
     const { path } = (_nuclideUri || _load_nuclideUri()).default.parse(uri);
     return this.getConnections().filter(connection => {
@@ -382,20 +439,32 @@ class ServerConnection {
     var _this3 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      yield _this3._getInfoService().closeConnection(shutdown);
-      if (shutdown) {
-        // Clear the saved connection config so we don't try it again at startup.
-        (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).clearConnectionConfig)(_this3._config.host);
+      try {
+        // If the Nuclide server has already been shutdown or has crashed,
+        // the closeConnection() call will attempt to disconnect from the Nuclide
+        // server forever. This sets a 5 second timeout for it so that the rest
+        // of this function and anything calling it can complete.
+        yield (0, (_promise || _load_promise()).timeoutPromise)(_this3._getInfoService().closeConnection(shutdown), 5000);
+      } catch (e) {
+        (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection').error('Failed to close Nuclide server connection.');
+      } finally {
+        if (shutdown) {
+          // Clear the saved connection config so we don't try it again at startup.
+          (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).clearConnectionConfig)(_this3._config.host);
+        }
       }
     })();
   }
+
+  static observeRemoteConnections() {
+    const emitter = ServerConnection._emitter;
+    return _rxjsBundlesRxMinJs.Observable.merge((0, (_event || _load_event()).observableFromSubscribeFunction)(cb => emitter.on('did-add', cb)), (0, (_event || _load_event()).observableFromSubscribeFunction)(cb => emitter.on('did-close', cb)), _rxjsBundlesRxMinJs.Observable.of(null)).map(() => Array.from(ServerConnection._connections.values()));
+  }
 }
 
+exports.ServerConnection = ServerConnection;
 ServerConnection._connections = new Map();
 ServerConnection._emitter = new _atom.Emitter();
-module.exports = {
-  ServerConnection,
-  __test__: {
-    connections: ServerConnection._connections
-  }
+const __test__ = exports.__test__ = {
+  connections: ServerConnection._connections
 };

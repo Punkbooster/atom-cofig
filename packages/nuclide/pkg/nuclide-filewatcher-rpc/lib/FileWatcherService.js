@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,12 +13,12 @@ let getRealPath = (() => {
       stat = yield (_fsPromise || _load_fsPromise()).default.stat(entityPath);
     } catch (e) {
       // Atom watcher behavior compatibility.
-      throw new Error(`Can't watch a non-existing entity: ${ entityPath }`);
+      throw new Error(`Can't watch a non-existing entity: ${entityPath}`);
     }
     if (stat.isFile() !== isFile) {
-      (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().warn(`FileWatcherService: expected ${ entityPath } to be a ${ isFile ? 'file' : 'directory' }`);
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-filewatcher-rpc').warn(`FileWatcherService: expected ${entityPath} to be a ${isFile ? 'file' : 'directory'}`);
     }
-    return yield (_fsPromise || _load_fsPromise()).default.realpath(entityPath);
+    return (_fsPromise || _load_fsPromise()).default.realpath(entityPath);
   });
 
   return function getRealPath(_x, _x2) {
@@ -46,13 +37,14 @@ let unwatchDirectoryRecursive = (() => {
 })();
 
 exports.watchFile = watchFile;
+exports.watchFileWithNode = watchFileWithNode;
 exports.watchDirectory = watchDirectory;
 exports.watchDirectoryRecursive = watchDirectoryRecursive;
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _SharedObservableCache;
@@ -61,18 +53,20 @@ function _load_SharedObservableCache() {
   return _SharedObservableCache = _interopRequireDefault(require('../../commons-node/SharedObservableCache'));
 }
 
+var _fs = _interopRequireDefault(require('fs'));
+
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _nuclideWatchmanHelpers;
@@ -81,10 +75,27 @@ function _load_nuclideWatchmanHelpers() {
   return _nuclideWatchmanHelpers = require('../../nuclide-watchman-helpers');
 }
 
+var _debounceDeletes;
+
+function _load_debounceDeletes() {
+  return _debounceDeletes = _interopRequireDefault(require('./debounceDeletes'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Cache an observable for each watched entity (file or directory).
 // Multiple watches for the same entity can share the same observable.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const entityWatches = new (_SharedObservableCache || _load_SharedObservableCache()).default(registerWatch);
 
 // In addition, expose the observer behind each observable so we can
@@ -103,12 +114,25 @@ function watchFile(filePath) {
   return watchEntity(filePath, true).publish();
 }
 
+function watchFileWithNode(filePath) {
+  return _rxjsBundlesRxMinJs.Observable.create(observer => {
+    const watcher = _fs.default.watch(filePath, { persistent: false }, eventType => {
+      if (eventType === 'rename') {
+        observer.next({ path: filePath, type: 'delete' });
+      } else {
+        observer.next({ path: filePath, type: 'change' });
+      }
+    });
+    return () => watcher.close();
+  }).publish();
+}
+
 function watchDirectory(directoryPath) {
   return watchEntity(directoryPath, false).publish();
 }
 
 function watchEntity(entityPath, isFile) {
-  return _rxjsBundlesRxMinJs.Observable.fromPromise(getRealPath(entityPath, isFile)).switchMap(realPath => entityWatches.get(realPath));
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(getRealPath(entityPath, isFile)).switchMap(realPath => (0, (_debounceDeletes || _load_debounceDeletes()).default)(entityWatches.get(realPath)));
 }
 
 // Register an observable for the given path.
@@ -124,7 +148,7 @@ function watchDirectoryRecursive(directoryPath) {
   if (client.hasSubscription(directoryPath)) {
     return _rxjsBundlesRxMinJs.Observable.of('EXISTING').publish();
   }
-  return _rxjsBundlesRxMinJs.Observable.fromPromise(client.watchDirectoryRecursive(directoryPath, `filewatcher-${ directoryPath }`,
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(client.watchDirectoryRecursive(directoryPath, `filewatcher-${directoryPath}`,
   // Reloading with file changes should happen
   // during source control operations to reflect the file contents / tree state.
   { defer_vcs: false })).flatMap(watcher => {
@@ -145,13 +169,12 @@ function watchDirectoryRecursive(directoryPath) {
 function onWatcherChange(subscription, entries) {
   const directoryChanges = new Set();
   entries.forEach(entry => {
-    const entryPath = (_nuclideUri || _load_nuclideUri()).default.join(subscription.root, entry.name);
+    const entryPath = (_nuclideUri || _load_nuclideUri()).default.join(subscription.path, entry.name);
     const observer = entityObserver.get(entryPath);
     if (observer != null) {
       // TODO(most): handle `rename`, if needed.
       if (!entry.exists) {
         observer.next('delete');
-        observer.complete();
       } else {
         observer.next('change');
       }

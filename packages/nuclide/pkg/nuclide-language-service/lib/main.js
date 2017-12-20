@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -23,5 +14,37 @@ Object.defineProperty(exports, 'AtomLanguageService', {
   enumerable: true,
   get: function () {
     return (_AtomLanguageService || _load_AtomLanguageService()).AtomLanguageService;
+  }
+});
+
+var _HostServices;
+
+function _load_HostServices() {
+  return _HostServices = require('./HostServices');
+}
+
+Object.defineProperty(exports, 'getHostServices', {
+  enumerable: true,
+  get: function () {
+    return (_HostServices || _load_HostServices()).getHostServices;
+  }
+});
+
+var _AutocompleteProvider;
+
+function _load_AutocompleteProvider() {
+  return _AutocompleteProvider = require('./AutocompleteProvider');
+}
+
+Object.defineProperty(exports, 'updateAutocompleteResults', {
+  enumerable: true,
+  get: function () {
+    return (_AutocompleteProvider || _load_AutocompleteProvider()).updateAutocompleteResults;
+  }
+});
+Object.defineProperty(exports, 'updateAutocompleteFirstResults', {
+  enumerable: true,
+  get: function () {
+    return (_AutocompleteProvider || _load_AutocompleteProvider()).updateAutocompleteFirstResults;
   }
 });

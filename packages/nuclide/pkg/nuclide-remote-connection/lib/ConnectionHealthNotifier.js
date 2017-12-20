@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -28,17 +19,29 @@ function _load_NuclideSocket() {
   return _NuclideSocket = require('../../nuclide-server/lib/NuclideSocket');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection'); /**
+                                                                                         * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                         * All rights reserved.
+                                                                                         *
+                                                                                         * This source code is licensed under the license found in the LICENSE file in
+                                                                                         * the root directory of this source tree.
+                                                                                         *
+                                                                                         * 
+                                                                                         * @format
+                                                                                         */
 
 const HEARTBEAT_AWAY_REPORT_COUNT = 3;
 const HEARTBEAT_NOTIFICATION_ERROR = 1;
 const HEARTBEAT_NOTIFICATION_WARNING = 2;
+
+// Returning true short-circuits the default error handling in onHeartbeatError()
+
 
 // Provides feedback to the user of the health of a NuclideSocket.
 class ConnectionHealthNotifier {
@@ -57,7 +60,7 @@ class ConnectionHealthNotifier {
     const addHeartbeatNotification = (type, errorCode, message, dismissable, askToReload) => {
       const { code, notification: existingNotification } = this._lastHeartbeatNotification || {};
       if (code && code === errorCode && dismissable) {
-        // A dismissible heartbeat notification with this code is already active.
+        // A dismissable heartbeat notification with this code is already active.
         return;
       }
       let notification = null;
@@ -111,7 +114,7 @@ class ConnectionHealthNotifier {
     const notifyNetworkAway = code => {
       this._heartbeatNetworkAwayCount++;
       if (this._heartbeatNetworkAwayCount >= HEARTBEAT_AWAY_REPORT_COUNT) {
-        addHeartbeatNotification(HEARTBEAT_NOTIFICATION_WARNING, code, `Nuclide server cannot be reached at "${ serverUri }".<br/>` + 'Nuclide will reconnect when the network is restored.',
+        addHeartbeatNotification(HEARTBEAT_NOTIFICATION_WARNING, code, `Nuclide server cannot be reached at "${serverUri}".<br/>` + 'Nuclide will reconnect when the network is restored.',
         /* dismissable */true,
         /* askToReload */false);
       }
@@ -128,6 +131,11 @@ class ConnectionHealthNotifier {
         }
       });
       logger.info('Heartbeat network error:', code, originalCode, message);
+
+      if (this._onHeartbeatError != null && this._onHeartbeatError(error)) {
+        return;
+      }
+
       switch (code) {
         case 'NETWORK_AWAY':
           // Notify switching networks, disconnected, timeout, unreachable server or fragile
@@ -140,24 +148,23 @@ class ConnectionHealthNotifier {
           addHeartbeatNotification(HEARTBEAT_NOTIFICATION_ERROR, code, '**Nuclide Server Crashed**<br/>' + 'Please reload Atom to restore your remote project connection.',
           /* dismissable */true,
           /* askToReload */true);
-          // TODO(most) reconnect ServerConnection, restore the current project state,
-          // and finally change dismissable to false and type to 'WARNING'.
           break;
         case 'PORT_NOT_ACCESSIBLE':
           // Notify never heard a heartbeat from the server.
           const port = socket.getServerPort();
-          addHeartbeatNotification(HEARTBEAT_NOTIFICATION_ERROR, code, '**Nuclide Server Is Not Reachable**<br/>' + `It could be running on a port that is not accessible: ${ String(port) }.`,
+          addHeartbeatNotification(HEARTBEAT_NOTIFICATION_ERROR, code, '**Nuclide Server Is Not Reachable**<br/>' + `It could be running on a port that is not accessible: ${String(port)}.`,
           /* dismissable */true,
           /* askToReload */false);
           break;
         case 'INVALID_CERTIFICATE':
           // Notify the client certificate is not accepted by nuclide server
           // (certificate mismatch).
-          addHeartbeatNotification(HEARTBEAT_NOTIFICATION_ERROR, code, '**Connection Reset Error**<br/>' + 'This could be caused by the client certificate mismatching the ' + 'server certificate.<br/>' + 'Please reload Atom to restore your remote project connection.',
+          addHeartbeatNotification(HEARTBEAT_NOTIFICATION_ERROR, code, '**Certificate Expired**<br/>' +
+          // The expiration date should be synced with
+          // nuclide-server/scripts/nuclide_server_manager.py.
+          'The Nuclide server certificate has most likely expired.<br>' + 'For your security, certificates automatically expire after 14 days.<br>' + 'Please reload Atom to restore your remote project connection.',
           /* dismissable */true,
           /* askToReload */true);
-          // TODO(most): reconnect ServerConnection, restore the current project state.
-          // and finally change dismissable to false and type to 'WARNING'.
           break;
         default:
           notifyNetworkAway(code);
@@ -166,6 +173,12 @@ class ConnectionHealthNotifier {
       }
     };
     this._subscription = new _atom.CompositeDisposable(socket.onHeartbeat(onHeartbeat), socket.onHeartbeatError(onHeartbeatError));
+  }
+
+  // Sets function to be called on Heartbeat error.
+  // Function should return true to short-circuit the rest of the error logic.
+  setOnHeartbeatError(onHeartbeatError) {
+    this._onHeartbeatError = onHeartbeatError;
   }
 
   dispose() {

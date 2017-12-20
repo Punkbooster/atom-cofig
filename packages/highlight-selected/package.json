@@ -2,40 +2,39 @@
   "_args": [
     [
       {
-        "raw": "/tmp/d-1161028-21288-1onbuwr/package.tgz",
+        "raw": "/tmp/d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/tmp/d-1161028-21288-1onbuwr/package.tgz",
-        "spec": "/tmp/d-1161028-21288-1onbuwr/package.tgz",
+        "rawSpec": "/tmp/d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
+        "spec": "/tmp/d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
         "type": "local"
       },
-      "/tmp/apm-install-dir-1161028-21288-19parzi"
+      "/tmp/apm-install-dir-11774-27767-dogyha.uq441dzpvi"
     ]
   ],
-  "_from": "../d-1161028-21288-1onbuwr/package.tgz",
-  "_id": "highlight-selected@0.11.2",
+  "_from": "../d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
+  "_id": "highlight-selected@0.13.1",
   "_inCache": true,
-  "_installable": true,
   "_location": "/highlight-selected",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/tmp/d-1161028-21288-1onbuwr/package.tgz",
+    "raw": "/tmp/d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/tmp/d-1161028-21288-1onbuwr/package.tgz",
-    "spec": "/tmp/d-1161028-21288-1onbuwr/package.tgz",
+    "rawSpec": "/tmp/d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
+    "spec": "/tmp/d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-1161028-21288-1onbuwr/package.tgz",
-  "_shasum": "b218d2f9dd493e9dfb6b0d206e69f0cc831cb221",
+  "_resolved": "file:../d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
+  "_shasum": "8b6ce153f680dfd60ab003835e666266c4420e5f",
   "_shrinkwrap": null,
-  "_spec": "/tmp/d-1161028-21288-1onbuwr/package.tgz",
-  "_where": "/tmp/apm-install-dir-1161028-21288-19parzi",
+  "_spec": "/tmp/d-11774-27767-ji3cof.e7w48wipb9/package.tgz",
+  "_where": "/tmp/apm-install-dir-11774-27767-dogyha.uq441dzpvi",
   "bugs": {
     "url": "https://github.com/richrace/highlight-selected/issues"
   },
@@ -47,7 +46,7 @@
     }
   },
   "dependencies": {
-    "underscore-plus": "1.x"
+    "grim": "^2.0.1"
   },
   "description": "Highlights the current word selected when double clicking",
   "devDependencies": {
@@ -59,7 +58,7 @@
     "shasum": "7c9da46b1412aceb069f8ca2ca54d014986ad408"
   },
   "engines": {
-    "atom": ">=0.174.0 <2.0.0"
+    "atom": ">=1.13.0 <2.0.0"
   },
   "homepage": "https://github.com/richrace/highlight-selected",
   "license": "MIT",
@@ -70,7 +69,8 @@
     "highlightSelected": {
       "description": "Exposes Highlight Selected Events",
       "versions": {
-        "1.0.0": "provideHighlightSelectedV1"
+        "1.0.0": "provideHighlightSelectedV1Deprecated",
+        "2.0.0": "provideHighlightSelectedV2"
       }
     }
   },
@@ -80,5 +80,65 @@
     "type": "git",
     "url": "git+https://github.com/richrace/highlight-selected.git"
   },
-  "version": "0.11.2"
+  "version": "0.13.1",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [
+      {
+        "name": "event-kit",
+        "version": "2.3.0",
+        "path": "node_modules/event-kit/lib/event-kit.js"
+      },
+      {
+        "name": "grim",
+        "version": "2.0.1",
+        "path": "node_modules/grim/lib/grim.js"
+      }
+    ],
+    "extensions": {
+      ".json": [
+        "coffeelint.json",
+        "node_modules/event-kit/api.json",
+        "node_modules/event-kit/package.json",
+        "node_modules/grim/package.json",
+        "package.json"
+      ],
+      ".coffee": [
+        "lib/escape-reg-exp.coffee",
+        "lib/highlight-selected.coffee",
+        "lib/highlighted-area-view.coffee",
+        "lib/status-bar-view.coffee"
+      ],
+      ".js": [
+        "node_modules/event-kit/lib/composite-disposable.js",
+        "node_modules/event-kit/lib/disposable.js",
+        "node_modules/event-kit/lib/emitter.js",
+        "node_modules/event-kit/lib/event-kit.js",
+        "node_modules/grim/lib/deprecation.js",
+        "node_modules/grim/lib/grim.js"
+      ]
+    },
+    "folders": [
+      {
+        "paths": [
+          "",
+          "lib",
+          "spec/fixtures",
+          "spec"
+        ],
+        "dependencies": {
+          "grim": "^2.0.1"
+        }
+      },
+      {
+        "paths": [
+          "node_modules/grim/lib",
+          "node_modules/grim"
+        ],
+        "dependencies": {
+          "event-kit": "^2.0.0"
+        }
+      }
+    ]
+  }
 }

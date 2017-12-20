@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -28,22 +19,22 @@ function _load_nuclideOpenFilesRpc() {
   return _nuclideOpenFilesRpc = require('../../nuclide-open-files-rpc');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _event;
 
 function _load_event() {
-  return _event = require('../../commons-node/event');
+  return _event = require('nuclide-commons/event');
 }
 
 var _atom = require('atom');
@@ -51,12 +42,21 @@ var _atom = require('atom');
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-open-files'); /**
+                                                                                  * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                  * All rights reserved.
+                                                                                  *
+                                                                                  * This source code is licensed under the license found in the LICENSE file in
+                                                                                  * the root directory of this source tree.
+                                                                                  *
+                                                                                  * 
+                                                                                  * @format
+                                                                                  */
 
 const RESYNC_TIMEOUT_MS = 2000;
 
@@ -150,7 +150,7 @@ class NotifiersByConnection {
 
             yield message.fileVersion.notifier.onFileEvent(message);
           } catch (e) {
-            logger.error(`Error sending file close event: ${ filePath } ${ version }`, e);
+            logger.error(`Error sending file close event: ${filePath} ${version}`, e);
             setTimeout(sendMessage, RESYNC_TIMEOUT_MS);
           }
         }

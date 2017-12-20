@@ -1,20 +1,15 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _PanelComponentScroller;
 
 function _load_PanelComponentScroller() {
-  return _PanelComponentScroller = require('../../../nuclide-ui/PanelComponentScroller');
+  return _PanelComponentScroller = require('nuclide-commons-ui/PanelComponentScroller');
 }
 
 var _TestClassTreeNode;
@@ -31,11 +26,22 @@ function _load_TreeRootComponent() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function labelClassNameForNode() {
   return 'icon icon-code';
 }
 
-class TestClassTree extends _reactForAtom.React.Component {
+class TestClassTree extends _react.default.Component {
 
   componentDidUpdate(prevProps) {
     const { testSuiteModel } = this.props;
@@ -53,28 +59,28 @@ class TestClassTree extends _reactForAtom.React.Component {
   }
 
   render() {
-    const emptyRenderMessage = _reactForAtom.React.createElement(
+    const emptyRenderMessage = _react.default.createElement(
       'div',
       null,
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'h5',
         null,
         'Running tests'
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'ol',
         null,
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'li',
           null,
           'Open the file you want to test'
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'li',
           null,
           'Choose the appropriate runner from the dropdown'
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'li',
           null,
           'Click "Test" to run tests for that file\'s directory'
@@ -82,13 +88,13 @@ class TestClassTree extends _reactForAtom.React.Component {
       )
     );
 
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       (_PanelComponentScroller || _load_PanelComponentScroller()).PanelComponentScroller,
       null,
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'padded' },
-        _reactForAtom.React.createElement((_TreeRootComponent || _load_TreeRootComponent()).TreeRootComponent, {
+        _react.default.createElement((_TreeRootComponent || _load_TreeRootComponent()).TreeRootComponent, {
           elementToRenderWhenEmpty: emptyRenderMessage,
           eventHandlerSelector: '.nuclide-test-runner-tree',
           initialRoots: [],
@@ -127,5 +133,4 @@ class TestClassTree extends _reactForAtom.React.Component {
     return '';
   }
 }
-
-module.exports = TestClassTree;
+exports.default = TestClassTree;

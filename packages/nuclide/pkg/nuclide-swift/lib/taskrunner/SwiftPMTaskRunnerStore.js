@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,7 +7,7 @@ Object.defineProperty(exports, "__esModule", {
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _atom = require('atom');
@@ -34,44 +25,38 @@ class SwiftPMTaskRunnerStore {
     this._emitter = new _atom.Emitter();
 
     if (initialState) {
-      this._chdir = initialState.chdir ? initialState.chdir : '';
       this._configuration = initialState.configuration ? initialState.configuration : 'debug';
       this._buildPath = initialState.buildPath ? initialState.buildPath : '';
       this._Xcc = initialState.Xcc ? initialState.Xcc : '';
       this._Xlinker = initialState.Xlinker ? initialState.Xlinker : '';
       this._Xswiftc = initialState.Xswiftc ? initialState.Xswiftc : '';
-      this._testBuildPath = initialState.testBuildPath ? initialState.testBuildPath : '';
       this._compileCommands = initialState.compileCommands ? new Map((0, (_collection || _load_collection()).objectEntries)(initialState.compileCommands)) : new Map();
     } else {
-      this._chdir = '';
       this._configuration = 'debug';
       this._buildPath = '';
       this._Xcc = '';
       this._Xlinker = '';
       this._Xswiftc = '';
-      this._testBuildPath = '';
       this._compileCommands = new Map();
     }
 
     this._dispatcher.register(action => {
       switch (action.actionType) {
-        case (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_CHDIR:
-          this._chdir = action.chdir;
+        case (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_PROJECT_ROOT:
+          this._projectRoot = action.projectRoot;
           break;
-        case (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_BUILD_SETTINGS:
+        case (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_SETTINGS:
           this._configuration = action.configuration;
           this._Xcc = action.Xcc;
           this._Xlinker = action.Xlinker;
           this._Xswiftc = action.Xswiftc;
           this._buildPath = action.buildPath;
           break;
-        case (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_TEST_SETTINGS:
-          this._testBuildPath = action.buildPath;
-          break;
         case (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_COMPILE_COMMANDS:
           this._compileCommands = action.compileCommands;
           break;
       }
+      this.emitChange();
     });
   }
 
@@ -81,14 +66,12 @@ class SwiftPMTaskRunnerStore {
 
   serialize() {
     return {
-      chdir: this.getChdir(),
       configuration: this.getConfiguration(),
       buildPath: this.getBuildPath(),
       Xcc: this.getXcc(),
       Xlinker: this.getXlinker(),
       Xswiftc: this.getXswiftc(),
-      compileCommands: (0, (_collection || _load_collection()).objectFromMap)(this.getCompileCommands()),
-      testBuildPath: this.getTestBuildPath()
+      compileCommands: (0, (_collection || _load_collection()).objectFromMap)(this.getCompileCommands())
     };
   }
 
@@ -100,16 +83,16 @@ class SwiftPMTaskRunnerStore {
     this._emitter.emit('change');
   }
 
-  getChdir() {
-    return this._chdir;
-  }
-
   getConfiguration() {
     return this._configuration;
   }
 
   getBuildPath() {
     return this._buildPath;
+  }
+
+  getProjectRoot() {
+    return this._projectRoot;
   }
 
   getFlag() {
@@ -128,13 +111,17 @@ class SwiftPMTaskRunnerStore {
     return this._Xswiftc;
   }
 
-  getTestBuildPath() {
-    return this._testBuildPath;
-  }
-
   getCompileCommands() {
     return this._compileCommands;
   }
 }
-exports.default = SwiftPMTaskRunnerStore;
-module.exports = exports['default'];
+exports.default = SwiftPMTaskRunnerStore; /**
+                                           * Copyright (c) 2015-present, Facebook, Inc.
+                                           * All rights reserved.
+                                           *
+                                           * This source code is licensed under the license found in the LICENSE file in
+                                           * the root directory of this source tree.
+                                           *
+                                           * 
+                                           * @format
+                                           */

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,7 +8,7 @@ exports.default = loadingNotification;
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
 /**
@@ -37,4 +28,13 @@ function loadingNotification(promise, message, delayMs = 100, options = {}) {
     }
   };
   return (0, (_promise || _load_promise()).triggerAfterWait)(promise, delayMs, timeoutFn, cleanupFn);
-}module.exports = exports['default'];
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */

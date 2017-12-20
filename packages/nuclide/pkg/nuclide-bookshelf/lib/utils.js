@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -36,19 +27,19 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
-var _nuclideHgGitBridge;
+var _nuclideVcsBase;
 
-function _load_nuclideHgGitBridge() {
-  return _nuclideHgGitBridge = require('../../nuclide-hg-git-bridge');
+function _load_nuclideVcsBase() {
+  return _nuclideVcsBase = require('../../nuclide-vcs-base');
 }
 
 var _nuclideAnalytics;
@@ -58,6 +49,17 @@ function _load_nuclideAnalytics() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 function getEmptBookShelfState() {
   return {
@@ -100,7 +102,7 @@ function getRepoPathToEditors() {
   const reposToEditors = new Map();
   atom.workspace.getTextEditors().filter(textEditor => textEditor.getPath() != null && textEditor.getPath() !== '').map(textEditor => ({
     textEditor,
-    repository: (0, (_nuclideHgGitBridge || _load_nuclideHgGitBridge()).repositoryForPath)(textEditor.getPath() || '')
+    repository: (0, (_nuclideVcsBase || _load_nuclideVcsBase()).repositoryForPath)(textEditor.getPath() || '')
   })).filter(({ repository }) => repository != null).forEach(({ repository, textEditor }) => {
     if (!repository) {
       throw new Error('Invariant violation: "repository"');
@@ -117,10 +119,10 @@ function shortHeadChangedNotification(repository, newShortHead, restorePaneItemS
     const workingDirectoryName = (_nuclideUri || _load_nuclideUri()).default.basename(repository.getWorkingDirectory());
 
     // TODO(most): Should we handle empty bookmark switches differently?
-    const newShortHeadDisplayText = newShortHead.length > 0 ? `to \`${ newShortHead }\`` : '';
+    const newShortHeadDisplayText = newShortHead.length > 0 ? `to \`${newShortHead}\`` : '';
 
-    const shortHeadChangeNotification = atom.notifications.addInfo(`\`${ workingDirectoryName }\`'s active bookmark has changed ${ newShortHeadDisplayText }`, {
-      detail: 'Would you like to open the files you had active then?\n \n' + 'ProTip: Change the default behavior from \'Nuclide Settings>IDE Settings>Book Shelf\'',
+    const shortHeadChangeNotification = atom.notifications.addInfo(`\`${workingDirectoryName}\`'s active bookmark has changed ${newShortHeadDisplayText}`, {
+      detail: 'Would you like to open the files you had active then?\n \n' + "ProTip: Change the default behavior from 'Nuclide Settings>Nuclide-bookshelf'",
       dismissable: true,
       buttons: [{
         onDidClick: () => {
@@ -151,7 +153,9 @@ function shortHeadChangedNotification(repository, newShortHead, restorePaneItemS
 
 function getShortHeadChangesFromStateStream(states) {
   return states.pairwise().flatMap(([oldBookShelfState, newBookShelfState]) => {
-    const { repositoryPathToState: oldRepositoryPathToState } = oldBookShelfState;
+    const {
+      repositoryPathToState: oldRepositoryPathToState
+    } = oldBookShelfState;
 
     return _rxjsBundlesRxMinJs.Observable.from(Array.from(newBookShelfState.repositoryPathToState.entries()).filter(([repositoryPath, newRepositoryState]) => {
       const oldRepositoryState = oldRepositoryPathToState.get(repositoryPath);

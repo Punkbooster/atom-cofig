@@ -1,13 +1,14 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _Constants;
+
+function _load_Constants() {
+  return _Constants = require('./Constants');
+}
 
 var _atom = require('atom');
 
@@ -20,7 +21,27 @@ function _load_nuclideRemoteConnection() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
+
+var _featureConfig;
+
+function _load_featureConfig() {
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
+}
+
+var _observable;
+
+function _load_observable() {
+  return _observable = require('nuclide-commons/observable');
+}
+
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+
+var _passesGK;
+
+function _load_passesGK() {
+  return _passesGK = _interopRequireDefault(require('../../commons-node/passesGK'));
 }
 
 var _crypto = _interopRequireDefault(require('crypto'));
@@ -29,7 +50,16 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function dirPathToKey(path) {
   return (_nuclideUri || _load_nuclideUri()).default.ensureTrailingSeparator((_nuclideUri || _load_nuclideUri()).default.trimTrailingSeparator(path));
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 function isDirKey(key) {
   return (_nuclideUri || _load_nuclideUri()).default.endsWithSeparator(key);
@@ -53,7 +83,7 @@ function fetchChildren(nodeKey) {
 
   return new Promise((resolve, reject) => {
     if (directory == null) {
-      reject(`Directory "${ nodeKey }" not found or is inaccessible.`);
+      reject(new Error(`Directory "${nodeKey}" not found or is inaccessible.`));
       return;
     }
 
@@ -147,18 +177,44 @@ function buildHashKey(nodeKey) {
   return _crypto.default.createHash('MD5').update(nodeKey).digest('base64');
 }
 
+function observeUncommittedChangesKindConfigKey() {
+  return (0, (_observable || _load_observable()).cacheWhileSubscribed)((_featureConfig || _load_featureConfig()).default.observeAsStream((_Constants || _load_Constants()).SHOW_UNCOMMITTED_CHANGES_KIND_CONFIG_KEY).map(setting => {
+    // We need to map the unsanitized feature-setting string
+    // into a properly typed value:
+    switch (setting) {
+      case (_Constants || _load_Constants()).ShowUncommittedChangesKind.HEAD:
+        return (_Constants || _load_Constants()).ShowUncommittedChangesKind.HEAD;
+      case (_Constants || _load_Constants()).ShowUncommittedChangesKind.STACK:
+        return (_Constants || _load_Constants()).ShowUncommittedChangesKind.STACK;
+      default:
+        return (_Constants || _load_Constants()).ShowUncommittedChangesKind.UNCOMMITTED;
+    }
+  }).distinctUntilChanged());
+}
+
 function updatePathInOpenedEditors(oldPath, newPath) {
   atom.workspace.getTextEditors().forEach(editor => {
     const buffer = editor.getBuffer();
-    if (buffer.getPath() === oldPath) {
+    const bufferPath = buffer.getPath();
+    if (bufferPath == null) {
+      return;
+    }
+
+    if ((_nuclideUri || _load_nuclideUri()).default.contains(oldPath, bufferPath)) {
+      const relativeToOld = (_nuclideUri || _load_nuclideUri()).default.relative(oldPath, bufferPath);
+      const newBufferPath = (_nuclideUri || _load_nuclideUri()).default.join(newPath, relativeToOld);
       // setPath will append the hostname when given the local path, so we
       // strip off the hostname here to avoid including it twice in the path.
-      buffer.setPath((_nuclideUri || _load_nuclideUri()).default.getPath(newPath));
+      buffer.setPath((_nuclideUri || _load_nuclideUri()).default.getPath(newBufferPath));
     }
   });
 }
 
-module.exports = {
+function areStackChangesEnabled() {
+  return (0, (_passesGK || _load_passesGK()).default)('nuclide_file_tree_stack_changes');
+}
+
+exports.default = {
   dirPathToKey,
   isDirKey,
   keyToName,
@@ -173,5 +229,7 @@ module.exports = {
   isLocalEntry,
   isContextClick,
   buildHashKey,
-  updatePathInOpenedEditors
+  observeUncommittedChangesKindConfigKey,
+  updatePathInOpenedEditors,
+  areStackChangesEnabled
 };

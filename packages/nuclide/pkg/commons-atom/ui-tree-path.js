@@ -1,18 +1,19 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = uiTreePath;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const TREE_API_DATA_PATH = 'data-path';
 
@@ -24,7 +25,11 @@ const TREE_API_DATA_PATH = 'data-path';
 function uiTreePath(event) {
   // Event target isn't necessarily an HTMLElement,
   const target = event.currentTarget;
-  const nameElement = target.hasAttribute(TREE_API_DATA_PATH) ? target : target.querySelector(`[${ TREE_API_DATA_PATH }]`);
+  const nameElement = target.hasAttribute(TREE_API_DATA_PATH) ? target : target.querySelector(`[${TREE_API_DATA_PATH}]`);
+
+  if (!(nameElement != null)) {
+    throw new Error('Invariant violation: "nameElement != null"');
+  }
+
   return nameElement.getAttribute(TREE_API_DATA_PATH);
 }
-module.exports = exports['default'];

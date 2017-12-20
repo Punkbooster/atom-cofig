@@ -1,28 +1,19 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.hphpdMightBeAttached = exports.DUMMY_FRAME_ID = undefined;
+exports.hphpdMightBeAttached = exports.DUMMY_FRAME_ID = exports.uriToPath = exports.pathToUri = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 // Returns true if hphpd might be attached according to some heuristics applied to the process list.
 let hphpdMightBeAttached = exports.hphpdMightBeAttached = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* () {
-    const processes = yield (0, (_process || _load_process()).checkOutput)('ps', ['aux'], {});
-    return processes.stdout.toString().split('\n').slice(1).some(function (line) {
-      return line.indexOf('m debug') >= 0 // hhvm -m debug
-      || line.indexOf('mode debug') >= 0; // hhvm --mode debug
+    const processes = yield (0, (_process || _load_process()).runCommand)('ps', ['aux'], {}).toPromise();
+    return processes.toString().split('\n').slice(1).some(function (line) {
+      return line.indexOf('m debug') >= 0 || line.indexOf('mode debug') >= 0 // hhvm -m debug
+      ; // hhvm --mode debug
     });
   });
 
@@ -37,17 +28,19 @@ exports.base64Decode = base64Decode;
 exports.base64Encode = base64Encode;
 exports.makeDbgpMessage = makeDbgpMessage;
 exports.makeMessage = makeMessage;
-exports.pathToUri = pathToUri;
-exports.uriToPath = uriToPath;
 exports.getBreakpointLocation = getBreakpointLocation;
 exports.launchScriptForDummyConnection = launchScriptForDummyConnection;
 exports.launchScriptToDebug = launchScriptToDebug;
 exports.launchPhpScriptWithXDebugEnabled = launchPhpScriptWithXDebugEnabled;
 exports.getMode = getMode;
 
-var _child_process = _interopRequireDefault(require('child_process'));
+var _dedent;
 
-var _url = _interopRequireDefault(require('url'));
+function _load_dedent() {
+  return _dedent = _interopRequireDefault(require('dedent'));
+}
+
+var _child_process = _interopRequireDefault(require('child_process'));
 
 var _utils;
 
@@ -64,17 +57,42 @@ function _load_config() {
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
+}
+
+var _nuclideUri;
+
+function _load_nuclideUri() {
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
+
+var _helpers;
+
+function _load_helpers() {
+  return _helpers = require('../../nuclide-debugger-common/lib/helpers');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+exports.pathToUri = (_helpers || _load_helpers()).pathToUri;
+exports.uriToPath = (_helpers || _load_helpers()).uriToPath;
 const DUMMY_FRAME_ID = exports.DUMMY_FRAME_ID = 'Frame.0';
 
 function isContinuationCommand(command) {
@@ -106,25 +124,12 @@ function makeMessage(obj, body_) {
   return makeDbgpMessage(result);
 }
 
-function pathToUri(path) {
-  return 'file://' + path;
-}
-
-function uriToPath(uri) {
-  const components = _url.default.parse(uri);
-  // Some filename returned from hhvm does not have protocol.
-  if (components.protocol !== 'file:' && components.protocol != null) {
-    (_utils || _load_utils()).default.logErrorAndThrow(`unexpected file protocol. Got: ${ components.protocol }`);
-  }
-  return components.pathname || '';
-}
-
 function getBreakpointLocation(breakpoint) {
   const { filename, lineNumber } = breakpoint.breakpointInfo;
   return {
     // chrome lineNumber is 0-based while xdebug is 1-based.
     lineNumber: lineNumber - 1,
-    scriptId: uriToPath(filename)
+    scriptId: (0, (_helpers || _load_helpers()).uriToPath)(filename)
   };
 }
 
@@ -141,36 +146,67 @@ function launchScriptForDummyConnection(scriptPath) {
  */
 function launchScriptToDebug(scriptPath, sendToOutputWindow) {
   return new Promise(resolve => {
-    launchPhpScriptWithXDebugEnabled(scriptPath, text => {
-      sendToOutputWindow(text);
+    launchPhpScriptWithXDebugEnabled(scriptPath, (text, level) => {
+      sendToOutputWindow(text, level);
       resolve();
     });
   });
 }
 
 function launchPhpScriptWithXDebugEnabled(scriptPath, sendToOutputWindowAndResolve) {
-  const { phpRuntimePath, phpRuntimeArgs } = (0, (_config || _load_config()).getConfig)();
+  const {
+    phpRuntimePath,
+    phpRuntimeArgs,
+    dummyRequestFilePath,
+    launchWrapperCommand
+  } = (0, (_config || _load_config()).getConfig)();
   const runtimeArgs = (0, (_string || _load_string()).shellParse)(phpRuntimeArgs);
+  const isDummyLaunch = scriptPath === dummyRequestFilePath;
+
+  let processPath = phpRuntimePath;
+  const processOptions = {};
+  if (!isDummyLaunch && launchWrapperCommand != null) {
+    processPath = launchWrapperCommand;
+    processOptions.cwd = (_nuclideUri || _load_nuclideUri()).default.dirname(dummyRequestFilePath);
+  }
+
   const scriptArgs = (0, (_string || _load_string()).shellParse)(scriptPath);
-  const proc = _child_process.default.spawn(phpRuntimePath, [...runtimeArgs, ...scriptArgs]);
-  (_utils || _load_utils()).default.log(`child_process(${ proc.pid }) spawned with xdebug enabled for: ${ scriptPath }`);
+  const args = [...runtimeArgs, ...scriptArgs];
+  const proc = _child_process.default.spawn(processPath, args, processOptions);
+  (_utils || _load_utils()).default.debug((_dedent || _load_dedent()).default`
+    child_process(${proc.pid}) spawned with xdebug enabled.
+    $ ${phpRuntimePath} ${args.join(' ')}
+  `);
 
   proc.stdout.on('data', chunk => {
     // stdout should hopefully be set to line-buffering, in which case the
     const block = chunk.toString();
-    const output = `child_process(${ proc.pid }) stdout: ${ block }`;
-    (_utils || _load_utils()).default.log(output);
+    const output = `child_process(${proc.pid}) stdout: ${block}`;
+    (_utils || _load_utils()).default.debug(output);
+    // No need to forward stdout to the client here. Stdout is also sent
+    // over the XDebug protocol channel and is forwarded to the client
+    // by DbgpSocket.
+  });
+  proc.stderr.on('data', chunk => {
+    const block = chunk.toString().trim();
+    const output = `child_process(${proc.pid}) stderr: ${block}`;
+    (_utils || _load_utils()).default.debug(output);
+    // TODO: Remove this when XDebug forwards stderr streams over
+    // DbgpSocket.
+    if (sendToOutputWindowAndResolve != null) {
+      sendToOutputWindowAndResolve(block, 'error');
+    }
   });
   proc.on('error', err => {
-    (_utils || _load_utils()).default.log(`child_process(${ proc.pid }) error: ${ err }`);
+    (_utils || _load_utils()).default.debug(`child_process(${proc.pid}) error: ${err}`);
     if (sendToOutputWindowAndResolve != null) {
-      sendToOutputWindowAndResolve(`The process running script: ${ scriptPath } encountered an error: ${ err }`);
+      sendToOutputWindowAndResolve(`The process running script: ${scriptPath} encountered an error: ${err}`, 'error');
     }
   });
   proc.on('exit', code => {
-    (_utils || _load_utils()).default.log(`child_process(${ proc.pid }) exit: ${ code }`);
+    (_utils || _load_utils()).default.debug(`child_process(${proc.pid}) exit: ${code}`);
     if (code != null && sendToOutputWindowAndResolve != null) {
-      sendToOutputWindowAndResolve(`Script: ${ scriptPath } exited with code: ${ code }`);
+      sendToOutputWindowAndResolve(`Script: ${scriptPath} exited with code: ${code}`, code === 0 ? 'info' : 'error');
     }
   });
   return proc;

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,18 +10,18 @@ function _load_classnames() {
   return _classnames = _interopRequireDefault(require('classnames'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _AtomInput;
 
 function _load_AtomInput() {
-  return _AtomInput = require('../../../nuclide-ui/AtomInput');
+  return _AtomInput = require('nuclide-commons-ui/AtomInput');
 }
 
 var _ButtonGroup;
 
 function _load_ButtonGroup() {
-  return _ButtonGroup = require('../../../nuclide-ui/ButtonGroup');
+  return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
 }
 
 var _FunnelIcon;
@@ -48,44 +39,73 @@ function _load_ModalMultiSelect() {
 var _Toolbar;
 
 function _load_Toolbar() {
-  return _Toolbar = require('../../../nuclide-ui/Toolbar');
+  return _Toolbar = require('nuclide-commons-ui/Toolbar');
 }
 
 var _ToolbarLeft;
 
 function _load_ToolbarLeft() {
-  return _ToolbarLeft = require('../../../nuclide-ui/ToolbarLeft');
+  return _ToolbarLeft = require('nuclide-commons-ui/ToolbarLeft');
 }
 
 var _ToolbarRight;
 
 function _load_ToolbarRight() {
-  return _ToolbarRight = require('../../../nuclide-ui/ToolbarRight');
+  return _ToolbarRight = require('nuclide-commons-ui/ToolbarRight');
+}
+
+var _addTooltip;
+
+function _load_addTooltip() {
+  return _addTooltip = _interopRequireDefault(require('nuclide-commons-ui/addTooltip'));
 }
 
 var _Button;
 
 function _load_Button() {
-  return _Button = require('../../../nuclide-ui/Button');
+  return _Button = require('nuclide-commons-ui/Button');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class ConsoleHeader extends _reactForAtom.React.Component {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
-  constructor(props) {
-    super(props);
-    this._handleClearButtonClick = this._handleClearButtonClick.bind(this);
-    this._handleReToggleButtonClick = this._handleReToggleButtonClick.bind(this);
-    this._renderOption = this._renderOption.bind(this);
-  }
+class ConsoleHeader extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
 
-  _handleClearButtonClick(event) {
-    this.props.clear();
-  }
+    return _temp = super(...args), this._handleClearButtonClick = event => {
+      this.props.clear();
+    }, this._handleCreatePasteButtonClick = event => {
+      if (this.props.createPaste != null) {
+        this.props.createPaste();
+      }
+    }, this._handleReToggleButtonClick = () => {
+      this.props.toggleRegExpFilter();
+    }, this._renderOption = optionProps => {
+      const { option } = optionProps;
+      const source = this.props.sources.find(s => s.id === option.value);
 
-  _handleReToggleButtonClick() {
-    this.props.toggleRegExpFilter();
+      if (!(source != null)) {
+        throw new Error('Invariant violation: "source != null"');
+      }
+
+      return _react.default.createElement(
+        'span',
+        null,
+        option.label,
+        this._renderProcessControlButton(source)
+      );
+    }, _temp;
   }
 
   _renderProcessControlButton(source) {
@@ -121,29 +141,10 @@ class ConsoleHeader extends _reactForAtom.React.Component {
 
       action();
     };
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       (_Button || _load_Button()).Button,
-      {
-        className: 'pull-right',
-        icon: icon,
-        onClick: clickHandler },
+      { className: 'pull-right', icon: icon, onClick: clickHandler },
       label
-    );
-  }
-
-  _renderOption(optionProps) {
-    const { option } = optionProps;
-    const source = this.props.sources.find(s => s.id === option.value);
-
-    if (!(source != null)) {
-      throw new Error('Invariant violation: "source != null"');
-    }
-
-    return _reactForAtom.React.createElement(
-      'span',
-      null,
-      option.label,
-      this._renderProcessControlButton(source)
     );
   }
 
@@ -158,19 +159,30 @@ class ConsoleHeader extends _reactForAtom.React.Component {
     });
 
     const MultiSelectOption = this._renderOption;
+    const pasteButton = this.props.createPaste == null ? null : _react.default.createElement(
+      (_Button || _load_Button()).Button,
+      {
+        className: 'inline-block',
+        size: (_Button || _load_Button()).ButtonSizes.SMALL,
+        onClick: this._handleCreatePasteButtonClick,
+        ref: (0, (_addTooltip || _load_addTooltip()).default)({
+          title: 'Creates a Paste from the current contents of the console'
+        }) },
+      'Create Paste'
+    );
 
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       (_Toolbar || _load_Toolbar()).Toolbar,
       { location: 'top' },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         (_ToolbarLeft || _load_ToolbarLeft()).ToolbarLeft,
         null,
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'span',
           { className: 'nuclide-console-header-filter-icon inline-block' },
-          _reactForAtom.React.createElement((_FunnelIcon || _load_FunnelIcon()).FunnelIcon, null)
+          _react.default.createElement((_FunnelIcon || _load_FunnelIcon()).FunnelIcon, null)
         ),
-        _reactForAtom.React.createElement((_ModalMultiSelect || _load_ModalMultiSelect()).ModalMultiSelect, {
+        _react.default.createElement((_ModalMultiSelect || _load_ModalMultiSelect()).ModalMultiSelect, {
           labelComponent: MultiSelectLabel,
           optionComponent: MultiSelectOption,
           size: (_Button || _load_Button()).ButtonSizes.SMALL,
@@ -179,31 +191,34 @@ class ConsoleHeader extends _reactForAtom.React.Component {
           onChange: this.props.onSelectedSourcesChange,
           className: 'inline-block'
         }),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
           { className: 'inline-block' },
-          _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+          _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
             className: filterInputClassName,
             size: 'sm',
             width: 200,
             placeholderText: 'Filter',
-            onDidChange: this.props.onFilterTextChange
+            onDidChange: this.props.onFilterTextChange,
+            value: this.props.filterText
           }),
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             (_Button || _load_Button()).Button,
             {
               className: 'nuclide-console-filter-regexp-button',
               size: (_Button || _load_Button()).ButtonSizes.SMALL,
               selected: this.props.enableRegExpFilter,
-              onClick: this._handleReToggleButtonClick },
+              onClick: this._handleReToggleButtonClick,
+              tooltip: { title: 'Use Regex' } },
             '.*'
           )
         )
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         (_ToolbarRight || _load_ToolbarRight()).ToolbarRight,
         null,
-        _reactForAtom.React.createElement(
+        pasteButton,
+        _react.default.createElement(
           (_Button || _load_Button()).Button,
           {
             size: (_Button || _load_Button()).ButtonSizes.SMALL,
@@ -213,7 +228,6 @@ class ConsoleHeader extends _reactForAtom.React.Component {
       )
     );
   }
-
 }
 
 exports.default = ConsoleHeader;
@@ -230,12 +244,11 @@ function sortAlpha(a, b) {
 
 function MultiSelectLabel(props) {
   const { selectedOptions } = props;
-  const label = selectedOptions.length === 1 ? selectedOptions[0].label : `${ selectedOptions.length } Sources`;
-  return _reactForAtom.React.createElement(
+  const label = selectedOptions.length === 1 ? selectedOptions[0].label : `${selectedOptions.length} Sources`;
+  return _react.default.createElement(
     'span',
     null,
     'Showing: ',
     label
   );
 }
-module.exports = exports['default'];

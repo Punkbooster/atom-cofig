@@ -1,0 +1,70 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+        "spec": "/tmp/d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-11774-4604-1feui77.ljmtrl766r"
+    ]
+  ],
+  "_from": "../d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+  "_id": "darkula-syntax@0.3.0",
+  "_inCache": true,
+  "_location": "/darkula-syntax",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+    "spec": "/tmp/d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+  "_shasum": "e96a72ac3338f5f2c256c1d462199807b32854eb",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-11774-4604-ek8tw3.yr50tqpvi/package.tgz",
+  "_where": "/tmp/apm-install-dir-11774-4604-1feui77.ljmtrl766r",
+  "bugs": {
+    "url": "https://github.com/benburton/darkula-syntax/issues"
+  },
+  "dependencies": {},
+  "description": "An Atom theme inspired by the Darkula theme from IntelliJ IDEA.",
+  "devDependencies": {},
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "homepage": "https://github.com/benburton/darkula-syntax#readme",
+  "license": "MIT",
+  "name": "darkula-syntax",
+  "optionalDependencies": {},
+  "private": false,
+  "readme": "# Darkula Theme\n\nAn [Atom](http://atom.io) theme inspired by the Darkula theme from [IntelliJ IDEA](http://www.jetbrains.com/idea/).\n\n![](https://github.com/benburton/darkula-syntax/raw/master/screenshot.png)\n\nThe following languages/libraries are supported:\n  * CSS\n  * Java\n  * Javascript\n  * LESS\n  * Ruby (uses [RubyMine](http://www.jetbrains.com/ruby/) color conventions instead of IDEA)\n  * Scala\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benburton/darkula-syntax.git"
+  },
+  "theme": "syntax",
+  "version": "0.3.0",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [],
+    "extensions": {
+      ".json": [
+        "package.json"
+      ]
+    },
+    "folders": []
+  }
+}

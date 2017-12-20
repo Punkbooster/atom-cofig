@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,13 +13,14 @@ let getServerArgs = (() => {
       // Override the python path and additional sys paths
       // if override script is present.
       // $FlowFB
-      overrides = yield require('./fb/find-jedi-server-args')(src);
+      const findJediServerArgs = require('./fb/find-jedi-server-args').default;
+      overrides = yield findJediServerArgs(src);
     } catch (e) {}
     // Ignore.
 
 
     // Append the user's PYTHONPATH if it exists.
-    const { PYTHONPATH } = (0, (_process || _load_process()).getOriginalEnvironment)();
+    const { PYTHONPATH } = yield (0, (_process || _load_process()).getOriginalEnvironment)();
     if (PYTHONPATH != null && PYTHONPATH.trim() !== '') {
       overrides.paths = (overrides.paths || []).concat((_nuclideUri || _load_nuclideUri()).default.splitPathList(PYTHONPATH));
     }
@@ -43,7 +35,16 @@ let getServerArgs = (() => {
   return function getServerArgs(_x) {
     return _ref.apply(this, arguments);
   };
-})();
+})(); /**
+       * Copyright (c) 2015-present, Facebook, Inc.
+       * All rights reserved.
+       *
+       * This source code is licensed under the license found in the LICENSE file in
+       * the root directory of this source tree.
+       *
+       * 
+       * @format
+       */
 
 var _lruCache;
 
@@ -54,19 +55,19 @@ function _load_lruCache() {
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
 var _JediServer;
@@ -84,7 +85,6 @@ function _load_LinkTreeManager() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class JediServerManager {
-
   // Cache the promises of additional paths to ensure that we never trigger two
   // calls for the same file name from external calls to getLinkTreePaths and
   // getTopLevelModulePath.
@@ -118,7 +118,7 @@ class JediServerManager {
         _this._addTopLevelModulePath(src, server);
       }
 
-      return yield server.getService();
+      return server.getService();
     })();
   }
 
@@ -184,7 +184,5 @@ class JediServerManager {
     this._servers.reset();
     this._linkTreeManager.dispose();
   }
-
 }
 exports.default = JediServerManager;
-module.exports = exports['default'];

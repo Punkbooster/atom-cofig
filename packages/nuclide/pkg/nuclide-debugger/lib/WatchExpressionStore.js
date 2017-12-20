@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -33,19 +24,19 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _normalizeRemoteObjectValue;
@@ -55,6 +46,17 @@ function _load_normalizeRemoteObjectValue() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class WatchExpressionStore {
 
@@ -123,7 +125,8 @@ class WatchExpressionStore {
         this._watchExpressions.delete(expression);
         continue;
       }
-      this._requestExpressionEvaluation(expression, subject, false /* no REPL support */);
+      this._requestExpressionEvaluation(expression, subject, false /* no REPL support */
+      );
     }
   }
 
@@ -153,7 +156,8 @@ class WatchExpressionStore {
   }
 
   evaluateWatchExpression(expression) {
-    return this._evaluateExpression(expression, false /* do not support REPL */);
+    return this._evaluateExpression(expression, false /* do not support REPL */
+    );
   }
 
   /**
@@ -206,15 +210,22 @@ class WatchExpressionStore {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const result = yield _this._sendEvaluationCommand('evaluateOnSelectedCallFrame', expression, objectGroup);
-      if (result == null) {
-        // TODO: It would be nice to expose a better error from the backend here.
+      try {
+        const result = yield _this._sendEvaluationCommand('evaluateOnSelectedCallFrame', expression, objectGroup);
+        if (result == null) {
+          // Backend returned neither a result nor an error message
+          return {
+            type: 'text',
+            value: `Failed to evaluate: ${expression}`
+          };
+        } else {
+          return result;
+        }
+      } catch (e) {
         return {
           type: 'text',
-          value: `Failed to evaluate: ${ expression }`
+          value: `Failed to evaluate: ${expression} ` + e.toString()
         };
-      } else {
-        return result;
       }
     })();
   }
@@ -223,15 +234,22 @@ class WatchExpressionStore {
     var _this2 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const result = yield _this2._sendEvaluationCommand('runtimeEvaluate', expression);
-      if (result == null) {
-        // TODO: It would be nice to expose a better error from the backend here.
+      try {
+        const result = yield _this2._sendEvaluationCommand('runtimeEvaluate', expression);
+        if (result == null) {
+          // Backend returned neither a result nor an error message
+          return {
+            type: 'text',
+            value: `Failed to evaluate: ${expression}`
+          };
+        } else {
+          return result;
+        }
+      } catch (e) {
         return {
           type: 'text',
-          value: `Failed to evaluate: ${ expression }`
+          value: `Failed to evaluate: ${expression} ` + e.toString()
         };
-      } else {
-        return result;
       }
     })();
   }
@@ -246,12 +264,19 @@ class WatchExpressionStore {
       _this3._evaluationRequestsInFlight.set(evalId, deferred);
       _this3._bridge.sendEvaluationCommand(command, evalId, ...args);
       let result = null;
+      let errorMsg = null;
       try {
         result = yield deferred.promise;
       } catch (e) {
-        (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().warn(`${ command }: Error getting result.`, e);
+        (0, (_log4js || _load_log4js()).getLogger)('nuclide-debugger').warn(`${command}: Error getting result.`, e);
+        if (e.description) {
+          errorMsg = e.description;
+        }
       }
       _this3._evaluationRequestsInFlight.delete(evalId);
+      if (errorMsg != null) {
+        throw new Error(errorMsg);
+      }
       return result;
     })();
   }

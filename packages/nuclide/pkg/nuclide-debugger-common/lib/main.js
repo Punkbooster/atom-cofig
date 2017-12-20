@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -42,6 +33,32 @@ Object.defineProperty(exports, 'DebuggerRpcWebSocketService', {
   enumerable: true,
   get: function () {
     return (_DebuggerRpcServiceBase || _load_DebuggerRpcServiceBase()).DebuggerRpcWebSocketService;
+  }
+});
+
+var _VsDebugSessionTranslator;
+
+function _load_VsDebugSessionTranslator() {
+  return _VsDebugSessionTranslator = require('./VsDebugSessionTranslator');
+}
+
+Object.defineProperty(exports, 'VsDebugSessionTranslator', {
+  enumerable: true,
+  get: function () {
+    return _interopRequireDefault(_VsDebugSessionTranslator || _load_VsDebugSessionTranslator()).default;
+  }
+});
+
+var _FileCache;
+
+function _load_FileCache() {
+  return _FileCache = require('./FileCache');
+}
+
+Object.defineProperty(exports, 'FileCache', {
+  enumerable: true,
+  get: function () {
+    return _interopRequireDefault(_FileCache || _load_FileCache()).default;
   }
 });
 

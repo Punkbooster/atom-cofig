@@ -1,34 +1,17 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/*
- * WARNING: This package is still experimental and in early development. Use it at your own risk.
- */
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 var _atom = require('atom');
 
 var _ProviderRegistry;
 
 function _load_ProviderRegistry() {
-  return _ProviderRegistry = _interopRequireDefault(require('../../commons-atom/ProviderRegistry'));
+  return _ProviderRegistry = _interopRequireDefault(require('nuclide-commons-atom/ProviderRegistry'));
 }
 
 var _createPackage;
 
 function _load_createPackage() {
-  return _createPackage = _interopRequireDefault(require('../../commons-atom/createPackage'));
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
 }
 
 var _observeGrammarForTextEditors;
@@ -40,13 +23,13 @@ function _load_observeGrammarForTextEditors() {
 var _mouseToPosition;
 
 function _load_mouseToPosition() {
-  return _mouseToPosition = require('../../commons-atom/mouse-to-position');
+  return _mouseToPosition = require('nuclide-commons-atom/mouse-to-position');
 }
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _refactorActions;
@@ -71,10 +54,21 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// Will be a union type when we add more
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
+/*
+ * WARNING: This package is still experimental and in early development. Use it at your own risk.
+ */
 
-// Will be a union type when we add more
 const CONTEXT_MENU_CLASS = 'enable-nuclide-refactorizer';
 
 class Activation {
@@ -148,5 +142,4 @@ class Activation {
   }
 }
 
-exports.default = (0, (_createPackage || _load_createPackage()).default)(Activation);
-module.exports = exports['default'];
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

@@ -4,15 +4,15 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Decodes Unicode escapes on hover-over",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
     "testRunner": "apm"
   },
   "consumedServices": {
-    "nuclide-datatip.provider": {
+    "datatip": {
       "versions": {
-        "0.0.0": "consumeDatatipService"
+        "0.1.0": "consumeDatatipService"
       }
     }
   }

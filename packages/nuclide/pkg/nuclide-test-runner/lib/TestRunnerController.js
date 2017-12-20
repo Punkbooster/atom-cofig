@@ -1,17 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.TestRunnerController = exports.WORKSPACE_VIEW_URI = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -23,7 +15,9 @@ function _load_Ansi() {
 
 var _atom = require('atom');
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _TestRunModel;
 
@@ -57,35 +51,60 @@ function _load_consumeFirstProvider() {
   return _consumeFirstProvider = _interopRequireDefault(require('../../commons-atom/consumeFirstProvider'));
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-test-runner'); /**
+                                                                                   * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                   * All rights reserved.
+                                                                                   *
+                                                                                   * This source code is licensed under the license found in the LICENSE file in
+                                                                                   * the root directory of this source tree.
+                                                                                   *
+                                                                                   * 
+                                                                                   * @format
+                                                                                   */
+
+const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/test-runner';
 
 class TestRunnerController {
 
-  constructor(state_, testRunners) {
-    let state = state_;
-    if (state == null) {
-      state = {};
-    }
-
-    this._state = {
-      panelVisible: state.panelVisible
+  constructor(testRunners) {
+    this.clearOutput = () => {
+      this._buffer.setText('');
+      this._path = undefined;
+      this._run = undefined;
+      this._stopListening();
+      this._testSuiteModel = undefined;
+      this._renderPanel();
     };
 
-    // Bind Functions for use as callbacks;
-    // TODO: Replace with property initializers when supported by Flow;
-    this.clearOutput = this.clearOutput.bind(this);
-    this.hidePanel = this.hidePanel.bind(this);
-    this.stopTests = this.stopTests.bind(this);
-    this._handleClickRun = this._handleClickRun.bind(this);
-    this._onDebuggerCheckboxChanged = this._onDebuggerCheckboxChanged.bind(this);
+    this.stopTests = () => {
+      // Resume the debugger if needed.
+      atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-debugger:continue-debugging');
+      this._stopListening();
+      // Respond in the UI immediately and assume the process is properly killed.
+      this._setExecutionState((_TestRunnerPanel || _load_TestRunnerPanel()).default.ExecutionState.STOPPED);
+    };
+
+    this._onDebuggerCheckboxChanged = isChecked => {
+      this._attachDebuggerBeforeRunning = isChecked;
+      this._renderPanel();
+    };
+
+    this._handleClickRun = event => {
+      // Don't pass a reference to `runTests` directly because the callback receives a mouse event as
+      // its argument. `runTests` needs to be called with no arguments.
+      this.runTests();
+    };
+
+    this._root = document.createElement('div');
+    this._root.className = 'nuclide-test-runner-root';
 
     // TODO: Use the ReadOnlyTextBuffer class from nuclide-atom-text-editor when it is exported.
     this._buffer = new _atom.TextBuffer();
@@ -99,37 +118,13 @@ class TestRunnerController {
     this._renderPanel();
   }
 
-  clearOutput() {
-    this._buffer.setText('');
-    this._path = undefined;
-    this._run = undefined;
-    this._stopListening();
-    this._testSuiteModel = undefined;
-    this._renderPanel();
-  }
-
   destroy() {
     this._stopListening();
-    if (this._root) {
-      _reactForAtom.ReactDOM.unmountComponentAtNode(this._root);
-      this._root = null;
-    }
-    if (this._panel) {
-      this._panel.destroy();
-      this._panel = null;
-    }
+    _reactDom.default.unmountComponentAtNode(this._root);
   }
 
   didUpdateTestRunners() {
     this._renderPanel();
-  }
-
-  hidePanel() {
-    this.stopTests();
-    this._state.panelVisible = false;
-    if (this._panel) {
-      this._panel.hide();
-    }
   }
 
   /**
@@ -141,22 +136,13 @@ class TestRunnerController {
     return (0, _asyncToGenerator.default)(function* () {
       _this._runningTest = true;
 
-      // If the test runner panel is not rendered yet, ensure it is rendered before continuing.
-      if (_this._testRunnerPanel == null || !_this._state.panelVisible) {
-        yield new Promise(function (resolve, reject) {
-          _this.showPanel(resolve);
-        });
-      }
-
-      if (_this._testRunnerPanel == null) {
-        logger.error('Test runner panel did not render as expected. Aborting testing.');
-        return;
-      }
+      // eslint-disable-next-line nuclide-internal/atom-apis
+      atom.workspace.open(WORKSPACE_VIEW_URI);
 
       // Get selected test runner when Flow knows `this._testRunnerPanel` is defined.
       const selectedTestRunner = _this._testRunnerPanel.getSelectedTestRunner();
       if (!selectedTestRunner) {
-        logger.warn(`No test runner selected. Active test runners: ${ _this._testRunners.size }`);
+        logger.warn(`No test runner selected. Active test runners: ${_this._testRunners.size}`);
         return;
       }
 
@@ -225,40 +211,6 @@ class TestRunnerController {
     })();
   }
 
-  stopTests() {
-    // Resume the debugger if needed.
-    atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-debugger:continue-debugging');
-    this._stopListening();
-    // Respond in the UI immediately and assume the process is properly killed.
-    this._setExecutionState((_TestRunnerPanel || _load_TestRunnerPanel()).default.ExecutionState.STOPPED);
-  }
-
-  serialize() {
-    return this._state;
-  }
-
-  showPanel(didRender) {
-    (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('testrunner-show-panel');
-    this._state.panelVisible = true;
-    this._renderPanel(didRender);
-    if (this._panel) {
-      this._panel.show();
-    }
-  }
-
-  togglePanel() {
-    (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('testrunner-hide-panel');
-    if (this._state.panelVisible) {
-      this.hidePanel();
-    } else {
-      this.showPanel();
-    }
-  }
-
-  isVisible() {
-    return this._state.panelVisible;
-  }
-
   /**
    * Adds an end-of-line character to `text` and appends the resulting string to this controller's
    * text buffer.
@@ -269,18 +221,7 @@ class TestRunnerController {
     // bookkeeping.
     //
     // @see {@link https://atom.io/docs/api/v1.0.4/TextBuffer#instance-append|TextBuffer::append}
-    this._buffer.append(`${ text }${ _os.default.EOL }`, { undo: 'skip' });
-  }
-
-  _onDebuggerCheckboxChanged(isChecked) {
-    this._attachDebuggerBeforeRunning = isChecked;
-    this._renderPanel();
-  }
-
-  _handleClickRun(event) {
-    // Don't pass a reference to `runTests` directly because the callback receives a mouse event as
-    // its argument. `runTests` needs to be called with no arguments.
-    this.runTests();
+    this._buffer.append(`${text}${_os.default.EOL}`, { undo: 'skip' });
   }
 
   _runTestRunnerServiceForPath(testRun, path, label) {
@@ -318,17 +259,17 @@ class TestRunnerController {
             this._run.stop();
           }
           if (error.code === 'ENOENT') {
-            this._appendToBuffer(`${ (_Ansi || _load_Ansi()).default.YELLOW }Command '${ error.path }' does not exist${ (_Ansi || _load_Ansi()).default.RESET }`);
-            this._appendToBuffer(`${ (_Ansi || _load_Ansi()).default.YELLOW }Are you trying to run remotely?${ (_Ansi || _load_Ansi()).default.RESET }`);
-            this._appendToBuffer(`${ (_Ansi || _load_Ansi()).default.YELLOW }Path: ${ path }${ (_Ansi || _load_Ansi()).default.RESET }`);
+            this._appendToBuffer(`${(_Ansi || _load_Ansi()).default.YELLOW}Command '${error.path}' does not exist${(_Ansi || _load_Ansi()).default.RESET}`);
+            this._appendToBuffer(`${(_Ansi || _load_Ansi()).default.YELLOW}Are you trying to run remotely?${(_Ansi || _load_Ansi()).default.RESET}`);
+            this._appendToBuffer(`${(_Ansi || _load_Ansi()).default.YELLOW}Path: ${path}${(_Ansi || _load_Ansi()).default.RESET}`);
           }
-          this._appendToBuffer(`${ (_Ansi || _load_Ansi()).default.RED }Original Error: ${ error.message }${ (_Ansi || _load_Ansi()).default.RESET }`);
+          this._appendToBuffer(`${(_Ansi || _load_Ansi()).default.RED}Original Error: ${error.message}${(_Ansi || _load_Ansi()).default.RESET}`);
           this._setExecutionState((_TestRunnerPanel || _load_TestRunnerPanel()).default.ExecutionState.STOPPED);
-          logger.error(`Error running tests: "${ error.message }"`);
+          logger.error(`Error running tests: "${error.message}"`);
           break;
         case 'stderr':
           // Color stderr output red in the console to distinguish it as error.
-          this._appendToBuffer(`${ (_Ansi || _load_Ansi()).default.RED }${ message.data }${ (_Ansi || _load_Ansi()).default.RESET }`);
+          this._appendToBuffer(`${(_Ansi || _load_Ansi()).default.RED}${message.data}${(_Ansi || _load_Ansi()).default.RESET}`);
           break;
       }
     }).finally(() => {
@@ -343,20 +284,7 @@ class TestRunnerController {
     this._renderPanel();
   }
 
-  _renderPanel(didRender) {
-    // Initialize and render the contents of the panel only if the hosting container is visible by
-    // the user's choice.
-    if (!this._state.panelVisible) {
-      return;
-    }
-
-    let root = this._root;
-
-    if (!root) {
-      root = document.createElement('div');
-      this._root = root;
-    }
-
+  _renderPanel() {
     let progressValue;
     if (this._testSuiteModel && this._executionState === (_TestRunnerPanel || _load_TestRunnerPanel()).default.ExecutionState.RUNNING) {
       progressValue = this._testSuiteModel.progressPercent();
@@ -365,13 +293,11 @@ class TestRunnerController {
       // track.
       progressValue = 100;
     }
-
-    const component = _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement((_TestRunnerPanel || _load_TestRunnerPanel()).default, {
+    const component = _reactDom.default.render(_react.default.createElement((_TestRunnerPanel || _load_TestRunnerPanel()).default, {
       attachDebuggerBeforeRunning: this._attachDebuggerBeforeRunning,
       buffer: this._buffer,
       executionState: this._executionState,
       onClickClear: this.clearOutput,
-      onClickClose: this.hidePanel,
       onClickRun: this._handleClickRun,
       onClickStop: this.stopTests,
       onDebuggerCheckboxChanged: this._onDebuggerCheckboxChanged,
@@ -383,17 +309,13 @@ class TestRunnerController {
       // determinate on each render.
       , testRunners: Array.from(this._testRunners),
       testSuiteModel: this._testSuiteModel
-    }), root, didRender);
+    }), this._root);
 
     if (!(component instanceof (_TestRunnerPanel || _load_TestRunnerPanel()).default)) {
       throw new Error('Invariant violation: "component instanceof TestRunnerPanel"');
     }
 
     this._testRunnerPanel = component;
-
-    if (!this._panel) {
-      this._panel = atom.workspace.addBottomPanel({ item: root, visible: this._state.panelVisible });
-    }
   }
 
   _stopListening() {
@@ -421,11 +343,35 @@ class TestRunnerController {
         // proceed as usual.
 
 
-        logger.error(`Error when stopping test run #'${ this._run.label }: ${ e }`);
+        logger.error(`Error when stopping test run #'${this._run.label}: ${e}`);
       }
     }
   }
 
+  getTitle() {
+    return 'Test Runner';
+  }
+
+  getIconName() {
+    return 'checklist';
+  }
+
+  getURI() {
+    return WORKSPACE_VIEW_URI;
+  }
+
+  getDefaultLocation() {
+    return 'bottom';
+  }
+
+  getElement() {
+    return this._root;
+  }
+
+  serialize() {
+    return {
+      deserializer: 'nuclide.TestRunnerPanelState'
+    };
+  }
 }
-exports.default = TestRunnerController;
-module.exports = exports['default'];
+exports.TestRunnerController = TestRunnerController;

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -33,30 +24,41 @@ let getCtagsService = exports.getCtagsService = (() => {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const TAGS_FILENAME = 'tags';class CtagsService {
+const TAGS_FILENAME = 'tags'; /**
+                               * Copyright (c) 2015-present, Facebook, Inc.
+                               * All rights reserved.
+                               *
+                               * This source code is licensed under the license found in the LICENSE file in
+                               * the root directory of this source tree.
+                               *
+                               * 
+                               * @format
+                               */
+
+class CtagsService {
 
   constructor(tagsPath) {
     this._tagsPath = tagsPath;
@@ -69,9 +71,9 @@ const TAGS_FILENAME = 'tags';class CtagsService {
   findTags(query, options) {
     let ctags;
     try {
-      ctags = require('../VendorLib/ctags-prebuilt/lib/ctags');
+      ctags = require('nuclide-prebuilt-libs/ctags');
     } catch (e) {
-      (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error('Could not load the ctags package:', e);
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-ctags-rpc').error('Could not load the ctags package:', e);
       return Promise.resolve([]);
     }
 

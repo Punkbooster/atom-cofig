@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -23,12 +14,21 @@ var _atom = require('atom');
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const { remote } = _electron.default;
+const { remote } = _electron.default; /**
+                                       * Copyright (c) 2015-present, Facebook, Inc.
+                                       * All rights reserved.
+                                       *
+                                       * This source code is licensed under the license found in the LICENSE file in
+                                       * the root directory of this source tree.
+                                       *
+                                       * 
+                                       * @format
+                                       */
 
 if (!(remote != null)) {
   throw new Error('Invariant violation: "remote != null"');
@@ -50,19 +50,40 @@ function proxyToNativeNotification(notification) {
     return;
   }
 
-  raiseNativeNotification(`${ upperCaseFirst(notification.getType()) }: ${ notification.getMessage() }`, options.detail);
+  raiseNativeNotification(`${upperCaseFirst(notification.getType())}: ${notification.getMessage()}`, options.detail, 0, false);
 }
 
-function raiseNativeNotification(title, body) {
-  if (!(_featureConfig || _load_featureConfig()).default.get('nuclide-notifications.whenFocused') && remote.getCurrentWindow().isFocused()) {
-    return;
+function raiseNativeNotification(title, body, timeout, raiseIfAtomHasFocus = false) {
+  const sendNotification = () => {
+    if (raiseIfAtomHasFocus === false && !(_featureConfig || _load_featureConfig()).default.get('nuclide-notifications.whenFocused') && remote.getCurrentWindow().isFocused()) {
+      return;
+    }
+
+    // eslint-disable-next-line no-new, no-undef
+    new Notification(title, {
+      body,
+      icon: 'atom://nuclide/pkg/nuclide-notifications/notification.png'
+    });
+  };
+
+  if (timeout === 0) {
+    sendNotification();
+  } else {
+    const currentWindow = remote.getCurrentWindow();
+    if (raiseIfAtomHasFocus !== false || !currentWindow.isFocused()) {
+      const timeoutId = setTimeout(() => {
+        sendNotification();
+      }, timeout);
+
+      currentWindow.once('focus', () => {
+        clearTimeout(timeoutId);
+      });
+
+      return new _atom.Disposable(() => clearTimeout(timeoutId));
+    }
   }
 
-  // eslint-disable-next-line no-new, no-undef
-  new Notification(title, {
-    body,
-    icon: 'atom://nuclide/pkg/nuclide-notifications/notification.png'
-  });
+  return null;
 }
 
 function provideRaiseNativeNotification() {
@@ -75,5 +96,5 @@ function deactivate() {
 }
 
 function upperCaseFirst(str) {
-  return `${ str[0].toUpperCase() }${ str.slice(1) }`;
+  return `${str[0].toUpperCase()}${str.slice(1)}`;
 }

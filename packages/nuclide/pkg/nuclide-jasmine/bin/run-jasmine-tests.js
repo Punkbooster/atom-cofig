@@ -1,42 +1,52 @@
 #!/usr/bin/env node
-'use strict';
-/* @noflow */
-
-/*
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * @noflow
  */
+'use strict';
 
-/* NON-TRANSPILED FILE */
-/* eslint comma-dangle: [1, always-multiline], prefer-object-spread/prefer-object-spread: 0 */
-
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
 /* eslint-disable no-console */
 
 // jasmine-node test runner with Atom test globals and babel transpiling support.
 
-// Load nuclide-node-transpiler to start transpiling.
-require('../../nuclide-node-transpiler');
+const {__DEV__} = require('../../nuclide-node-transpiler/lib/env');
+
+if (__DEV__) {
+  require('../../nuclide-node-transpiler');
+}
 
 // Set this up before we call jasmine-node. jasmine-node does this same trick,
 // but neglects to respect the exit code, so we beat it the to the punch.
 process.once('exit', code => {
-  // jasmine-node is swallowing temp's exit handler, so force a cleanup.
-  try {
-    const temp = require('temp');
-    temp.cleanupSync();
-  } catch (err) {
-    if (err && err.message !== 'not tracking') {
-      console.log(`temp.cleanup() failed. ${err}`);
+  const temp = require('temp');
+  if (code === 0) {
+    // jasmine-node is swallowing temp's exit handler, so force a cleanup.
+    try {
+      temp.cleanupSync();
+    } catch (err) {
+      if (err && err.message !== 'not tracking') {
+        console.log(`temp.cleanup() failed. ${err}`);
+      }
     }
+  } else {
+    // When the test fails, we keep the temp contents for debugging.
+    temp.track(false);
   }
   process.exit(code);
 });
 
 // Load waitsForPromise into global.
-global.waitsForPromise = require('../lib/waitsForPromise');
+global.waitsForPromise = require('../lib/waitsForPromise').default;
 global.window = global;
 
 require('../lib/focused');

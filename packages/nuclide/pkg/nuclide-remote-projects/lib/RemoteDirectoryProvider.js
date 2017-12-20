@@ -1,13 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _nuclideRemoteConnection;
 
@@ -20,7 +15,16 @@ function _load_nuclideRemoteConnection() {
  * `RemoteDirectory` for it. This should also be the path prefix checked by the
  * handler we register with `atom.project.registerOpener()` to open remote files.
  */
-const REMOTE_PATH_URI_PREFIX = 'nuclide://';
+const REMOTE_PATH_URI_PREFIX = 'nuclide://'; /**
+                                              * Copyright (c) 2015-present, Facebook, Inc.
+                                              * All rights reserved.
+                                              *
+                                              * This source code is licensed under the license found in the LICENSE file in
+                                              * the root directory of this source tree.
+                                              *
+                                              * 
+                                              * @format
+                                              */
 
 class RemoteDirectoryProvider {
   directoryForURISync(uri) {
@@ -42,5 +46,4 @@ class RemoteDirectoryProvider {
     return Promise.resolve(this.directoryForURISync(uri));
   }
 }
-
-module.exports = RemoteDirectoryProvider;
+exports.default = RemoteDirectoryProvider;

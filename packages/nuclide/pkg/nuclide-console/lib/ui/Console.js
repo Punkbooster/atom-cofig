@@ -1,25 +1,28 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
 var _debounce;
 
 function _load_debounce() {
-  return _debounce = _interopRequireDefault(require('../../../commons-node/debounce'));
+  return _debounce = _interopRequireDefault(require('nuclide-commons/debounce'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _FilteredMessagesReminder;
+
+function _load_FilteredMessagesReminder() {
+  return _FilteredMessagesReminder = _interopRequireDefault(require('./FilteredMessagesReminder'));
+}
 
 var _OutputTable;
 
@@ -45,10 +48,10 @@ function _load_PromptButton() {
   return _PromptButton = _interopRequireDefault(require('./PromptButton'));
 }
 
-var _UnseenMessagesNotification;
+var _NewMessagesNotification;
 
-function _load_UnseenMessagesNotification() {
-  return _UnseenMessagesNotification = _interopRequireDefault(require('./UnseenMessagesNotification'));
+function _load_NewMessagesNotification() {
+  return _NewMessagesNotification = _interopRequireDefault(require('./NewMessagesNotification'));
 }
 
 var _shallowequal;
@@ -57,28 +60,82 @@ function _load_shallowequal() {
   return _shallowequal = _interopRequireDefault(require('shallowequal'));
 }
 
+var _recordsChanged;
+
+function _load_recordsChanged() {
+  return _recordsChanged = _interopRequireDefault(require('../recordsChanged'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class Console extends _reactForAtom.React.Component {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class Console extends _react.default.Component {
 
   constructor(props) {
     super(props);
+
+    this._getExecutor = id => {
+      return this.props.executors.get(id);
+    };
+
+    this._getProvider = id => {
+      return this.props.getProvider(id);
+    };
+
+    this._handleScroll = (offsetHeight, scrollHeight, scrollTop) => {
+      this._handleScrollEnd(offsetHeight, scrollHeight, scrollTop);
+    };
+
+    this._handleOutputTable = ref => {
+      this._outputTable = ref;
+    };
+
+    this._scrollToBottom = () => {
+      if (!this._outputTable) {
+        return;
+      }
+      this._outputTable.scrollToBottom();
+      this.setState({ unseenMessages: false });
+    };
+
     this.state = {
       unseenMessages: false
     };
-    this._shouldScrollToBottom = false;
-    this._getExecutor = this._getExecutor.bind(this);
-    this._getProvider = this._getProvider.bind(this);
-    this._handleScrollPane = this._handleScrollPane.bind(this);
-    this._handleScroll = this._handleScroll.bind(this);
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
+    this._isScrolledNearBottom = true;
     this._handleScrollEnd = (0, (_debounce || _load_debounce()).default)(this._handleScrollEnd, 100);
-    this._scrollToBottom = this._scrollToBottom.bind(this);
+  }
+
+  componentDidMount() {
+    // Wait for `<OutputTable />` to render itself via react-virtualized before scrolling and
+    // re-measuring; Otherwise, the scrolled location will be inaccurate, preventing the Console
+    // from auto-scrolling.
+    const immediate = setImmediate(() => {
+      this._scrollToBottom();
+    });
+    this._disposables.add(() => {
+      clearImmediate(immediate);
+    });
+  }
+
+  componentWillUnmount() {
+    this._disposables.dispose();
   }
 
   componentDidUpdate(prevProps) {
     // If records are added while we're scrolled to the bottom (or very very close, at least),
     // automatically scroll.
-    if (this._shouldScrollToBottom) {
+    if (this._isScrolledNearBottom && (0, (_recordsChanged || _load_recordsChanged()).default)(prevProps.displayableRecords, this.props.displayableRecords)) {
       this._scrollToBottom();
     }
   }
@@ -93,7 +150,7 @@ class Console extends _reactForAtom.React.Component {
       id: executor.id,
       label: executor.name
     }));
-    return _reactForAtom.React.createElement((_PromptButton || _load_PromptButton()).default, {
+    return _react.default.createElement((_PromptButton || _load_PromptButton()).default, {
       value: currentExecutor.id,
       onChange: this.props.selectExecutor,
       options: options,
@@ -101,25 +158,19 @@ class Console extends _reactForAtom.React.Component {
     });
   }
 
-  _isScrolledToBottom() {
-    if (this._scrollPane == null) {
-      return true;
-    }
-    const { scrollTop, scrollHeight, offsetHeight } = this._scrollPane;
+  _isScrolledToBottom(offsetHeight, scrollHeight, scrollTop) {
     return scrollHeight - (offsetHeight + scrollTop) < 5;
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.records !== this.props.records) {
-      const isScrolledToBottom = this._isScrolledToBottom();
-
-      this._shouldScrollToBottom = isScrolledToBottom;
-
-      // If we receive new messages after we've scrolled away from the bottom, show the
-      // "new messages" notification.
-      if (!isScrolledToBottom) {
-        this.setState({ unseenMessages: true });
-      }
+    // If the messages were cleared, hide the notification.
+    if (nextProps.displayableRecords.length === 0) {
+      this.setState({ unseenMessages: false });
+    } else if (
+    // If we receive new messages after we've scrolled away from the bottom, show the "new
+    // messages" notification.
+    !this._isScrolledNearBottom && (0, (_recordsChanged || _load_recordsChanged()).default)(this.props.displayableRecords, nextProps.displayableRecords)) {
+      this.setState({ unseenMessages: true });
     }
   }
 
@@ -127,48 +178,42 @@ class Console extends _reactForAtom.React.Component {
     return !(0, (_shallowequal || _load_shallowequal()).default)(this.props, nextProps) || !(0, (_shallowequal || _load_shallowequal()).default)(this.state, nextState);
   }
 
-  _getExecutor(id) {
-    return this.props.executors.get(id);
-  }
-
-  _getProvider(id) {
-    return this.props.getProvider(id);
-  }
-
   render() {
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'nuclide-console' },
-      _reactForAtom.React.createElement((_ConsoleHeader || _load_ConsoleHeader()).default, {
+      _react.default.createElement((_ConsoleHeader || _load_ConsoleHeader()).default, {
         clear: this.props.clearRecords,
+        createPaste: this.props.createPaste,
         invalidFilterInput: this.props.invalidFilterInput,
         enableRegExpFilter: this.props.enableRegExpFilter,
+        filterText: this.props.filterText,
         selectedSourceIds: this.props.selectedSourceIds,
         sources: this.props.sources,
         toggleRegExpFilter: this.props.toggleRegExpFilter,
         onFilterTextChange: this.props.updateFilterText,
         onSelectedSourcesChange: this.props.selectSources
       }),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'nuclide-console-body' },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'div',
           { className: 'nuclide-console-scroll-pane-wrapper' },
-          _reactForAtom.React.createElement(
-            'div',
-            {
-              ref: this._handleScrollPane,
-              className: 'nuclide-console-scroll-pane',
-              onScroll: this._handleScroll },
-            _reactForAtom.React.createElement((_OutputTable || _load_OutputTable()).default, {
-              records: this.props.records,
-              showSourceLabels: this.props.selectedSourceIds.length > 1,
-              getExecutor: this._getExecutor,
-              getProvider: this._getProvider
-            })
-          ),
-          _reactForAtom.React.createElement((_UnseenMessagesNotification || _load_UnseenMessagesNotification()).default, {
+          _react.default.createElement((_FilteredMessagesReminder || _load_FilteredMessagesReminder()).default, {
+            filteredRecordCount: this.props.filteredRecordCount,
+            onReset: this.props.resetAllFilters
+          }),
+          _react.default.createElement((_OutputTable || _load_OutputTable()).default, {
+            ref: this._handleOutputTable,
+            displayableRecords: this.props.displayableRecords,
+            showSourceLabels: this.props.selectedSourceIds.length > 1,
+            getExecutor: this._getExecutor,
+            getProvider: this._getProvider,
+            onScroll: this._handleScroll,
+            onDisplayableRecordHeightChange: this.props.onDisplayableRecordHeightChange
+          }),
+          _react.default.createElement((_NewMessagesNotification || _load_NewMessagesNotification()).default, {
             visible: this.state.unseenMessages,
             onClick: this._scrollToBottom
           })
@@ -183,11 +228,11 @@ class Console extends _reactForAtom.React.Component {
     if (currentExecutor == null) {
       return;
     }
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'nuclide-console-prompt' },
       this._renderPromptButton(),
-      _reactForAtom.React.createElement((_InputArea || _load_InputArea()).default, {
+      _react.default.createElement((_InputArea || _load_InputArea()).default, {
         scopeName: currentExecutor.scopeName,
         onSubmit: this.props.execute,
         history: this.props.history
@@ -195,32 +240,12 @@ class Console extends _reactForAtom.React.Component {
     );
   }
 
-  _handleScroll(event) {
-    this._handleScrollEnd();
-  }
-
-  _handleScrollEnd() {
-    if (!this._scrollPane) {
-      return;
-    }
-
-    const isScrolledToBottom = this._isScrolledToBottom();
-    this.setState({ unseenMessages: this.state.unseenMessages && !isScrolledToBottom });
-  }
-
-  _handleScrollPane(el) {
-    this._scrollPane = el;
-  }
-
-  _scrollToBottom() {
-    if (!this._scrollPane) {
-      return;
-    }
-    // TODO: Animate?
-    this._scrollPane.scrollTop = this._scrollPane.scrollHeight;
-    this.setState({ unseenMessages: false });
+  _handleScrollEnd(offsetHeight, scrollHeight, scrollTop) {
+    this._isScrolledNearBottom = this._isScrolledToBottom(offsetHeight, scrollHeight, scrollTop);
+    this.setState({
+      unseenMessages: this.state.unseenMessages && !this._isScrolledNearBottom
+    });
   }
 
 }
 exports.default = Console;
-module.exports = exports['default'];

@@ -1,19 +1,22 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+var _addTooltip;
+
+function _load_addTooltip() {
+  return _addTooltip = _interopRequireDefault(require('nuclide-commons-ui/addTooltip'));
+}
+
+var _hideAllTooltips;
+
+function _load_hideAllTooltips() {
+  return _hideAllTooltips = _interopRequireDefault(require('../../nuclide-ui/hide-all-tooltips'));
+}
 
 var _nuclideAnalytics;
 
@@ -25,13 +28,54 @@ var _atom = require('atom');
 
 var _electron = require('electron');
 
+var _nuclideVcsLog;
+
+function _load_nuclideVcsLog() {
+  return _nuclideVcsLog = require('../../nuclide-vcs-log');
+}
+
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
+
+var _classnames;
+
+function _load_classnames() {
+  return _classnames = _interopRequireDefault(require('classnames'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const MS_TO_WAIT_BEFORE_SPINNER = 2000;
-const CHANGESET_CSS_CLASS = 'nuclide-blame-hash';
-const CLICKABLE_CHANGESET_CSS_CLASS = 'nuclide-blame-hash-clickable';
-const HG_CHANGESET_DATA_ATTRIBUTE = 'hgChangeset';
-const BLAME_DECORATION_CLASS = 'blame-decoration';
+// eslint-disable-next-line nuclide-internal/no-cross-atom-imports
+const BLAME_DECORATION_CLASS = 'blame-decoration'; /**
+                                                    * Copyright (c) 2015-present, Facebook, Inc.
+                                                    * All rights reserved.
+                                                    *
+                                                    * This source code is licensed under the license found in the LICENSE file in
+                                                    * the root directory of this source tree.
+                                                    *
+                                                    * 
+                                                    * @format
+                                                    */
+
+let Avatar;
+try {
+  // $FlowFB
+  Avatar = require('../../nuclide-ui/fb-Avatar').default;
+} catch (err) {
+  Avatar = null;
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function getHash(revision) {
+  if (revision == null) {
+    return null;
+  }
+  return revision.hash;
+}
 
 class BlameGutter {
 
@@ -49,60 +93,35 @@ class BlameGutter {
     this._subscriptions = new _atom.CompositeDisposable();
     this._editor = editor;
     this._blameProvider = blameProvider;
-    this._changesetSpanClassName = CHANGESET_CSS_CLASS;
     this._bufferLineToDecoration = new Map();
     // Priority is -200 by default and 0 is the line number
     this._gutter = editor.addGutter({ name: gutterName, priority: -1200 });
-    const gutterView = atom.views.getView(this._gutter);
-    gutterView.classList.add('nuclide-blame');
-
-    // If getUrlForRevision() is available, add a single, top-level click handler for the gutter.
-    if (typeof blameProvider.getUrlForRevision === 'function') {
-      // We also want to style the changeset differently if it is clickable.
-      this._changesetSpanClassName += ' ' + CLICKABLE_CHANGESET_CSS_CLASS;
-
-      const onClick = this._onClick.bind(this);
-      gutterView.addEventListener('click', onClick);
-      this._subscriptions.add(this._gutter.onDidDestroy(() => gutterView.removeEventListener('click', onClick)));
-    }
 
     this._subscriptions.add(editor.onDidDestroy(() => {
       this._isEditorDestroyed = true;
     }));
+    const editorView = atom.views.getView(editor);
+    this._subscriptions.add(editorView.onDidChangeScrollTop(() => {
+      (0, (_hideAllTooltips || _load_hideAllTooltips()).default)();
+    }));
     this._fetchAndDisplayBlame();
   }
 
-  /**
-   * If the user clicked on a ChangeSet ID, extract it from the DOM element via the data- attribute
-   * and find the corresponding Differential revision. If successful, open the URL for the revision.
-   */
-  _onClick(e) {
+  _onClick(revision) {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const target = e.target;
-      if (!target) {
-        return;
-      }
-
-      const dataset = target.dataset;
-      const changeset = dataset[HG_CHANGESET_DATA_ATTRIBUTE];
-      if (!changeset) {
-        return;
-      }
-
       const blameProvider = _this._blameProvider;
-
-      if (!(typeof blameProvider.getUrlForRevision === 'function')) {
-        throw new Error('Invariant violation: "typeof blameProvider.getUrlForRevision === \'function\'"');
+      if (typeof blameProvider.getUrlForRevision !== 'function') {
+        return;
       }
 
-      const url = yield blameProvider.getUrlForRevision(_this._editor, changeset);
+      const url = yield blameProvider.getUrlForRevision(_this._editor, revision.hash);
       if (url) {
         // Note that 'shell' is not the public 'shell' package on npm but an Atom built-in.
         _electron.shell.openExternal(url);
       } else {
-        atom.notifications.addWarning(`No URL found for ${ changeset }.`);
+        atom.notifications.addWarning(`No URL found for ${revision.hash}.`);
       }
 
       (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('blame-gutter-click-revision', {
@@ -123,7 +142,7 @@ class BlameGutter {
       try {
         newBlame = yield _this2._blameProvider.getBlameForEditor(_this2._editor);
       } catch (error) {
-        atom.notifications.addError('Failed to fetch blame to display. ' + 'The file is empty or untracked or the repository cannot be reached.', error);
+        atom.notifications.addError('Failed to fetch blame to display. ' + 'The file is empty or untracked or the repository cannot be reached.', { detail: error });
         atom.commands.dispatch(atom.views.getView(_this2._editor), 'nuclide-blame:hide-blame');
         return;
       }
@@ -140,27 +159,22 @@ class BlameGutter {
   }
 
   _addLoadingSpinner() {
-    if (this._loadingSpinnerIsPending) {
+    if (this._loadingSpinnerDiv) {
       return;
     }
-    this._loadingSpinnerIsPending = true;
-    this._loadingSpinnerTimeoutId = window.setTimeout(() => {
-      const gutterView = atom.views.getView(this._gutter);
-      this._loadingSpinnerIsPending = false;
-      this._loadingSpinnerDiv = document.createElement('div');
-      this._loadingSpinnerDiv.className = 'nuclide-blame-spinner';
-      gutterView.appendChild(this._loadingSpinnerDiv);
-    }, MS_TO_WAIT_BEFORE_SPINNER);
+    const gutterView = atom.views.getView(this._gutter);
+    this._loadingSpinnerDiv = document.createElement('div');
+    this._loadingSpinnerDiv.className = 'nuclide-blame-spinner';
+    gutterView.appendChild(this._loadingSpinnerDiv);
+    gutterView.classList.add('nuclide-blame-loading');
   }
 
   _cleanUpLoadingSpinner() {
-    if (this._loadingSpinnerIsPending) {
-      window.clearTimeout(this._loadingSpinnerTimeoutId);
-      this._loadingSpinnerIsPending = false;
-    }
     if (this._loadingSpinnerDiv) {
       this._loadingSpinnerDiv.remove();
       this._loadingSpinnerDiv = null;
+      const gutterView = atom.views.getView(this._gutter);
+      gutterView.classList.remove('nuclide-blame-loading');
     }
   }
 
@@ -172,36 +186,49 @@ class BlameGutter {
       // has been destroyed results in an exception.
       this._gutter.destroy();
     }
-    for (const decoration of this._bufferLineToDecoration.values()) {
-      decoration.getMarker().destroy();
+    // Remove all the lines
+    for (const lineNumber of this._bufferLineToDecoration.keys()) {
+      this._removeBlameLine(lineNumber);
     }
   }
 
   _updateBlame(blameForEditor) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('blame-ui.blame-gutter.updateBlame', () => this.__updateBlame(blameForEditor));
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('blame-ui.blame-gutter.updateBlame', () => this.__updateBlame(blameForEditor));
   }
 
   // The BlameForEditor completely replaces any previous blame information.
   __updateBlame(blameForEditor) {
-    if (blameForEditor.size === 0) {
+    if (blameForEditor.length === 0) {
       atom.notifications.addInfo(`Found no blame to display. Is this file empty or untracked?
           If not, check for errors in the Nuclide logs local to your repo.`);
     }
     const allPreviousBlamedLines = new Set(this._bufferLineToDecoration.keys());
 
-    let longestBlame = 0;
-    for (const blameInfo of blameForEditor.values()) {
-      let blameLength = blameInfo.author.length;
-      if (blameInfo.changeset) {
-        blameLength += blameInfo.changeset.length + 1;
+    let oldest = Number.POSITIVE_INFINITY;
+    let newest = Number.NEGATIVE_INFINITY;
+    for (let i = 0; i < blameForEditor.length; ++i) {
+      const revision = blameForEditor[i];
+      if (!revision) {
+        continue;
       }
-      if (blameLength > longestBlame) {
-        longestBlame = blameLength;
+      const date = Number(revision.date);
+      if (date < oldest) {
+        oldest = date;
+      }
+      if (date > newest) {
+        newest = date;
       }
     }
 
-    for (const [bufferLine, blameInfo] of blameForEditor) {
-      this._setBlameLine(bufferLine, blameInfo, longestBlame);
+    for (let bufferLine = 0; bufferLine < blameForEditor.length; ++bufferLine) {
+      const hash = getHash(blameForEditor[bufferLine]);
+      const isFirstLine = hash !== getHash(blameForEditor[bufferLine - 1]);
+      const isLastLine = hash !== getHash(blameForEditor[bufferLine + 1]);
+
+      const blameInfo = blameForEditor[bufferLine];
+      if (blameInfo) {
+        this._setBlameLine(bufferLine, blameInfo, isFirstLine, isLastLine, oldest, newest);
+      }
       allPreviousBlamedLines.delete(bufferLine);
     }
 
@@ -209,18 +236,10 @@ class BlameGutter {
     for (const oldLine of allPreviousBlamedLines) {
       this._removeBlameLine(oldLine);
     }
-
-    // Update the width of the gutter according to the new contents.
-    this._updateGutterWidthToCharacterLength(longestBlame);
   }
 
-  _updateGutterWidthToCharacterLength(characters) {
-    const gutterView = atom.views.getView(this._gutter);
-    gutterView.style.width = `${ characters }ch`;
-  }
-
-  _setBlameLine(bufferLine, blameInfo, longestBlame) {
-    const item = this._createGutterItem(blameInfo, longestBlame);
+  _setBlameLine(bufferLine, revision, isFirstLine, isLastLine, oldest, newest) {
+    const item = this._createGutterItem(revision, isFirstLine, isLastLine, oldest, newest);
     const decorationProperties = {
       type: 'gutter',
       gutterName: this._gutter.name,
@@ -230,13 +249,12 @@ class BlameGutter {
 
     let decoration = this._bufferLineToDecoration.get(bufferLine);
     if (!decoration) {
-      const bufferLineHeadPoint = [bufferLine, 0];
-      // The range of this Marker doesn't matter, only the line it is on, because
-      // the Decoration is for a Gutter.
-      const marker = this._editor.markBufferRange([bufferLineHeadPoint, bufferLineHeadPoint]);
+      const marker = this._editor.markBufferRange([[bufferLine, 0], [bufferLine, 100000]], { invalidate: 'touch' });
+
       decoration = this._editor.decorateMarker(marker, decorationProperties);
       this._bufferLineToDecoration.set(bufferLine, decoration);
     } else {
+      _reactDom.default.unmountComponentAtNode(decoration.getProperties().item);
       decoration.setProperties(decorationProperties);
     }
   }
@@ -246,35 +264,76 @@ class BlameGutter {
     if (!blameDecoration) {
       return;
     }
+    _reactDom.default.unmountComponentAtNode(blameDecoration.getProperties().item);
     // The recommended way of destroying a decoration is by destroying its marker.
     blameDecoration.getMarker().destroy();
     this._bufferLineToDecoration.delete(bufferLine);
   }
 
-  _createGutterItem(blameInfo, longestBlame) {
-    const doc = window.document;
-    const item = doc.createElement('div');
+  _createGutterItem(blameInfo, isFirstLine, isLastLine, oldest, newest) {
+    const item = document.createElement('div');
 
-    const authorSpan = doc.createElement('span');
-    authorSpan.innerText = blameInfo.author;
-    item.appendChild(authorSpan);
+    item.addEventListener('click', () => {
+      this._onClick(blameInfo);
+    });
 
-    if (blameInfo.changeset) {
-      const numSpaces = longestBlame - blameInfo.author.length - blameInfo.changeset.length;
-      // Insert non-breaking spaces to ensure the changeset is right-aligned.
-      // Admittedly, this is a little gross, but it seems better than setting style.width on every
-      // item that we create and having to give it a special flexbox layout. Hooray monospace!
-      item.appendChild(doc.createTextNode('\u00A0'.repeat(numSpaces)));
-
-      const changesetSpan = doc.createElement('span');
-      changesetSpan.className = this._changesetSpanClassName;
-      changesetSpan.dataset[HG_CHANGESET_DATA_ATTRIBUTE] = blameInfo.changeset;
-      changesetSpan.innerText = blameInfo.changeset;
-      item.appendChild(changesetSpan);
-    }
-
+    _reactDom.default.render(_react.default.createElement(GutterElement, {
+      revision: blameInfo,
+      isFirstLine: isFirstLine,
+      isLastLine: isLastLine,
+      oldest: oldest,
+      newest: newest
+    }), item);
     return item;
   }
 }
+
 exports.default = BlameGutter;
-module.exports = exports['default'];
+
+
+class GutterElement extends _react.default.Component {
+
+  render() {
+    const { oldest, newest, revision, isLastLine, isFirstLine } = this.props;
+    const date = Number(revision.date);
+
+    const alpha = 1 - (date - newest) / (oldest - newest);
+    const opacity = 0.2 + 0.8 * alpha;
+
+    if (isFirstLine) {
+      const unixname = (0, (_nuclideVcsLog || _load_nuclideVcsLog()).shortNameForAuthor)(revision.author);
+      const tooltip = {
+        title: escapeHTML(revision.title) + '<br />' + escapeHTML(unixname) + ' &middot; ' + escapeHTML(revision.date.toDateString()),
+        delay: 0,
+        placement: 'right'
+      };
+
+      return _react.default.createElement(
+        'div',
+        {
+          className: 'nuclide-blame-row nuclide-blame-content',
+          ref: (0, (_addTooltip || _load_addTooltip()).default)(tooltip) },
+        !isLastLine ? _react.default.createElement('div', { className: 'nuclide-blame-vertical-bar nuclide-blame-vertical-bar-first' }) : null,
+        Avatar ? _react.default.createElement(Avatar, { size: 16, unixname: unixname }) : unixname + ': ',
+        _react.default.createElement(
+          'span',
+          null,
+          revision.title
+        ),
+        _react.default.createElement('div', { style: { opacity }, className: 'nuclide-blame-border-age' })
+      );
+    }
+
+    return _react.default.createElement(
+      'div',
+      { className: 'nuclide-blame-row' },
+      _react.default.createElement('div', {
+        className: (0, (_classnames || _load_classnames()).default)('nuclide-blame-vertical-bar', {
+          'nuclide-blame-vertical-bar-last': isLastLine,
+          'nuclide-blame-vertical-bar-middle': !isLastLine
+        })
+      }),
+      _react.default.createElement('div', { style: { opacity }, className: 'nuclide-blame-border-age' })
+    );
+  }
+}

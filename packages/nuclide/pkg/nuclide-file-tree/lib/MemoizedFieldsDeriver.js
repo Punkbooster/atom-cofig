@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,13 +8,13 @@ exports.MemoizedFieldsDeriver = undefined;
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _FileTreeHelpers;
 
 function _load_FileTreeHelpers() {
-  return _FileTreeHelpers = require('./FileTreeHelpers');
+  return _FileTreeHelpers = _interopRequireDefault(require('./FileTreeHelpers'));
 }
 
 var _hgConstants;
@@ -55,6 +46,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * stored.
  *
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class MemoizedFieldsDeriver {
 
   // These properties do not depend on the conf instance and can be calculated right away.
@@ -63,10 +65,10 @@ class MemoizedFieldsDeriver {
     this._rootUri = rootUri;
 
     this._isRoot = uri === rootUri;
-    this._name = (0, (_FileTreeHelpers || _load_FileTreeHelpers()).keyToName)(uri);
-    this._isContainer = (0, (_FileTreeHelpers || _load_FileTreeHelpers()).isDirKey)(uri);
+    this._name = (_FileTreeHelpers || _load_FileTreeHelpers()).default.keyToName(uri);
+    this._isContainer = (_FileTreeHelpers || _load_FileTreeHelpers()).default.isDirKey(uri);
     this._relativePath = uri.slice(rootUri.length);
-    this._localPath = (0, (_FileTreeHelpers || _load_FileTreeHelpers()).keyToPath)((_nuclideUri || _load_nuclideUri()).default.isRemote(uri) ? (_nuclideUri || _load_nuclideUri()).default.parse(uri).pathname : uri);
+    this._localPath = (_FileTreeHelpers || _load_FileTreeHelpers()).default.keyToPath((_nuclideUri || _load_nuclideUri()).default.isRemote(uri) ? (_nuclideUri || _load_nuclideUri()).default.parse(uri).path : uri);
     this._splitPath = (_nuclideUri || _load_nuclideUri()).default.split(uri);
 
     this._getRepo = memoize(this._repoGetter.bind(this));

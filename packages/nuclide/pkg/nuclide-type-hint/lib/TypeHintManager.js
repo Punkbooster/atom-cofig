@@ -1,43 +1,41 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+var _analytics;
+
+function _load_analytics() {
+  return _analytics = _interopRequireDefault(require('nuclide-commons-atom/analytics'));
+}
 
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
-var _nuclideAnalytics;
+var _log4js;
 
-function _load_nuclideAnalytics() {
-  return _nuclideAnalytics = require('../../nuclide-analytics');
-}
-
-var _TypeHintComponent;
-
-function _load_TypeHintComponent() {
-  return _TypeHintComponent = require('./TypeHintComponent');
-}
-
-var _nuclideLogging;
-
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-type-hint'); /**
+                                                                                 * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                 * All rights reserved.
+                                                                                 *
+                                                                                 * This source code is licensed under the license found in the LICENSE file in
+                                                                                 * the root directory of this source tree.
+                                                                                 *
+                                                                                 * 
+                                                                                 * @format
+                                                                                 */
 
 class TypeHintManager {
 
@@ -68,27 +66,20 @@ class TypeHintManager {
         name = 'unknown';
         logger.error('Type hint provider has no name', provider);
       }
-      const typeHint = yield (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)(name + '.typeHint', function () {
+      const typeHint = yield (_analytics || _load_analytics()).default.trackTiming(name + '.typeHint', function () {
         return provider.typeHint(editor, position);
       });
       if (!typeHint || _this._marker) {
         return;
       }
-      const { hint, hintTree, range } = typeHint;
-      // For now, actual hint text is required.
-
-      if (!(hint != null)) {
-        throw new Error('Invariant violation: "hint != null"');
-      }
+      const { hint, range } = typeHint;
       // We track the timing above, but we still want to know the number of popups that are shown.
-
-
-      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('type-hint-popup', {
+      (_analytics || _load_analytics()).default.track('type-hint-popup', {
         scope: scopeName,
         message: hint
       });
       return {
-        component: (0, (_TypeHintComponent || _load_TypeHintComponent()).makeTypeHintComponent)(hintTree || hint, grammar),
+        markedStrings: [{ type: 'snippet', value: hint, grammar }],
         range
       };
     })();
@@ -111,5 +102,4 @@ class TypeHintManager {
     (0, (_collection || _load_collection()).arrayRemove)(this._typeHintProviders, provider);
   }
 }
-
-module.exports = TypeHintManager;
+exports.default = TypeHintManager;

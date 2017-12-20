@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,13 +9,13 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _nuclideBuckRpc;
@@ -37,16 +28,25 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const BUCK_GEN_PATH = 'buck-out/gen';
+const BUCK_GEN_PATH = 'buck-out/gen'; /**
+                                       * Copyright (c) 2015-present, Facebook, Inc.
+                                       * All rights reserved.
+                                       *
+                                       * This source code is licensed under the license found in the LICENSE file in
+                                       * the root directory of this source tree.
+                                       *
+                                       * 
+                                       * @format
+                                       */
+
 const LINK_TREE_SUFFIXES = {
   python_binary: '#link-tree',
   python_unittest: '#binary,link-tree'
 };
 
 class LinkTreeManager {
-
   _getBuckTargetForDir(dirPath) {
-    return `//${ dirPath }:`;
+    return `//${dirPath}:`;
   }
 
   _getDirForBuckTarget(target) {
@@ -73,8 +73,8 @@ class LinkTreeManager {
         try {
           // Not using Promise.all since we want to break as soon as one query returns
           // a non-empty result, and we don't want concurrent buck queries.
-          // eslint-disable-next-line babel/no-await-in-loop
-          const results = yield (_nuclideBuckRpc || _load_nuclideBuckRpc()).query(basePath, `kind(${ kind }, rdeps(${ searchRoot }, owner(${ src })))`);
+          // eslint-disable-next-line no-await-in-loop
+          const results = yield (_nuclideBuckRpc || _load_nuclideBuckRpc()).query(basePath, `kind(${kind}, rdeps(${searchRoot}, owner(${src})))`);
           if (results.length > 0) {
             return results;
           }
@@ -124,7 +124,5 @@ class LinkTreeManager {
   reset(src) {}
 
   dispose() {}
-
 }
 exports.default = LinkTreeManager;
-module.exports = exports['default'];

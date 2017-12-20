@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,7 +7,7 @@ Object.defineProperty(exports, "__esModule", {
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 var _settingsUtils;
@@ -25,20 +16,18 @@ function _load_settingsUtils() {
   return _settingsUtils = require('./settings-utils');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class SettingsSelect extends _reactForAtom.React.Component {
+class SettingsSelect extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
 
-  constructor(props) {
-    super(props);
-    this._handleChange = this._handleChange.bind(this);
-  }
-
-  _handleChange(event) {
-    const value = event.target.value;
-    this.props.onChange(value);
+    return _temp = super(...args), this._handleChange = event => {
+      const value = event.target.value;
+      this.props.onChange(value);
+    }, _temp;
   }
 
   render() {
@@ -53,7 +42,7 @@ class SettingsSelect extends _reactForAtom.React.Component {
     const optionElements = [];
     if (options.enum) {
       options.enum.forEach((option, i) => {
-        optionElements.push(_reactForAtom.React.createElement(
+        optionElements.push(_react.default.createElement(
           'option',
           { value: option, key: i },
           option
@@ -61,24 +50,24 @@ class SettingsSelect extends _reactForAtom.React.Component {
       });
     }
 
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       null,
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'label',
         { className: 'control-label' },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'div',
           { className: 'setting-title' },
           title
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'div',
           { className: 'setting-description' },
           description
         )
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'select',
         {
           className: 'form-control',
@@ -90,5 +79,13 @@ class SettingsSelect extends _reactForAtom.React.Component {
     );
   }
 }
-exports.default = SettingsSelect;
-module.exports = exports['default'];
+exports.default = SettingsSelect; /**
+                                   * Copyright (c) 2015-present, Facebook, Inc.
+                                   * All rights reserved.
+                                   *
+                                   * This source code is licensed under the license found in the LICENSE file in
+                                   * the root directory of this source tree.
+                                   *
+                                   * 
+                                   * @format
+                                   */

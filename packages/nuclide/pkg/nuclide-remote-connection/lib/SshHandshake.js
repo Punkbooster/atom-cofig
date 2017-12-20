@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -47,13 +38,13 @@ function _load_RemoteConnection() {
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
 var _lookupPreferIpV;
@@ -62,15 +53,26 @@ function _load_lookupPreferIpV() {
   return _lookupPreferIpV = _interopRequireDefault(require('./lookup-prefer-ip-v6'));
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
 
 // Sync word and regex pattern for parsing command stdout.
 const READY_TIMEOUT_MS = 120 * 1000;
@@ -136,7 +138,7 @@ class SshHandshake {
   }
 
   _error(message, errorType, error) {
-    logger.error(`SshHandshake failed: ${ errorType }, ${ message }`, error);
+    logger.error(`SshHandshake failed: ${errorType}, ${message}`, error);
     this._delegate.onError(errorType, error, this._config);
   }
 
@@ -148,7 +150,7 @@ class SshHandshake {
       const retryText = this._passwordRetryCount ? ' again' : '';
       this._delegate.onKeyboardInteractive('', '', '', // ignored
       [{
-        prompt: `Authentication failed. Try entering your password${ retryText }:`,
+        prompt: `Authentication failed. Try entering your password${retryText}:`,
         echo: true
       }], ([password]) => {
         this._connection.connect({
@@ -156,7 +158,8 @@ class SshHandshake {
           port: config.sshPort,
           username: config.username,
           password,
-          tryKeyboard: true
+          tryKeyboard: true,
+          readyTimeout: READY_TIMEOUT_MS
         });
       });
       this._passwordRetryCount++;
@@ -182,18 +185,24 @@ class SshHandshake {
         return;
       }
 
-      const connection = yield (_RemoteConnection || _load_RemoteConnection()).RemoteConnection.createConnectionBySavedConfig(_this._config.host, _this._config.cwd, _this._config.displayTitle);
+      let lookup;
+      try {
+        lookup = yield (0, (_lookupPreferIpV || _load_lookupPreferIpV()).default)(config.host);
+      } catch (e) {
+        return _this._error('Failed to resolve DNS.', SshHandshake.ErrorType.HOST_NOT_FOUND, e);
+      }
+
+      const { address, family } = lookup;
+      _this._config.family = family;
+
+      const connection = (yield (_RemoteConnection || _load_RemoteConnection()).RemoteConnection.createConnectionBySavedConfig(_this._config.host, _this._config.cwd, _this._config.displayTitle)) || (
+      // We save connections by their IP address as well, in case a different hostname
+      // was used for the same server.
+      yield (_RemoteConnection || _load_RemoteConnection()).RemoteConnection.createConnectionBySavedConfig(address, _this._config.cwd, _this._config.displayTitle));
 
       if (connection) {
         _this._didConnect(connection);
         return;
-      }
-
-      let address = null;
-      try {
-        address = yield (0, (_lookupPreferIpV || _load_lookupPreferIpV()).default)(config.host);
-      } catch (e) {
-        _this._error('Failed to resolve DNS.', SshHandshake.ErrorType.HOST_NOT_FOUND, e);
       }
 
       if (config.authMethod === SupportedMethods.SSL_AGENT) {
@@ -222,7 +231,8 @@ class SshHandshake {
           port: config.sshPort,
           username: config.username,
           password: config.password,
-          tryKeyboard: true
+          tryKeyboard: true,
+          readyTimeout: READY_TIMEOUT_MS
         });
       } else if (config.authMethod === SupportedMethods.PRIVATE_KEY) {
         // We use fs-plus's normalize() function because it will expand the ~, if present.
@@ -309,10 +319,10 @@ class SshHandshake {
     let sftpTimer = null;
     return new Promise((resolve, reject) => {
       let stdOut = '';
-      const remoteTempFile = `/tmp/nuclide-sshhandshake-${ Math.random() }`;
+      const remoteTempFile = `/tmp/nuclide-sshhandshake-${Math.random()}`;
       // TODO: escape any single quotes
       // TODO: the timeout value shall be configurable using .json file too (t6904691).
-      const cmd = `${ this._config.remoteServerCommand } --workspace=${ this._config.cwd }` + ` --common-name=${ this._config.host } --json-output-file=${ remoteTempFile } -t 60`;
+      const cmd = `${this._config.remoteServerCommand} --workspace=${this._config.cwd}` + ` --common-name=${this._config.host} --json-output-file=${remoteTempFile} -t 60`;
 
       this._connection.exec(cmd, { pty: { term: 'nuclide' } }, (err, stream) => {
         if (err) {
@@ -454,6 +464,7 @@ class SshHandshake {
         connect({
           host: _this3._remoteHost,
           port: _this3._remotePort,
+          family: _this3._config.family,
           cwd: _this3._config.cwd,
           certificateAuthorityCertificate: _this3._certificateAuthorityCertificate,
           clientCertificate: _this3._clientCertificate,
@@ -474,6 +485,7 @@ class SshHandshake {
           connect({
             host: 'localhost',
             port: localPort,
+            family: _this3._config.family,
             cwd: _this3._config.cwd,
             displayTitle: _this3._config.displayTitle
           });

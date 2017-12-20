@@ -1,19 +1,16 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+var _nuclideUri;
+
+function _load_nuclideUri() {
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
 
 var _nuclideRemoteConnection;
 
@@ -41,22 +38,30 @@ function _load_config() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class LintHelpers {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
+class LintHelpers {
   static lint(editor) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-python.lint', (0, _asyncToGenerator.default)(function* () {
-      const src = editor.getPath();
-      if (src == null || !(0, (_config || _load_config()).getEnableLinting)()) {
+    const src = editor.getPath();
+    if (src == null || !(0, (_config || _load_config()).getEnableLinting)() || (0, (_config || _load_config()).getLintExtensionBlacklist)().includes((_nuclideUri || _load_nuclideUri()).default.extname(src))) {
+      return Promise.resolve([]);
+    }
+
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-python.lint', (0, _asyncToGenerator.default)(function* () {
+      const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getPythonServiceByNuclideUri)(src);
+      const diagnostics = yield service.getDiagnostics(src, editor.getText());
+      if (editor.isDestroyed()) {
         return [];
       }
-
-      const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getServiceByNuclideUri)('PythonService', src);
-
-      if (!service) {
-        throw new Error('Invariant violation: "service"');
-      }
-
-      const diagnostics = yield service.getDiagnostics(src, editor.getText());
       return diagnostics.map(function (diagnostic) {
         return {
           name: 'flake8: ' + diagnostic.code,
@@ -68,7 +73,5 @@ class LintHelpers {
       });
     }));
   }
-
 }
 exports.default = LintHelpers;
-module.exports = exports['default'];

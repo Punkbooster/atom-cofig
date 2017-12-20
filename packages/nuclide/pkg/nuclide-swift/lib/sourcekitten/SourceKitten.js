@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -30,17 +21,20 @@ let asyncExecuteSourceKitten = exports.asyncExecuteSourceKitten = (() => {
     }
 
     const sourceKittenPath = getSourceKittenPath();
-    const result = yield (0, (_process || _load_process()).asyncExecute)(sourceKittenPath, [command].concat(args));
-    if (result.exitCode == null) {
-      const errorCode = result.errorCode ? result.errorCode : '';
-      const errorMessage = result.errorMessage ? result.errorMessage : '';
-      atom.notifications.addError(`Could not invoke SourceKitten at path \`${ sourceKittenPath }\``, {
-        description: 'Please double-check that the path you have set for the ' + '`nuclide-swift.sourceKittenPath` config setting is correct.<br>' + `**Error code:** \`${ errorCode }\`<br>` + `**Error message:** <pre>${ errorMessage }</pre>`
+    let result;
+    try {
+      result = yield (0, (_process || _load_process()).runCommandDetailed)(sourceKittenPath, [command].concat(args), { isExitError: function () {
+          return false;
+        } }).toPromise();
+    } catch (err) {
+      atom.notifications.addError(`Could not invoke SourceKitten at path \`${sourceKittenPath}\``, {
+        description: 'Please double-check that the path you have set for the ' + '`nuclide-swift.sourceKittenPath` config setting is correct.<br>' + `**Error code:** \`${err.errno || ''}\`<br>` + `**Error message:** <pre>${err.message}</pre>`
       });
       return null;
-    } else if (result.exitCode !== 0 || result.stdout.length === 0) {
+    }
+    if (result.exitCode !== 0 || result.stdout.length === 0) {
       atom.notifications.addError('An error occured when invoking SourceKitten', {
-        description: 'Please file a bug.<br>' + `**exit code:** \`${ String(result.exitCode) }\`<br>` + `**stdout:** <pre>${ String(result.stdout) }</pre><br>` + `**stderr:** <pre>${ String(result.stderr) }</pre><br>` + `**command:** <pre>${ String(result.command ? result.command : '') }</pre><br>`
+        description: 'Please file a bug.<br>' + `**exit code:** \`${String(result.exitCode)}\`<br>` + `**stdout:** <pre>${String(result.stdout)}</pre><br>` + `**stderr:** <pre>${String(result.stderr)}</pre><br>` + `**command:** <pre>${[command].concat(args).join(' ')}</pre><br>`
       });
       return null;
     }
@@ -58,13 +52,13 @@ exports.getSourceKittenPath = getSourceKittenPath;
 var _process;
 
 function _load_process() {
-  return _process = require('../../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -78,6 +72,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * Commands that SourceKitten implements and nuclide-swift supports, such as
  * "complete" for autocompletion.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function getSourceKittenPath() {
   return (_featureConfig || _load_featureConfig()).default.get('nuclide-swift.sourceKittenPath');
 }

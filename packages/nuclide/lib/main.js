@@ -1,12 +1,85 @@
 'use strict';
-'use babel';
 
-/*
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.config = undefined;
+exports.activate = activate;
+exports.deactivate = deactivate;
+exports.serialize = serialize;
+
+require('./preload-dependencies');
+
+var _FeatureLoader;
+
+function _load_FeatureLoader() {
+  return _FeatureLoader = _interopRequireDefault(require('nuclide-commons-atom/FeatureLoader'));
+}
+
+var _featureConfig;
+
+function _load_featureConfig() {
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
+}
+
+var _fs = _interopRequireDefault(require('fs'));
+
+var _electron = _interopRequireDefault(require('electron'));
+
+var _path = _interopRequireDefault(require('path'));
+
+var _atom = require('atom');
+
+var _atomPackageDeps;
+
+function _load_atomPackageDeps() {
+  return _atomPackageDeps = require('atom-package-deps');
+}
+
+var _installErrorReporter;
+
+function _load_installErrorReporter() {
+  return _installErrorReporter = _interopRequireDefault(require('./installErrorReporter'));
+}
+
+var _patchEditors;
+
+function _load_patchEditors() {
+  return _patchEditors = _interopRequireDefault(require('./patchEditors'));
+}
+
+var _package;
+
+function _load_package() {
+  return _package = _interopRequireDefault(require('../package.json'));
+}
+
+var _nuclideLogging;
+
+function _load_nuclideLogging() {
+  return _nuclideLogging = require('../pkg/nuclide-logging');
+}
+
+var _serviceManager;
+
+function _load_serviceManager() {
+  return _serviceManager = require('../pkg/nuclide-remote-connection/lib/service-manager');
+}
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// Install the error reporting even before Nuclide is activated.
+
+// eslint-disable-next-line nuclide-internal/prefer-nuclide-uri
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * 
+ * @format
  */
 
 /**
@@ -19,78 +92,23 @@
  *
  */
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.config = undefined;
-exports.activate = activate;
-exports.deactivate = deactivate;
-exports.serialize = serialize;
+let errorReporterDisposable = (0, (_installErrorReporter || _load_installErrorReporter()).default)();
+// Install the logger config before Nuclide is activated.
+(0, (_nuclideLogging || _load_nuclideLogging()).initializeLogging)();
 
-require('./preload-dependencies');
+// Patch Text editors to try to eliminate memory leaks.
+(0, (_patchEditors || _load_patchEditors()).default)();
 
-var _featureConfig;
-
-function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../pkg/commons-atom/featureConfig'));
-}
-
-var _fs = _interopRequireDefault(require('fs'));
-
-var _path = _interopRequireDefault(require('path'));
-
-var _serviceManager;
-
-function _load_serviceManager() {
-  return _serviceManager = require('../pkg/nuclide-remote-connection/lib/service-manager');
-}
-
-var _electron = _interopRequireDefault(require('electron'));
-
-var _atom = require('atom');
-
-var _atomPackageDeps;
-
-function _load_atomPackageDeps() {
-  return _atomPackageDeps = require('atom-package-deps');
-}
-
-var _package;
-
-function _load_package() {
-  return _package = _interopRequireDefault(require('../package.json'));
-}
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// eslint-disable-next-line nuclide-internal/prefer-nuclide-uri
 const { remote } = _electron.default;
+
 if (!(remote != null)) {
   throw new Error('Invariant violation: "remote != null"');
 }
 
-// Add a dummy deserializer. This forces Atom to load Nuclide's main module
-// (this file) when the package is loaded, which is super important because
-// this module loads all of the Nuclide features. We could accomplish the same
-// thing by unsetting [the local storage value][1] that Atom uses to indicate
-// whether the main module load can be deferred, however, that would mean that
-// (for a brief time, at least), the flag would be set. If there were an error
-// during that time and we never got a chance to unset the flag, Nuclide
-// features would never load again!
-//
-// [1] https://github.com/atom/atom/blob/v1.9.8/src/package.coffee#L442
-
-
-atom.deserializers.add({
-  name: 'nuclide.ForceMainModuleLoad',
-  deserialize() {}
-});
-
-// Exported "config" object
-const config = exports.config = {
+const baseConfig = {
   installRecommendedPackages: {
     default: false,
-    description: 'On start up, check for and install Atom packages recommended for use with Nuclide. The' + ' list of packages can be found in the <code>package-deps</code> setting in this package\'s' + ' "package.json" file. Disabling this setting will not uninstall packages it previously' + ' installed. Restart Atom after changing this setting for it to take effect.',
+    description: 'On start up, check for and install Atom packages recommended for use with Nuclide. The' + " list of packages can be found in the <code>package-deps</code> setting in this package's" + ' "package.json" file. Disabling this setting will not uninstall packages it previously' + ' installed. Restart Atom after changing this setting for it to take effect.',
     title: 'Install Recommended Packages on Startup',
     type: 'boolean'
   },
@@ -99,23 +117,17 @@ const config = exports.config = {
     description: 'Use RPC marshalling for local services. This ensures better compatibility between the local' + ' and remote case. Useful for internal Nuclide development. Requires restart to take' + ' effect.',
     title: 'Use RPC for local Services.',
     type: 'boolean'
-  },
-  use: {
-    type: 'object',
-    properties: {}
   }
 };
 
 // `setUseLocalRpc` can only be called once, so it's set out here during load.
 const _useLocalRpc = atom.config.get('nuclide.useLocalRpc');
-const _shouldUseLocalRpc = typeof _useLocalRpc !== 'boolean' ? config.useLocalRpc.default : _useLocalRpc;
+const _shouldUseLocalRpc = typeof _useLocalRpc !== 'boolean' ? baseConfig.useLocalRpc.default : _useLocalRpc;
 (0, (_serviceManager || _load_serviceManager()).setUseLocalRpc)(_shouldUseLocalRpc);
 
 // Nuclide packages for Atom are called "features"
 const FEATURES_DIR = _path.default.join(__dirname, '../pkg');
-const features = {};
-
-let disposables;
+const features = [];
 
 /**
  * Get the "package.json" of all the features.
@@ -149,115 +161,61 @@ _fs.default.readdirSync(FEATURES_DIR).forEach(item => {
       throw new Error('Invariant violation: "pkg.name"');
     }
 
-    features[pkg.name] = {
+    features.push({
       pkg,
-      dirname,
-      useKeyPath: `nuclide.use.${ pkg.name }`
-    };
-  }
-});
-
-/**
- * Build the "config" object. This determines the config defaults and
- * it's what is shown by the Settings view. It includes:
- * (1) An entry to enable/disable each feature - called "nuclide.use.*".
- * (2) Each feature's merged config.
- *
- * https://atom.io/docs/api/latest/Config
- */
-Object.keys(features).forEach(name => {
-  const { pkg } = features[name];
-
-  // Sample packages are disabled by default. They are meant for development
-  // use only, and aren't included in Nuclide builds.
-  const enabled = !name.startsWith('sample-');
-
-  // Entry for enabling/disabling the feature
-  const setting = {
-    title: `Enable the "${ name }" feature`,
-    description: pkg.description || '',
-    type: 'boolean',
-    default: enabled
-  };
-  if (pkg.providedServices) {
-    const provides = Object.keys(pkg.providedServices).join(', ');
-    setting.description += `<br/>**Provides:** _${ provides }_`;
-  }
-  if (pkg.consumedServices) {
-    const consumes = Object.keys(pkg.consumedServices).join(', ');
-    setting.description += `<br/>**Consumes:** _${ consumes }_`;
-  }
-  config.use.properties[name] = setting;
-
-  // Merge in the feature's config
-  const pkgConfig = pkg.nuclide.config;
-  if (pkgConfig) {
-    config[name] = {
-      type: 'object',
-      properties: {}
-    };
-    Object.keys(pkgConfig).forEach(key => {
-      config[name].properties[key] = Object.assign({}, pkgConfig[key], {
-        title: pkgConfig[key].title || key
-      });
+      dirname
     });
   }
 });
 
-// Nesting loads within loads leads to reverse activation order- that is, if
-// Nuclide loads feature packages, then the feature package activations will
-// happen before Nuclide's. So we wait until Nuclide is done loading, but before
-// it activates, to load the features.
-let initialLoadDisposable = atom.packages.onDidLoadPackage(pack => {
-  if (pack.name !== 'nuclide') {
-    return;
-  }
+// atom-ide-ui packages are a lot more consistent.
+const ATOM_IDE_DIR = _path.default.join(__dirname, '../modules/atom-ide-ui/pkg');
+_fs.default.readdirSync(ATOM_IDE_DIR).forEach(item => {
+  const dirname = _path.default.join(ATOM_IDE_DIR, item);
+  const filename = _path.default.join(dirname, 'package.json');
+  try {
+    const src = _fs.default.readFileSync(filename, 'utf8');
+    const pkg = JSON.parse(src);
 
-  // Load all the features. This needs to be done during Atom's load phase to
-  // make sure that deserializers are registered, etc.
-  // https://github.com/atom/atom/blob/v1.1.0/src/atom-environment.coffee#L625-L631
-  // https://atom.io/docs/api/latest/PackageManager
-  Object.keys(features).forEach(name => {
-    const feature = features[name];
-    // Config defaults are not merged with user defaults until activate. At
-    // this point `atom.config.get` returns the user set value. If it's
-    // `undefined`, then the user has not set it.
-    const _enabled = atom.config.get(feature.useKeyPath);
-    const _shouldEnable = typeof _enabled === 'undefined' ? config.use.properties[name].default : _enabled;
-    if (_shouldEnable) {
-      atom.packages.loadPackage(feature.dirname);
+    if (!pkg.name) {
+      throw new Error('Invariant violation: "pkg.name"');
     }
-  });
 
-  if (!(initialLoadDisposable != null)) {
-    throw new Error('Invariant violation: "initialLoadDisposable != null"');
+    features.push({
+      pkg,
+      dirname
+    });
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err;
+    }
   }
-
-  initialLoadDisposable.dispose();
-  initialLoadDisposable = null;
 });
 
+const featureLoader = new (_FeatureLoader || _load_FeatureLoader()).default({
+  features,
+  pkgName: 'nuclide'
+});
+featureLoader.load();
+
+const config = exports.config = Object.assign({}, baseConfig, featureLoader.getConfig());
+
+let disposables;
 function activate() {
-  const nuclidePack = atom.packages.getLoadedPackage('nuclide');
-
-  if (!(nuclidePack != null)) {
-    throw new Error('Invariant violation: "nuclidePack != null"');
+  if (errorReporterDisposable == null) {
+    errorReporterDisposable = (0, (_installErrorReporter || _load_installErrorReporter()).default)();
   }
-
-  // This is a failsafe in case the `nuclide.ForceMainModuleLoad` deserializer
-  // defined above does not register in time, or if the defer key has been set
-  // w/o our knowledge. This can happen during OSS upgrades.
-
-
-  window.localStorage.removeItem(nuclidePack.getCanDeferMainModuleRequireStorageKey());
 
   disposables = new _atom.CompositeDisposable();
 
   // Add the "Nuclide" menu, if it's not there already.
   disposables.add(atom.menu.add([{
-    label: 'Nuclide',
+    // On Windows, menu labels have an & before a letter to indicate which
+    // ALT key combination maps to that menu. In our case, Alt+N should open
+    // the Nuclide menu.
+    label: process.platform === 'win32' ? '&Nuclide' : 'Nuclide',
     submenu: [{
-      label: `Version ${ (_package || _load_package()).default.version }`,
+      label: `Version ${(_package || _load_package()).default.version}`,
       enabled: false
     }]
   }]));
@@ -278,30 +236,7 @@ function activate() {
   // integration test helper.
   //
   // [1]: https://github.com/atom/atom/blob/v1.9.0/src/package-manager.coffee#L425
-  Object.keys(features).forEach(name => {
-    const feature = features[name];
-    if (atom.config.get(feature.useKeyPath)) {
-      atom.packages.activatePackage(feature.dirname);
-    }
-  });
-
-  // Watch the config to manage toggling features
-  Object.keys(features).forEach(name => {
-    const feature = features[name];
-    const watcher = atom.config.onDidChange(feature.useKeyPath, event => {
-      if (event.newValue === true) {
-        atom.packages.activatePackage(feature.dirname);
-      } else if (event.newValue === false) {
-        safeDeactivate(name);
-      }
-    });
-
-    if (!(disposables != null)) {
-      throw new Error('Invariant violation: "disposables != null"');
-    }
-
-    disposables.add(watcher);
-  });
+  featureLoader.activate();
 
   // Install public, 3rd-party Atom packages listed in this package's 'package-deps' setting. Run
   // this *after* other packages are activated so they can modify this setting if desired before
@@ -313,56 +248,92 @@ function activate() {
     const firstWindowId = remote.BrowserWindow.getAllWindows()[0].id;
     const currentWindowId = remote.getCurrentWindow().id;
     if (firstWindowId === currentWindowId) {
-      (0, (_atomPackageDeps || _load_atomPackageDeps()).install)('nuclide');
+      (0, (_atomPackageDeps || _load_atomPackageDeps()).install)('nuclide', /* promptUser */false);
     }
   }
+
+  const menusToSort = ['Nuclide', 'View'];
+  disposables.add(atom.packages.onDidActivateInitialPackages(() => {
+    sortMenuGroups(menusToSort);
+
+    if (!(disposables != null)) {
+      throw new Error('Invariant violation: "disposables != null"');
+    }
+
+    disposables.add(atom.packages.onDidActivatePackage(() => {
+      sortMenuGroups(menusToSort);
+    }));
+  }));
+}
+
+function sortLabelValue(label) {
+  // Ignore the Windows accelerator key hint when sorting, the & doesn't
+  // actually appear in the UX so it shouldn't affect the sort.
+  return String(label).replace('&', '');
+}
+
+function sortSubmenuGroup(menuItems, startIndex, itemCount) {
+  // Sort a subset of the items in the menu of length itemCount beginning
+  // at startIndex.
+  const itemsToSort = menuItems.splice(startIndex, itemCount);
+  itemsToSort.sort((a, b) => {
+    // Always put the "Version" label up top.
+    if (sortLabelValue(a.label).startsWith('Version')) {
+      return -1;
+    } else {
+      return sortLabelValue(a.label).localeCompare(sortLabelValue(b.label));
+    }
+  });
+
+  menuItems.splice(startIndex, 0, ...itemsToSort);
+}
+
+function sortMenuGroups(menuNames) {
+  for (const menuName of menuNames) {
+    // Sorts the items in a menu alphabetically. If the menu contains one or more
+    // separators, then the items within each separator subgroup will be sorted
+    // with respect to each other, but items will remain in the same groups, and
+    // the separators will not be moved.
+    const menu = atom.menu.template.find(m => sortLabelValue(m.label) === menuName);
+    if (menu == null) {
+      continue;
+    }
+
+    // Sort each group of items (separated by a separator) individually.
+    let sortStart = 0;
+    for (let i = 0; i < menu.submenu.length; i++) {
+      if (menu.submenu[i].type === 'separator') {
+        sortSubmenuGroup(menu.submenu, sortStart, i - sortStart);
+        sortStart = i + 1;
+      }
+    }
+
+    // Sort any remaining items after the last separator.
+    if (sortStart < menu.submenu.length) {
+      sortSubmenuGroup(menu.submenu, sortStart, menu.submenu.length - sortStart);
+    }
+  }
+
+  atom.menu.update();
 }
 
 function deactivate() {
-  Object.keys(features).forEach(name => {
-    // Deactivate the packge, but don't serialize. That needs to be done in a separate phase so that
-    // we don't end up disconnecting a service and then serializing the disconnected state.
-    safeDeactivate(name, true);
-  });
-
   if (!(disposables != null)) {
     throw new Error('Invariant violation: "disposables != null"');
   }
 
+  featureLoader.deactivate();
   disposables.dispose();
   disposables = null;
+
+  if (!(errorReporterDisposable != null)) {
+    throw new Error('Invariant violation: "errorReporterDisposable != null"');
+  }
+
+  errorReporterDisposable.dispose();
+  errorReporterDisposable = null;
 }
 
 function serialize() {
-  // When Nuclide is serialized, all of its features need to be serialized. This is an abuse of
-  // `serialize()` since we're using it to do side effects instead of returning the serialization,
-  // but it ensures that serialization of the Atom packages happens at the right point in the
-  // package lifecycle. Unfortunately, it also means that Nuclide features will be serialized twice
-  // on deactivation.
-  Object.keys(features).forEach(safeSerialize);
-}
-
-function safeDeactivate(name, suppressSerialization) {
-  try {
-    const pack = atom.packages.getActivePackage(name);
-    if (pack != null) {
-      atom.packages.deactivatePackage(name, suppressSerialization);
-    }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(`Error deactivating "${ name }": ${ err.message }`);
-  }
-}
-
-function safeSerialize(name) {
-  try {
-    const pack = atom.packages.getActivePackage(name);
-    if (pack != null) {
-      // Serialize the package
-      atom.packages.serializePackage(pack);
-    }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(`Error serializing "${ name }": ${ err.message }`);
-  }
+  featureLoader.serialize();
 }

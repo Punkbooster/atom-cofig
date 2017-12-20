@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -20,11 +11,7 @@ function _load_systemInfo() {
   return _systemInfo = require('./system-info');
 }
 
-var _userInfo;
-
-function _load_userInfo() {
-  return _userInfo = _interopRequireDefault(require('./userInfo'));
-}
+var _os = _interopRequireDefault(require('os'));
 
 var _uuid;
 
@@ -32,7 +19,24 @@ function _load_uuid() {
   return _uuid = _interopRequireDefault(require('uuid'));
 }
 
+var _env;
+
+function _load_env() {
+  return _env = require('../nuclide-node-transpiler/lib/env');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 let cachedInformation = null;
 
@@ -43,11 +47,11 @@ function getCacheableRuntimeInformation() {
 
   cachedInformation = {
     sessionId: (_uuid || _load_uuid()).default.v4(),
-    user: (0, (_userInfo || _load_userInfo()).default)().username,
+    user: _os.default.userInfo().username,
     osType: (0, (_systemInfo || _load_systemInfo()).getOsType)(),
     timestamp: 0,
     isClient: (0, (_systemInfo || _load_systemInfo()).isRunningInClient)(),
-    isDevelopment: (0, (_systemInfo || _load_systemInfo()).isDevelopment)(),
+    isDevelopment: (_env || _load_env()).__DEV__,
     atomVersion: (0, (_systemInfo || _load_systemInfo()).isRunningInClient)() ? (0, (_systemInfo || _load_systemInfo()).getAtomVersion)() : '',
     nuclideVersion: (0, (_systemInfo || _load_systemInfo()).getNuclideVersion)(),
     installerPackageVersion: 0,

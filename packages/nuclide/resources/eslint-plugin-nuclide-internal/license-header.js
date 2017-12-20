@@ -1,39 +1,28 @@
-'use strict';
-/* @noflow */
-
-/*
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * @noflow
  */
+'use strict';
 
-/* NON-TRANSPILED FILE */
-/* eslint comma-dangle: [1, always-multiline], prefer-object-spread/prefer-object-spread: 0 */
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
+
+const path = require('path');
 
 const FAKE_DISABLE_RE = /\s*eslint-disable\s+nuclide-internal\/license-header\s*/;
 
 const SHEBANG_RE = /^#!\/usr\/bin\/env node\n/;
-const DIRECTIVES_RE = /^['"]use (babel|strict)['"];\n/;
-const FLOW_PRAGMA_RE = /^\/\* @(no)?flow \*\//;
 
-const LICENSE = `\
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */`;
-
-// The LICENSE_WITH_FLOW header is meant for files that are read by flow but
-// not by the transpiler. The build transpiler will transpile any file that
-// starts with the right pragma (e.g. 'use babel', "use babel", /* @flow */, or
-// /** @babel */). There is some flow syntax that babel can't handle, this
-// header is for those files.
-const LICENSE_WITH_FLOW = `\
-/*
+const FLOW_FORMAT_AND_TRANSPILE = `\
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -41,12 +30,64 @@ const LICENSE_WITH_FLOW = `\
  * the root directory of this source tree.
  *
  * @flow
- */`;
+ * @format
+ */
+`;
 
-const LINE_RE = /^\n/;
-const LINE_OR_END_RE = /^(\n|$)/;
+const NO_FLOW_AND_NO_TRANSPILE = `\
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * @noflow
+ */
+'use strict';
 
-module.exports = context => {
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
+`;
+
+const MODULES_FLOW_FORMAT_AND_TRANSPILE = `\
+/**
+ * Copyright (c) 2017-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @flow
+ * @format
+ */
+`;
+
+const MODULES_NO_FLOW_AND_NO_TRANSPILE = `\
+/**
+ * Copyright (c) 2017-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @noflow
+ */
+'use strict';
+
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
+`;
+
+module.exports = function(context) {
   // "eslint-disable" disables rules after it. Since the directives have to go
   // first, we can't use that mechanism to disable this check.
   const comments = context.getAllComments();
@@ -56,65 +97,61 @@ module.exports = context => {
     }
   }
 
-  const sourceCode = context.getSourceCode();
-
   return {
     Program(node) {
-      let source = sourceCode.text;
+      const sourceCode = context.getSourceCode();
+      const source = sourceCode.text;
 
-      if (source.startsWith(LICENSE_WITH_FLOW)) {
+      const isInModules = context
+        .getFilename()
+        .startsWith(path.join(__dirname, '..', '..', 'modules/'));
+      const flowHeader = isInModules
+        ? MODULES_FLOW_FORMAT_AND_TRANSPILE
+        : FLOW_FORMAT_AND_TRANSPILE;
+      if (source.startsWith(flowHeader)) {
         return;
       }
 
-      // shebangs and directives are optional
-      source = source.replace(SHEBANG_RE, '');
-      source = source.replace(DIRECTIVES_RE, '');
+      const noFlowHeader = isInModules
+        ? MODULES_NO_FLOW_AND_NO_TRANSPILE
+        : NO_FLOW_AND_NO_TRANSPILE;
+      if (source.replace(SHEBANG_RE, '').startsWith(noFlowHeader)) {
+        return;
+      }
 
-      // flow pragma is optional...
-      if (FLOW_PRAGMA_RE.test(source)) {
-        source = source.replace(FLOW_PRAGMA_RE, '').replace(LINE_RE, '');
-        if (LINE_OR_END_RE.test(source)) {
-          source = source.replace(LINE_OR_END_RE, '');
-        } else {
-          // ...but, if used, it needs a line break
-          comments.some(comment => {
-            const text = sourceCode.getText(comment);
-            if (FLOW_PRAGMA_RE.test(text)) {
-              context.report({
-                node: comment,
-                message: 'Expected one line break after the flow pragma',
-              });
-              return true;
-            }
-          });
+      let fix;
+      // The modules folder has a special license that shouldn't be blindly applied.
+      if (!isInModules) {
+        const comment = context.getSourceCode().getAllComments()[0];
+        if (
+          comment != null &&
+          comment.type === 'Block' &&
+          comment.loc.start.line === 1
+        ) {
+          if (comment.value.includes('@flow')) {
+            fix = fixer => fixer.replaceText(comment, flowHeader.trim());
+          } else if (comment.value.includes('@noflow')) {
+            // TODO: replace the stuff after the docblock.
+            // It should be pretty obvious to the user, though.
+            fix = fixer => fixer.replaceText(comment, noFlowHeader.trim());
+          } else {
+            // Default to the @flow header.
+            fix = fixer => fixer.insertTextBeforeRange([0, 0], flowHeader);
+          }
+        } else if (!source.match(SHEBANG_RE)) {
+          fix = fixer => fixer.insertTextBeforeRange([0, 0], flowHeader);
         }
       }
 
-      // license is NOT optional
-      if (source.startsWith(LICENSE)) {
-        source = source.replace(LICENSE, '').replace(LINE_RE, '');
-        if (LINE_OR_END_RE.test(source)) {
-          // all ok
-        } else {
-          comments.some(comment => {
-            const text = sourceCode.getText(comment);
-            if (text === LICENSE) {
-              context.report({
-                node: comment,
-                message: 'Expected a line break after the license header',
-              });
-              return true;
-            }
-          });
-        }
-      } else {
-        context.report({
-          node,
-          message: 'Expected a license header',
-        });
-      }
+      context.report({
+        node,
+        message: 'Expected a license header',
+        fix,
+      });
     },
   };
 };
 
 module.exports.schema = [];
+module.exports.FLOW_FORMAT_AND_TRANSPILE = FLOW_FORMAT_AND_TRANSPILE;
+module.exports.NO_FLOW_AND_NO_TRANSPILE = NO_FLOW_AND_NO_TRANSPILE;

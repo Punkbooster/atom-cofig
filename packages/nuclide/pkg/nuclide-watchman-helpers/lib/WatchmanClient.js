@@ -1,20 +1,15 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _fbWatchman;
@@ -26,13 +21,13 @@ function _load_fbWatchman() {
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _path;
@@ -47,15 +42,25 @@ function _load_WatchmanSubscription() {
   return _WatchmanSubscription = _interopRequireDefault(require('./WatchmanSubscription'));
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-watchman-helpers'); /**
+                                                                                        * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                        * All rights reserved.
+                                                                                        *
+                                                                                        * This source code is licensed under the license found in the LICENSE file in
+                                                                                        * the root directory of this source tree.
+                                                                                        *
+                                                                                        * 
+                                                                                        * @format
+                                                                                        */
+
 const WATCHMAN_SETTLE_TIME_MS = 2500;
 
 class WatchmanClient {
@@ -64,7 +69,6 @@ class WatchmanClient {
     this._initWatchmanClient();
     this._serializedReconnect = (0, (_promise || _load_promise()).serializeAsyncCall)(() => this._reconnectClient());
     this._subscriptions = new Map();
-    this._watchmanVersionPromise = this.version();
   }
 
   dispose() {
@@ -85,6 +89,7 @@ class WatchmanClient {
 
       const client = yield _this2._clientPromise;
       client.on('end', function () {
+        logger.info('Watchman client ended');
         client.removeAllListeners();
         _this2._serializedReconnect();
       });
@@ -119,6 +124,7 @@ class WatchmanClient {
     return (0, _asyncToGenerator.default)(function* () {
       logger.error('Watchman client disconnected, reconnecting a new client!');
       yield _this3._initWatchmanClient();
+      logger.info('Watchman client re-initialized, restoring subscriptions');
       yield _this3._restoreSubscriptions();
     })();
   }
@@ -166,7 +172,7 @@ class WatchmanClient {
     }
     if (!Array.isArray(response.files)) {
       if (response.canceled === true) {
-        logger.info(`Watch for ${ response.root } was deleted.`);
+        logger.info(`Watch for ${response.root} was deleted.`);
         // Ending the client will trigger a reconnect.
         this._clientPromise.then(client => client.end());
         return;
@@ -174,8 +180,8 @@ class WatchmanClient {
       // TODO(most): use state messages to decide on when to send updates.
       const stateEnter = response['state-enter'];
       const stateLeave = response['state-leave'];
-      const stateMessage = stateEnter != null ? `Entering ${ stateEnter }` : `Leaving ${ (0, (_string || _load_string()).maybeToString)(stateLeave) }`;
-      logger.info(`Subscription state: ${ stateMessage }`);
+      const stateMessage = stateEnter != null ? `Entering ${stateEnter}` : `Leaving ${(0, (_string || _load_string()).maybeToString)(stateLeave)}`;
+      logger.info(`Subscription state: ${stateMessage}`);
       return;
     }
     subscription.emit('change', response.files);
@@ -200,9 +206,12 @@ class WatchmanClient {
           since: clock
         });
         if (relativePath && !options.expression) {
-          // Passing an 'undefined' expression causes an exception in fb-watchman.
-          options.expression = ['dirname', relativePath];
+          options.relative_root = relativePath;
         }
+        // Try this thing out where we always set empty_on_fresh_instance. Eden will be a lot happier
+        // if we never ask Watchman to do something that results in a glob(**) near the root.
+        options.empty_on_fresh_instance = true;
+
         // relativePath is undefined if watchRoot is the same as directoryPath.
         const subscription = new (_WatchmanSubscription || _load_WatchmanSubscription()).default(
         /* subscriptionRoot */watchRoot,
@@ -256,7 +265,7 @@ class WatchmanClient {
         // a tree walk with respect to the relative_root and path provided.
         // Path generator will do less work unless the root path of the repository
         // is passed in as an entry path.
-        path: ['.'],
+        path: [''],
         fields: ['name'], // names only
         relative_root: relative_path
       }, options));
@@ -292,10 +301,6 @@ class WatchmanClient {
     var _this10 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const watchmanVersion = yield _this10._watchmanVersionPromise;
-      if (!watchmanVersion || watchmanVersion < '3.1.0') {
-        throw new Error('Watchman version: ' + watchmanVersion + ' does not support watch-project');
-      }
       const response = yield _this10._command('watch-project', directoryPath);
       if (response.warning) {
         logger.error('watchman warning: ', response.warning);
@@ -310,15 +315,6 @@ class WatchmanClient {
     return (0, _asyncToGenerator.default)(function* () {
       const { clock } = yield _this11._command('clock', directoryPath);
       return clock;
-    })();
-  }
-
-  version() {
-    var _this12 = this;
-
-    return (0, _asyncToGenerator.default)(function* () {
-      const { version } = yield _this12._command('version');
-      return version;
     })();
   }
 
@@ -337,5 +333,4 @@ class WatchmanClient {
     });
   }
 }
-
-module.exports = WatchmanClient;
+exports.default = WatchmanClient;

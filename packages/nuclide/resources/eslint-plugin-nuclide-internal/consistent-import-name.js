@@ -1,16 +1,21 @@
-'use strict';
-/* @noflow */
-
-/*
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * @noflow
  */
+'use strict';
 
-/* NON-TRANSPILED FILE */
-/* eslint comma-dangle: [1, always-multiline], prefer-object-spread/prefer-object-spread: 0 */
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
+
+const {isRequire} = require('./utils');
 
 /**
  * This rule enforces a naming standard for external modules. Why?
@@ -79,7 +84,6 @@ function prettyNames(namesList) {
 }
 
 module.exports = function(context) {
-
   function checkNameForId(node, name, id) {
     const allowedNames = ALLOWED_NAMES_BY_MODULE[id];
     if (allowedNames.indexOf(name) === -1) {
@@ -130,14 +134,3 @@ module.exports = function(context) {
     },
   };
 };
-
-function isRequire(node) {
-  return (
-    node &&
-    node.type === 'CallExpression' &&
-    node.callee.type === 'Identifier' &&
-    node.callee.name === 'require' &&
-    node.arguments[0] &&
-    node.arguments[0].type === 'Literal'
-  );
-}

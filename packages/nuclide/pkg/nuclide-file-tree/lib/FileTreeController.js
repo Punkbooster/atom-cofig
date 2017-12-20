@@ -1,15 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-var _atom = require('atom');
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _FileTreeConstants;
 
@@ -62,8 +55,34 @@ function _load_nuclideAnalytics() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
+
+var _goToLocation;
+
+function _load_goToLocation() {
+  return _goToLocation = require('nuclide-commons-atom/go-to-location');
+}
+
+var _getElementFilePath;
+
+function _load_getElementFilePath() {
+  return _getElementFilePath = _interopRequireDefault(require('../../commons-atom/getElementFilePath'));
+}
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _Constants;
+
+function _load_Constants() {
+  return _Constants = require('./Constants');
+}
+
+var _atom = require('atom');
 
 var _os = _interopRequireDefault(require('os'));
 
@@ -71,32 +90,58 @@ var _electron = require('electron');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const VALID_FILTER_CHARS = '!#./0123456789-:;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ' + '_abcdefghijklmnopqrstuvwxyz~';
+
+class ProjectSelectionManager {
+
+  constructor() {
+    this._actions = (_FileTreeActions || _load_FileTreeActions()).default.getInstance();
+    this._store = (_FileTreeStore || _load_FileTreeStore()).FileTreeStore.getInstance();
+  }
+
+  addExtraContent(content) {
+    this._actions.addExtraProjectSelectionContent(content);
+    return new _atom.Disposable(() => this._actions.removeExtraProjectSelectionContent(content));
+  }
+
+  getExtraContent() {
+    return this._store.getExtraProjectSelectionContent();
+  }
+}
 
 class FileTreeController {
 
   constructor(state) {
     this._actions = (_FileTreeActions || _load_FileTreeActions()).default.getInstance();
     this._store = (_FileTreeStore || _load_FileTreeStore()).FileTreeStore.getInstance();
+    this._projectSelectionManager = new ProjectSelectionManager();
     this._repositories = new (_immutable || _load_immutable()).default.Set();
-    this._subscriptionForRepository = new (_immutable || _load_immutable()).default.Map();
-    this._subscriptions = new _atom.CompositeDisposable(new _atom.Disposable(() => {
+    this._disposableForRepository = new (_immutable || _load_immutable()).default.Map();
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       if (this._cwdApiSubscription != null) {
         this._cwdApiSubscription.dispose();
       }
-    }));
+    });
     // Initial root directories
     this._updateRootDirectories();
     // Subsequent root directories updated on change
-    this._subscriptions.add(atom.project.onDidChangePaths(() => this._updateRootDirectories()));
-
-    this._subscriptions.add(atom.commands.add('atom-text-editor', {
-      // eslint-disable-next-line nuclide-internal/atom-commands
-      'nuclide-file-tree:reveal-text-editor': this._revealTextEditor.bind(this)
-    }), atom.commands.add('atom-workspace', {
-      // Pass undefined so the default parameter gets used.
-      'nuclide-file-tree:reveal-active-file': this.revealActiveFile.bind(this, undefined),
-      'nuclide-file-tree:recursive-collapse-all': this._collapseAll.bind(this)
+    this._disposables.add(atom.project.onDidChangePaths(() => this._updateRootDirectories()), atom.commands.add('atom-workspace', {
+      'nuclide-file-tree:reveal-active-file': this._revealFile.bind(this),
+      'nuclide-file-tree:recursive-collapse-all': this._collapseAll.bind(this),
+      'nuclide-file-tree:add-file-relative': () => {
+        (_FileSystemActions || _load_FileSystemActions()).default.openAddFileDialogRelative(this._openAndRevealFilePath.bind(this));
+      }
     }));
     const letterKeyBindings = {
       'nuclide-file-tree:remove-letter': this._handleRemoveLetterKeypress.bind(this),
@@ -104,9 +149,9 @@ class FileTreeController {
     };
     for (let i = 0, c = VALID_FILTER_CHARS.charCodeAt(0); i < VALID_FILTER_CHARS.length; i++, c = VALID_FILTER_CHARS.charCodeAt(i)) {
       const char = String.fromCharCode(c);
-      letterKeyBindings[`nuclide-file-tree:go-to-letter-${ char }`] = this._handlePrefixKeypress.bind(this, char);
+      letterKeyBindings[`nuclide-file-tree:go-to-letter-${char}`] = this._handlePrefixKeypress.bind(this, char);
     }
-    this._subscriptions.add(atom.commands.add((_FileTreeConstants || _load_FileTreeConstants()).EVENT_HANDLER_SELECTOR, Object.assign({
+    this._disposables.add(atom.commands.add((_FileTreeConstants || _load_FileTreeConstants()).EVENT_HANDLER_SELECTOR, Object.assign({
       'core:move-down': this._moveDown.bind(this),
       'core:move-up': this._moveUp.bind(this),
       'core:move-to-top': this._moveToTop.bind(this),
@@ -119,10 +164,11 @@ class FileTreeController {
       'nuclide-file-tree:add-folder': () => {
         (_FileSystemActions || _load_FileSystemActions()).default.openAddFolderDialog(this._openAndRevealDirectoryPath.bind(this));
       },
-      'nuclide-file-tree:collapse-directory': this._collapseSelection.bind(this, /* deep */false),
+      'nuclide-file-tree:collapse-directory': this._collapseSelection.bind(this,
+      /* deep */false),
       'nuclide-file-tree:recursive-collapse-directory': this._collapseSelection.bind(this, true),
-      'nuclide-file-tree:copy-full-path': this._copyFullPath.bind(this),
-      'nuclide-file-tree:expand-directory': this._expandSelection.bind(this, /* deep */false),
+      'nuclide-file-tree:expand-directory': this._expandSelection.bind(this,
+      /* deep */false),
       'nuclide-file-tree:recursive-expand-directory': this._expandSelection.bind(this, true),
       'nuclide-file-tree:open-selected-entry': this._openSelectedEntry.bind(this),
       'nuclide-file-tree:open-selected-entry-up': this._openSelectedEntrySplitUp.bind(this),
@@ -136,14 +182,15 @@ class FileTreeController {
         (_FileSystemActions || _load_FileSystemActions()).default.openDuplicateDialog(this._openAndRevealFilePath.bind(this));
       },
       'nuclide-file-tree:search-in-directory': this._searchInDirectory.bind(this),
-      'nuclide-file-tree:show-in-file-manager': this._showInFileManager.bind(this),
       'nuclide-file-tree:set-current-working-root': this._setCwdToSelection.bind(this)
-    }, letterKeyBindings)));
-    this._subscriptions.add(atom.commands.add('[is="tabs-tab"]', {
-      'nuclide-file-tree:reveal-tab-file': this._revealTabFileOnClick.bind(this)
+    }, letterKeyBindings)), atom.commands.add('atom-workspace', {
+      // eslint-disable-next-line nuclide-internal/atom-apis
+      'file:copy-full-path': this._copyFullPath.bind(this),
+      // eslint-disable-next-line nuclide-internal/atom-apis
+      'file:show-in-file-manager': this._showInFileManager.bind(this)
     }));
-    if (state && state.tree) {
-      this._store.loadData(state.tree);
+    if (state != null) {
+      this._store.loadData(state);
     }
     this._contextMenu = new (_FileTreeContextMenu || _load_FileTreeContextMenu()).default();
   }
@@ -176,6 +223,10 @@ class FileTreeController {
     return this._contextMenu;
   }
 
+  getProjectSelectionManager() {
+    return this._projectSelectionManager;
+  }
+
   _handleClearFilter() {
     this._store.clearFilter();
   }
@@ -197,7 +248,7 @@ class FileTreeController {
 
   _openAndRevealFilePath(filePath) {
     if (filePath != null) {
-      atom.workspace.open(filePath);
+      (0, (_goToLocation || _load_goToLocation()).goToLocation)(filePath);
       this.revealNodeKey(filePath);
     }
   }
@@ -217,54 +268,33 @@ class FileTreeController {
     this._actions.updateRepositories(rootDirectories);
   }
 
-  _revealTextEditor(event) {
-    const editorElement = event.currentTarget;
-    if (editorElement == null || typeof editorElement.getModel !== 'function' || !atom.workspace.isTextEditor(editorElement.getModel())) {
-      return;
+  _revealFile(event) {
+    let path = (0, (_getElementFilePath || _load_getElementFilePath()).default)(event.target);
+
+    if (path == null) {
+      const editor = atom.workspace.getActiveTextEditor();
+      path = editor != null ? editor.getPath() : null;
+      if (path == null) {
+        return;
+      }
     }
 
-    const filePath = editorElement.getModel().getPath();
-    this._revealFilePath(filePath);
+    this.revealFilePath(path);
   }
 
-  /**
-   * Reveal the file that currently has focus in the file tree. If showIfHidden is false,
-   * this will enqueue a pending reveal to be executed when the file tree is shown again.
-   */
-  revealActiveFile(showIfHidden = true) {
-    const editor = atom.workspace.getActiveTextEditor();
-    const filePath = editor != null ? editor.getPath() : null;
-    this._revealFilePath(filePath, showIfHidden);
-  }
-
-  _revealFilePath(filePath, showIfHidden = true) {
+  revealFilePath(filePath, showIfHidden = true) {
     if (showIfHidden) {
       // Ensure the file tree is visible before trying to reveal a file in it. Even if the currently
       // active pane is not an ordinary editor, we still at least want to show the tree.
-      atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-file-tree:toggle', { display: true });
+      // eslint-disable-next-line nuclide-internal/atom-apis
+      atom.workspace.open((_Constants || _load_Constants()).WORKSPACE_VIEW_URI);
+      this._actions.setFoldersExpanded(true);
     }
 
     if (!filePath) {
       return;
     }
 
-    this.revealNodeKey(filePath);
-  }
-
-  /**
-   * Reveal the file of a given tab based on the path stored on the DOM.
-   * This method is meant to be triggered by the context-menu click.
-   */
-  _revealTabFileOnClick(event) {
-    const tab = event.currentTarget;
-    const title = tab.querySelector('.title[data-path]');
-    if (!title) {
-      // can only reveal it if we find the file path
-      return;
-    }
-
-    const filePath = title.dataset.path;
-    atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-file-tree:toggle', { display: true });
     this.revealNodeKey(filePath);
   }
 
@@ -319,7 +349,7 @@ class FileTreeController {
       // The problem happens when the connection fails, or is canceled.
       // The fake root just stays in the file tree.
       // After remote projects have been reloaded, force a refresh to clear out the fake roots.
-      this._subscriptions.add(service.waitForRemoteProjectReload(this._updateRootDirectories.bind(this)));
+      this._disposables.add(service.waitForRemoteProjectReload(this._updateRootDirectories.bind(this)));
     }
     this._remoteProjectsService = service;
   }
@@ -342,6 +372,10 @@ class FileTreeController {
 
   setUsePrefixNav(usePrefixNav) {
     this._actions.setUsePrefixNav(usePrefixNav);
+  }
+
+  setAutoExpandSingleChild(autoExpandSingleChild) {
+    this._store._setAutoExpandSingleChild(autoExpandSingleChild);
   }
 
   updateWorkingSet(workingSet) {
@@ -420,16 +454,16 @@ class FileTreeController {
           },
           Cancel: () => {}
         },
-        detailedMessage: `You are deleting:${ _os.default.EOL }${ selectedPaths.join(_os.default.EOL) }`,
+        detailedMessage: `You are deleting:${_os.default.EOL}${selectedPaths.join(_os.default.EOL)}`,
         message
       });
     } else {
       let message;
       if (rootPaths.size === 1) {
-        message = `The root directory '${ rootPaths.first().nodeName }' can't be removed.`;
+        message = `The root directory '${rootPaths.first().nodeName}' can't be removed.`;
       } else {
-        const rootPathNames = rootPaths.map(node => `'${ node.nodeName }'`).join(', ');
-        message = `The root directories ${ rootPathNames } can't be removed.`;
+        const rootPathNames = rootPaths.map(node => `'${node.nodeName}'`).join(', ');
+        message = `The root directories ${rootPathNames} can't be removed.`;
       }
 
       atom.confirm({
@@ -538,7 +572,6 @@ class FileTreeController {
 
   _searchInDirectory(event) {
     const targetElement = event.target;
-    let shouldClearPath = false;
     // If the event was sent to the entire tree, rather then a single element - attempt to derive
     // the path to work on from the current selection.
     if (targetElement.classList.contains('nuclide-file-tree')) {
@@ -558,47 +591,50 @@ class FileTreeController {
 
       // What we see here is an unfortunate example of "DOM as an API" paradigm :-(
       // Atom's handler for the "show-in-current-directory" command is context sensitive
-      // and it derives the context from the custom "data-path" attribute.
-      // This attribute is available through the `.dataset.path` property of the event's target
-      // element. If missing in the target element, the descendants are queried.
-      // See: https://github.com/atom/find-and-replace/blob/66f09c532bb4f7b941282b99d4daf85a08d2288c/lib/project-find-view.coffee#L277
-      //
-      // This works when the command is targeted at an entry in the file-tree DOM structure, because
-      // we add these attributes too, to maintain compatibility with Atom. But, obviously, the
-      // file-tree root can't have one. Unfortunately, when we use keyboard shortcuts to trigger the
-      // commands the focused element is the tree root.
-      // So, to pass the contextual information somehow, we temporarily
-      // add this attribute to the root element (and cleanup once the command is issued).
-      targetElement.dataset.path = path;
-      shouldClearPath = true;
-    }
-    // Dispatch a command to show the `ProjectFindView`. This opens the view and focuses the search
-    // box.
-    atom.commands.dispatch(targetElement, 'project-find:show-in-current-directory');
-    if (shouldClearPath) {
-      delete targetElement.dataset.path;
+      // and it derives the context from the custom "data-path" attribute. The attribute must
+      // be present on a child of a closest element having a ".directory" class.
+      // See: https://github.com/atom/find-and-replace/blob/v0.208.1/lib/project-find-view.js#L356-L360
+      // We will just temporarily create a proper element for the event handler to work on
+      // and remove it immediately afterwards.
+      const temporaryElement = document.createElement('div');
+      temporaryElement.classList.add('directory');
+      const pathChild = document.createElement('div');
+      pathChild.dataset.path = path;
+      temporaryElement.appendChild(pathChild);
+
+      // Must attach to the workspace-view, otherwise the handler won't be found
+      const workspaceView = atom.views.getView(atom.workspace);
+      workspaceView.appendChild(temporaryElement);
+
+      atom.commands.dispatch(temporaryElement, 'project-find:show-in-current-directory');
+
+      // Cleaning for the workspace-view
+      workspaceView.removeChild(temporaryElement);
+    } else {
+      atom.commands.dispatch(targetElement, 'project-find:show-in-current-directory');
     }
   }
 
-  _showInFileManager() {
-    const node = this._store.getSingleSelectedNode();
-    if (node == null) {
-      // Only allow revealing a single directory/file at a time. Return otherwise.
+  _showInFileManager(event) {
+    const path = (0, (_getElementFilePath || _load_getElementFilePath()).default)(event.target, true);
+    if (path == null || (_nuclideUri || _load_nuclideUri()).default.isRemote(path)) {
       return;
     }
-    _electron.shell.showItemInFolder(node.uri);
+    _electron.shell.showItemInFolder(path);
   }
 
-  _copyFullPath() {
-    const singleSelectedNode = this._store.getSingleSelectedNode();
-    if (singleSelectedNode != null) {
-      atom.clipboard.write(singleSelectedNode.localPath);
+  _copyFullPath(event) {
+    const path = (0, (_getElementFilePath || _load_getElementFilePath()).default)(event.target, true);
+    if (path == null) {
+      return;
     }
+    const parsed = (_nuclideUri || _load_nuclideUri()).default.parse(path);
+    atom.clipboard.write(parsed.path);
   }
 
   destroy() {
-    this._subscriptions.dispose();
-    for (const disposable of this._subscriptionForRepository.values()) {
+    this._disposables.dispose();
+    for (const disposable of this._disposableForRepository.values()) {
       disposable.dispose();
     }
     this._store.reset();
@@ -606,10 +642,7 @@ class FileTreeController {
   }
 
   serialize() {
-    return {
-      tree: this._store.exportData()
-    };
+    return this._store.exportData();
   }
 }
-
-module.exports = FileTreeController;
+exports.default = FileTreeController;

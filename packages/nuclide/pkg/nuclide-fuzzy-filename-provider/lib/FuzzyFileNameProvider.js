@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -30,36 +21,16 @@ function _load_utils() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = {
+  providerType: 'DIRECTORY',
+  name: 'FuzzyFileNameProvider',
+  debounceDelay: 0,
+  display: {
+    title: 'Filenames',
+    prompt: 'Fuzzy filename search...',
+    action: 'nuclide-fuzzy-filename-provider:toggle-provider'
+  },
   // Give preference to filename results in OmniSearch.
-  getPriority: () => 1,
-
-  getName() {
-    return 'FuzzyFileNameProvider';
-  },
-
-  getProviderType() {
-    return 'DIRECTORY';
-  },
-
-  isRenderable() {
-    return true;
-  },
-
-  getDebounceDelay() {
-    return 0;
-  },
-
-  getAction() {
-    return 'nuclide-fuzzy-filename-provider:toggle-provider';
-  },
-
-  getPromptText() {
-    return 'Fuzzy File Name Search';
-  },
-
-  getTabTitle() {
-    return 'Filenames';
-  },
+  priority: 1,
 
   isEligibleForDirectory(directory) {
     return directory.exists();
@@ -67,17 +38,14 @@ exports.default = {
 
   executeQuery(query, directory) {
     return (0, _asyncToGenerator.default)(function* () {
-      if (query.length === 0) {
+      const { fileName, line, column } = (0, (_utils || _load_utils()).parseFileNameQuery)(query);
+      if (fileName.length === 0) {
         return [];
-      }
-
-      if (directory == null) {
-        throw new Error('FuzzyFileNameProvider is a directory-specific provider but its executeQuery method was' + ' called without a directory argument.');
       }
 
       const directoryPath = directory.getPath();
       const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFuzzyFileSearchServiceByNuclideUri)(directoryPath);
-      const results = yield service.queryFuzzyFile(directoryPath, query, (0, (_utils || _load_utils()).getIgnoredNames)());
+      const results = yield service.queryFuzzyFile(directoryPath, fileName, (0, (_utils || _load_utils()).getIgnoredNames)());
 
       // Take the `nuclide://<host>` prefix into account for matchIndexes of remote files.
       if ((_nuclideRemoteConnection || _load_nuclideRemoteConnection()).RemoteDirectory.isRemoteDirectory(directory)) {
@@ -90,8 +58,24 @@ exports.default = {
         }
       }
 
-      return results;
+      return results.map(function (result) {
+        return {
+          path: result.path,
+          score: result.score,
+          matchIndexes: result.matchIndexes,
+          line,
+          column
+        };
+      });
     })();
   }
-};
-module.exports = exports['default'];
+}; /**
+    * Copyright (c) 2015-present, Facebook, Inc.
+    * All rights reserved.
+    *
+    * This source code is licensed under the license found in the LICENSE file in
+    * the root directory of this source tree.
+    *
+    * 
+    * @format
+    */

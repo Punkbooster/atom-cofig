@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -38,6 +29,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * Therefore, finding the top K scores from a collection of N elements should be
  * O(N lg K).
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class TopScores {
 
   constructor(capacity) {
@@ -82,4 +84,3 @@ class TopScores {
   }
 }
 exports.default = TopScores;
-module.exports = exports['default'];

@@ -1,13 +1,9 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.convertValue = convertValue;
 
 var _utils;
 
@@ -54,13 +50,22 @@ function convertValue(contextId, dbgpProperty) {
       // TODO: Remaining property types - closure, hashmap, ...
       return convertUnknownValue(dbgpProperty);
   }
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 function convertStringValue(dbgpProperty) {
   let value;
   if (dbgpProperty.hasOwnProperty('_')) {
-    // $FlowFixMe(peterhal)
-    value = dbgpProperty.$.encoding === 'base64' ? (0, (_helpers || _load_helpers()).base64Decode)(dbgpProperty._) : `TODO: Non-base64 encoded string: ${ JSON.stringify(dbgpProperty) }`;
+    value = dbgpProperty.$.encoding === 'base64' ? // $FlowFixMe(peterhal)
+    (0, (_helpers || _load_helpers()).base64Decode)(dbgpProperty._) : `TODO: Non-base64 encoded string: ${JSON.stringify(dbgpProperty)}`;
   } else {
     // zero length strings have no dbgpProperty._ property
     value = '';
@@ -73,7 +78,7 @@ function convertStringValue(dbgpProperty) {
 }
 
 function convertIntValue(dbgpProperty) {
-  const value = dbgpProperty.$.encoding === 'base64' ? `TODO: Base64 encoded int: ${ JSON.stringify(dbgpProperty) }` : dbgpProperty._;
+  const value = dbgpProperty.$.encoding === 'base64' ? `TODO: Base64 encoded int: ${JSON.stringify(dbgpProperty)}` : dbgpProperty._;
   return {
     type: 'number',
     value
@@ -81,7 +86,7 @@ function convertIntValue(dbgpProperty) {
 }
 
 function convertFloatValue(dbgpProperty) {
-  const value = dbgpProperty.$.encoding === 'base64' ? `TODO: Base64 encoded float: ${ JSON.stringify(dbgpProperty) }` : dbgpProperty._;
+  const value = dbgpProperty.$.encoding === 'base64' ? `TODO: Base64 encoded float: ${JSON.stringify(dbgpProperty)}` : dbgpProperty._;
   return {
     type: 'number',
     value
@@ -93,7 +98,7 @@ function convertBoolValue(dbgpProperty) {
     throw new Error('Invariant violation: "dbgpProperty._ != null"');
   }
 
-  const value = dbgpProperty.$.encoding === 'base64' ? `TODO: Base64 encoded bool: ${ JSON.stringify(dbgpProperty) }` : toBool(dbgpProperty._);
+  const value = dbgpProperty.$.encoding === 'base64' ? `TODO: Base64 encoded bool: ${JSON.stringify(dbgpProperty)}` : toBool(dbgpProperty._);
   return {
     type: 'boolean',
     value
@@ -118,7 +123,7 @@ function getUndefinedValue() {
 function convertArrayValue(contextId, dbgpProperty) {
   const remoteId = getAggregateRemoteObjectId(contextId, dbgpProperty);
   const numchildren = String(dbgpProperty.$.numchildren != null ? dbgpProperty.$.numchildren : 0);
-  let description = `Array[${ numchildren }]`;
+  let description = `Array[${numchildren}]`;
   if (dbgpProperty.$.recursive != null) {
     description = '* Recursive *';
   }
@@ -131,7 +136,7 @@ function convertArrayValue(contextId, dbgpProperty) {
 
 function convertObjectValue(contextId, dbgpProperty) {
   const remoteId = getAggregateRemoteObjectId(contextId, dbgpProperty);
-  let description = dbgpProperty.$.classname;
+  let description = getObjectDescription(dbgpProperty);
   if (dbgpProperty.$.recursive != null) {
     description = '* Recursive *';
   }
@@ -140,6 +145,21 @@ function convertObjectValue(contextId, dbgpProperty) {
     type: 'object',
     objectId: remoteId
   };
+}
+
+function getObjectDescription(dbgpProperty) {
+  const { classname, numchildren } = dbgpProperty.$;
+  switch (classname) {
+    case 'HH\\Map':
+    case 'HH\\ImmMap':
+    case 'HH\\Vector':
+    case 'HH\\ImmVector':
+    case 'HH\\Set':
+    case 'HH\\ImmSet':
+      return `${classname}[${numchildren || 0}]`;
+    default:
+      return classname;
+  }
 }
 
 function getAggregateRemoteObjectId(contextId, dbgpProperty) {
@@ -151,7 +171,7 @@ function getAggregateRemoteObjectId(contextId, dbgpProperty) {
   if (pagesize !== 0) {
     pageCount = Math.trunc((numchildren + pagesize - 1) / pagesize) || 0;
   }
-  (_utils || _load_utils()).default.log(`numchildren: ${ numchildren } pagesize: ${ pagesize } pageCount ${ pageCount }`);
+  (_utils || _load_utils()).default.debug(`numchildren: ${numchildren} pagesize: ${pagesize} pageCount ${pageCount}`);
   if (pageCount > 1) {
     const elementRange = {
       pagesize,
@@ -190,5 +210,3 @@ function toBool(value) {
       return 'Unexpected bool value: ' + value;
   }
 }
-
-module.exports = { convertValue };

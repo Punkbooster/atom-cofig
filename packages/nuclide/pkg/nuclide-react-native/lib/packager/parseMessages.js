@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,7 +13,17 @@ function _load_parseRegularLine() {
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
-const PORT_LINE = /.*(?:Running.*|Listening )on port\s+(\d+)/;
+const PORT_LINE = /.*(?:Running.*|Listening )on port\s+(\d+)/; /**
+                                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                                * All rights reserved.
+                                                                *
+                                                                * This source code is licensed under the license found in the LICENSE file in
+                                                                * the root directory of this source tree.
+                                                                *
+                                                                * 
+                                                                * @format
+                                                                */
+
 const SOURCE_LIST_START = /Looking for (?:JS|JavaScript) files in/;
 const READY_LINE = /(packager|server) ready|<END> {3}Starting Facebook Packager Server/i;
 
@@ -52,7 +53,7 @@ function parseMessages(raw) {
               kind: 'message',
               message: {
                 level: 'info',
-                text: `Running packager on port ${ match[1] }.`
+                text: `Running packager on port ${match[1]}.`
               }
             });
             return;
@@ -77,7 +78,7 @@ function parseMessages(raw) {
               kind: 'message',
               message: {
                 level: 'info',
-                text: `Looking for JS files in: ${ sourceDirectories.join(',') }`
+                text: `Looking for JS files in: ${sourceDirectories.join(',')}`
               }
             });
             return;

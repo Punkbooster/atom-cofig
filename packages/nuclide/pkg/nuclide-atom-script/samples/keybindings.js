@@ -1,15 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/* eslint-disable no-console */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -38,6 +27,15 @@ exports.default = (() => {
   }
 
   return runCommand;
-})();
+})(); /**
+       * Copyright (c) 2015-present, Facebook, Inc.
+       * All rights reserved.
+       *
+       * This source code is licensed under the license found in the LICENSE file in
+       * the root directory of this source tree.
+       *
+       * 
+       * @format
+       */
 
-module.exports = exports['default'];
+/* eslint-disable no-console */

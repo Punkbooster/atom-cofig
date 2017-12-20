@@ -1,20 +1,11 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.highlightOnUpdate = highlightOnUpdate;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _shallowequal;
 
@@ -28,6 +19,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * Wraps DecoratedComponent in a special `span` with a configurable classname whenever the
  * component's props change.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function highlightOnUpdate(ComposedComponent,
 /**
  * The result of this function determines whether to apply the highlight or not.
@@ -43,7 +45,7 @@ className = 'nuclide-ui-highlight-on-render',
  */
 unhighlightDelay = 200) {
   // $FlowIssue The return type is guaranteed to be the same as the type of ComposedComponent.
-  return class extends _reactForAtom.React.Component {
+  return class extends _react.default.Component {
 
     constructor(props) {
       super(props);
@@ -68,10 +70,11 @@ unhighlightDelay = 200) {
     }
 
     render() {
-      return _reactForAtom.React.createElement(
+      return _react.default.createElement(
         'span',
-        { className: `${ className } ${ this.showFlash ? className + '-highlight' : '' }` },
-        _reactForAtom.React.createElement(ComposedComponent, this.props)
+        {
+          className: `${className} ${this.showFlash ? className + '-highlight' : ''}` },
+        _react.default.createElement(ComposedComponent, this.props)
       );
     }
   };

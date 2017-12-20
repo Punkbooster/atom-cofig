@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,7 +10,7 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _ServerConnection;
@@ -33,7 +24,7 @@ var _atom = require('atom');
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _RemoteConnectionConfigurationManager;
@@ -42,15 +33,26 @@ function _load_RemoteConnectionConfigurationManager() {
   return _RemoteConnectionConfigurationManager = require('./RemoteConnectionConfigurationManager');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
 
 const FILE_WATCHER_SERVICE = 'FileWatcherService';
 const FILE_SYSTEM_SERVICE = 'FileSystemService';
@@ -62,23 +64,27 @@ const FILE_SYSTEM_SERVICE = 'FileSystemService';
 // Nuclide behaves badly when remote directories are opened which are parent/child of each other.
 // And there needn't be a 1:1 relationship between RemoteConnections and hg repos.
 class RemoteConnection {
-
+  // Path to remote directory user should start in upon connection.
   static findOrCreate(config) {
     return (0, _asyncToGenerator.default)(function* () {
       const serverConnection = yield (_ServerConnection || _load_ServerConnection()).ServerConnection.getOrCreate(config);
-      const connection = new RemoteConnection(serverConnection, config.cwd, config.displayTitle);
-      return yield connection._initialize();
+      return RemoteConnection.findOrCreateFromConnection(serverConnection, config.cwd, config.displayTitle);
     })();
   }
 
+  static findOrCreateFromConnection(serverConnection, cwd, displayTitle) {
+    const connection = new RemoteConnection(serverConnection, cwd, displayTitle);
+    return connection._initialize();
+  }
+
   // Do NOT call this directly. Use findOrCreate instead.
-  // Path to remote directory user should start in upon connection.
   constructor(connection, cwd, displayTitle) {
     this._cwd = cwd;
     this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._hgRepositoryDescription = null;
     this._connection = connection;
     this._displayTitle = displayTitle;
+    this._alwaysShutdownIfLast = false;
   }
 
   static _createInsecureConnectionForTesting(cwd, port) {
@@ -95,10 +101,11 @@ class RemoteConnection {
    * Create a connection by reusing the configuration of last successful connection associated with
    * given host. If the server's certs has been updated or there is no previous successful
    * connection, null (resolved by promise) is returned.
+   * Configurations may also be retrieved by IP address.
    */
-  static createConnectionBySavedConfig(host, cwd, displayTitle) {
+  static createConnectionBySavedConfig(hostOrIp, cwd, displayTitle) {
     return (0, _asyncToGenerator.default)(function* () {
-      const connectionConfig = (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).getConnectionConfig)(host);
+      const connectionConfig = (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).getConnectionConfig)(hostOrIp);
       if (!connectionConfig) {
         return null;
       }
@@ -106,8 +113,8 @@ class RemoteConnection {
         const config = Object.assign({}, connectionConfig, { cwd, displayTitle });
         return yield RemoteConnection.findOrCreate(config);
       } catch (e) {
-        const log = e.name === 'VersionMismatchError' ? logger.warn : logger.error;
-        log(`Failed to reuse connectionConfiguration for ${ host }`, e);
+        const log = e.name === 'VersionMismatchError' ? logger.warn.bind(logger) : logger.error.bind(logger);
+        log(`Failed to reuse connectionConfiguration for ${hostOrIp}`, e);
         return null;
       }
     })();
@@ -127,7 +134,7 @@ class RemoteConnection {
   }
 
   getUriOfRemotePath(remotePath) {
-    return `nuclide://${ this.getRemoteHostname() }${ remotePath }`;
+    return `nuclide://${this.getRemoteHostname()}${remotePath}`;
   }
 
   getPathOfUri(uri) {
@@ -160,8 +167,8 @@ class RemoteConnection {
       // in a possible race.
       _this2._connection.addConnection(_this2);
       try {
-        const FileSystemService = _this2.getService(FILE_SYSTEM_SERVICE);
-        const resolvedPath = yield FileSystemService.resolveRealPath(_this2._cwd);
+        const fileSystemService = _this2.getService(FILE_SYSTEM_SERVICE);
+        const resolvedPath = yield fileSystemService.resolveRealPath(_this2._cwd);
 
         // Now that we know the real path, it's possible this collides with an existing connection.
         // If so, we should just stop immediately.
@@ -211,22 +218,31 @@ class RemoteConnection {
     const subscription = watchStream.subscribe(watchUpdate => {
       // Nothing needs to be done if the root directory was watched correctly.
       // Let's just console log it anyway.
-      logger.info(`Watcher Features Initialized for project: ${ rootDirectoryUri }`, watchUpdate);
+      logger.info(`Watcher Features Initialized for project: ${rootDirectoryUri}`, watchUpdate);
     }, (() => {
       var _ref = (0, _asyncToGenerator.default)(function* (error) {
-        let warningMessageToUser = 'You just connected to a remote project ' + `\`${ rootDirectoryPath }\` without Watchman support, which means that ` + 'crucial features such as synced remote file editing, file search, ' + 'and Mercurial-related updates will not work.<br/><br/>' + 'A possible workaround is to create an empty `.watchmanconfig` file ' + 'in the remote folder, which will enable Watchman if you have it installed.<br/><br/>';
-
-        const loggedErrorMessage = error.message || error;
-        logger.error(`Watcher failed to start - watcher features disabled! Error: ${ loggedErrorMessage }`);
-
-        const FileSystemService = _this3.getService(FILE_SYSTEM_SERVICE);
-        if (yield FileSystemService.isNfs(rootDirectoryPath)) {
-          warningMessageToUser += `This project directory: \`${ rootDirectoryPath }\` is on <b>\`NFS\`</b> filesystem. ` + 'Nuclide works best with local (non-NFS) root directory.' + 'e.g. `/data/users/$USER`';
+        let warningMessageToUser = '';
+        let detail;
+        const fileSystemService = _this3.getService(FILE_SYSTEM_SERVICE);
+        if (yield fileSystemService.isNfs(rootDirectoryUri)) {
+          warningMessageToUser += `This project directory: \`${rootDirectoryPath}\` is on <b>\`NFS\`</b> filesystem. ` + 'Nuclide works best with local (non-NFS) root directory.' + 'e.g. `/data/users/$USER`' + 'features such as synced remote file editing, file search, ' + 'and Mercurial-related updates will not work.<br/>';
         } else {
-          warningMessageToUser += '<b><a href="https://facebook.github.io/watchman/">Watchman</a> Error:</b>' + loggedErrorMessage;
+          warningMessageToUser += 'You just connected to a remote project ' + `\`${rootDirectoryPath}\` without Watchman support, which means that ` + 'crucial features such as synced remote file editing, file search, ' + 'and Mercurial-related updates will not work.';
+
+          const watchmanConfig = yield fileSystemService.findNearestAncestorNamed('.watchmanconfig', rootDirectoryUri).catch(function () {
+            return null;
+          });
+          if (watchmanConfig == null) {
+            warningMessageToUser += '<br/><br/>A possible workaround is to create an empty `.watchmanconfig` file ' + 'in the remote folder, which will enable Watchman if you have it installed.';
+          }
+          detail = error.message || error;
+          logger.error('Watchman failed to start - watcher features disabled!', error);
         }
         // Add a persistent warning message to make sure the user sees it before dismissing.
-        atom.notifications.addWarning(warningMessageToUser, { dismissable: true });
+        atom.notifications.addWarning(warningMessageToUser, {
+          dismissable: true,
+          detail
+        });
       });
 
       return function (_x) {
@@ -234,7 +250,7 @@ class RemoteConnection {
       };
     })(), () => {
       // Nothing needs to be done if the root directory watch has ended.
-      logger.info(`Watcher Features Ended for project: ${ rootDirectoryUri }`);
+      logger.info(`Watcher Features Ended for project: ${rootDirectoryUri}`);
     });
     this._subscriptions.add(subscription);
   }
@@ -274,7 +290,10 @@ class RemoteConnection {
   }
 
   getConfig() {
-    return Object.assign({}, this._connection.getConfig(), { cwd: this._cwd, displayTitle: this._displayTitle });
+    return Object.assign({}, this._connection.getConfig(), {
+      cwd: this._cwd,
+      displayTitle: this._displayTitle
+    });
   }
 
   static onDidAddRemoteConnection(handler) {
@@ -317,6 +336,14 @@ class RemoteConnection {
 
   isOnlyConnection() {
     return this._connection.getConnections().length === 1;
+  }
+
+  setAlwaysShutdownIfLast(alwaysShutdownIfLast) {
+    this._alwaysShutdownIfLast = alwaysShutdownIfLast;
+  }
+
+  alwaysShutdownIfLast() {
+    return this._alwaysShutdownIfLast;
   }
 }
 exports.RemoteConnection = RemoteConnection;

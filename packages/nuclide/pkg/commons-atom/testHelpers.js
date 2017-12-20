@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,7 +13,7 @@ exports.getMountedReactRootNames = getMountedReactRootNames;
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -38,12 +29,27 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @param metaKeys An object denoting which meta keys are pressed for this
  * keyboard event.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function dispatchKeyboardEvent(key, target, metaKeys = {}) {
   const { alt, cmd, ctrl, shift } = metaKeys;
   // Atom requires `key` to be uppercase when `shift` is specified.
 
   if (!(shift !== true || key.toUpperCase() === key)) {
     throw new Error('Invariant violation: "shift !== true || key.toUpperCase() === key"');
+  }
+
+  if (!(target != null)) {
+    throw new Error('Invariant violation: "target != null"');
   }
 
   const event = atom.keymaps.constructor.buildKeydownEvent(key, {
@@ -118,7 +124,7 @@ function setLocalProject(projectPath) {
  * Can only be used in a Jasmine context.
  */
 function waitsForFile(filename, timeoutMs = 10000) {
-  waitsFor(`${ filename } to become active`, timeoutMs, () => {
+  waitsFor(`${filename} to become active`, timeoutMs, () => {
     const editor = atom.workspace.getActiveTextEditor();
     if (editor == null) {
       return false;
@@ -132,7 +138,7 @@ function waitsForFile(filename, timeoutMs = 10000) {
 }
 
 function waitsForFilePosition(filename, row, column, timeoutMs = 10000) {
-  waitsFor(`${ filename } to become active at ${ row }:${ column }`, timeoutMs, () => {
+  waitsFor(`${filename} to become active at ${row}:${column}`, timeoutMs, () => {
     const editor = atom.workspace.getActiveTextEditor();
     if (editor == null) {
       return false;

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,13 +13,24 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
  *       (i.e. where we should look for commands like this) and use that here. The current behavior
  *       of everything having its own algorithm is bad.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 let getCommandInfo = exports.getCommandInfo = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (projectRootPath) {
     if (projectRootPath == null || (_nuclideUri || _load_nuclideUri()).default.isRemote(projectRootPath)) {
       return null;
     }
 
-    return (yield getCommandFromNodePackage(projectRootPath)) || (yield getCommandFromBuck(projectRootPath));
+    return (yield getCommandFromNodePackage(projectRootPath)) || getCommandFromBuck(projectRootPath);
   });
 
   return function getCommandInfo(_x) {
@@ -38,7 +40,7 @@ let getCommandInfo = exports.getCommandInfo = (() => {
 
 let getCommandFromNodePackage = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* (dir) {
-    return (yield getCommandFromNodeModules(dir)) || (yield getCommandFromReactNative(dir));
+    return (yield getCommandFromNodeModules(dir)) || getCommandFromReactNative(dir);
   });
 
   return function getCommandFromNodePackage(_x2) {
@@ -112,9 +114,9 @@ let getCommandFromBuck = (() => {
     }
 
     // TODO(matthewwithanm): Move this to BuckUtils?
-    const filePath = (_nuclideUri || _load_nuclideUri()).default.join(projectRoot, '.buckConfig');
+    const filePath = (_nuclideUri || _load_nuclideUri()).default.join(projectRoot, '.buckconfig');
     const content = yield (_fsPromise || _load_fsPromise()).default.readFile(filePath, 'utf8');
-    const parsed = (_ini || _load_ini()).default.parse(`scope = global\n${ content }`);
+    const parsed = (_ini || _load_ini()).default.parse(`scope = global\n${content}`);
     const section = parsed['react-native'];
     if (section == null || section.server == null) {
       return null;
@@ -151,13 +153,13 @@ let getCommandForCli = (() => {
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 var _nuclideBuckBase;
@@ -175,7 +177,7 @@ function _load_ini() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }

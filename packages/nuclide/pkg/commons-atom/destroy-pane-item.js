@@ -1,18 +1,19 @@
-'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = destroyPaneItemWithTitle;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 function destroyPaneItemWithTitle(title) {
   for (const item of atom.workspace.getPaneItems()) {
@@ -25,4 +26,3 @@ function destroyPaneItemWithTitle(title) {
     }
   }
 }
-module.exports = exports['default'];

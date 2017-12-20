@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -29,10 +20,33 @@ function _load_utils() {
 var _event;
 
 function _load_event() {
-  return _event = require('../../commons-node/event');
+  return _event = require('nuclide-commons/event');
+}
+
+var _log4js;
+
+function _load_log4js() {
+  return _log4js = require('log4js');
+}
+
+var _goToLocation;
+
+function _load_goToLocation() {
+  return _goToLocation = require('nuclide-commons-atom/go-to-location');
 }
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const HANDLED_ACTION_TYPES = [(_constants || _load_constants()).ActionType.ADD_PROJECT_REPOSITORY, (_constants || _load_constants()).ActionType.RESTORE_PANE_ITEM_STATE];
 
@@ -60,17 +74,10 @@ function applyActionMiddleware(actions, getState) {
 }
 
 function watchProjectRepository(action, getState) {
-
   const { repository } = action.payload;
   const hgRepository = repository;
   // Type was checked with `getType`. Downcast to safely access members with Flow.
-  return _rxjsBundlesRxMinJs.Observable.merge((0, (_event || _load_event()).observableFromSubscribeFunction)(
-  // Re-fetch when the list of bookmarks changes.
-  hgRepository.onDidChangeBookmarks.bind(hgRepository)), (0, (_event || _load_event()).observableFromSubscribeFunction)(
-  // Re-fetch when the active bookmark changes (called "short head" to match
-  // Atom's Git API).
-  hgRepository.onDidChangeShortHead.bind(hgRepository))).startWith(null) // Kick it off the first time
-  .switchMap(() => _rxjsBundlesRxMinJs.Observable.fromPromise(hgRepository.getBookmarks())).map(bookmarks => {
+  return hgRepository.observeBookmarks().map(bookmarks => {
     const bookmarkNames = new Set(bookmarks.map(bookmark => bookmark.bookmark).concat([(_constants || _load_constants()).EMPTY_SHORTHEAD]));
 
     const activeBookmark = bookmarks.filter(bookmark => bookmark.active)[0];
@@ -124,6 +131,9 @@ function restorePaneItemState(action, getState) {
     } else {
       textEditor.destroy();
     }
+  }).catch(error => {
+    (0, (_log4js || _load_log4js()).getLogger)('nuclide-bookshelf').error('bookshelf failed to close some editors', error);
+    return _rxjsBundlesRxMinJs.Observable.empty();
   }).ignoreElements(),
   // Note: the reloading step can be omitted if the file watchers are proven to be robust.
   // But that's not the case; hence, a reload on bookmark switch/restore doesn't hurt.
@@ -136,8 +146,14 @@ function restorePaneItemState(action, getState) {
     } else {
       return _rxjsBundlesRxMinJs.Observable.fromPromise(textEditor.getBuffer().load());
     }
+  }).catch(error => {
+    (0, (_log4js || _load_log4js()).getLogger)('nuclide-bookshelf').error('bookshelf failed to reload some editors', error);
+    return _rxjsBundlesRxMinJs.Observable.empty();
   }).ignoreElements(), _rxjsBundlesRxMinJs.Observable.from(urisToOpen).flatMap(fileUri => {
-    return _rxjsBundlesRxMinJs.Observable.fromPromise(atom.workspace.open(fileUri));
+    return _rxjsBundlesRxMinJs.Observable.fromPromise((0, (_goToLocation || _load_goToLocation()).goToLocation)(fileUri));
+  }).catch(error => {
+    (0, (_log4js || _load_log4js()).getLogger)('nuclide-bookshelf').error('bookshelf failed to open some editors', error);
+    return _rxjsBundlesRxMinJs.Observable.empty();
   }).ignoreElements(), _rxjsBundlesRxMinJs.Observable.of({
     payload: {
       repository

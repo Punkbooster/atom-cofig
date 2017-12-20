@@ -1,13 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -27,7 +22,7 @@ let renameNode = (() => {
     try {
       const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileSystemServiceByNuclideUri)(filePath);
       // Throws if the destPath already exists.
-      yield service.rename((_nuclideUri || _load_nuclideUri()).default.getPath(filePath), (_nuclideUri || _load_nuclideUri()).default.getPath(destPath));
+      yield service.rename(filePath, destPath);
 
       const hgRepository = getHgRepositoryForNode(node);
       if (hgRepository == null) {
@@ -63,8 +58,9 @@ let moveNodes = (() => {
     isMoving = true;
 
     // Reset isMoving to false whenever move operation completes, errors, or times out.
-    yield (0, (_promise || _load_promise()).triggerAfterWait)(_moveNodesUnprotected(nodes, destPath), MOVE_TIMEOUT, resetIsMoving, /* timeoutFn */
-    resetIsMoving);
+    yield (0, (_promise || _load_promise()).triggerAfterWait)(_moveNodesUnprotected(nodes, destPath), MOVE_TIMEOUT, resetIsMoving /* timeoutFn */
+    , resetIsMoving /* cleanupFn */
+    );
   });
 
   return function moveNodes(_x3, _x4) {
@@ -97,9 +93,7 @@ let _moveNodesUnprotected = (() => {
       });
 
       const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileSystemServiceByNuclideUri)(paths[0]);
-      yield service.move(paths.map(function (p) {
-        return (_nuclideUri || _load_nuclideUri()).default.getPath(p);
-      }), (_nuclideUri || _load_nuclideUri()).default.getPath(destPath));
+      yield service.move(paths, destPath);
 
       // All filtered nodes should have the same rootUri, so we simply attempt to
       // retrieve the hg repository using the first node.
@@ -157,9 +151,7 @@ let deleteNodes = (() => {
         var _ref5 = (0, _asyncToGenerator.default)(function* (pathGroup) {
           // Batch delete using fs service.
           const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileSystemServiceByNuclideUri)(pathGroup.get(0));
-          yield service.rmdirAll(pathGroup.map(function (path) {
-            return (_nuclideUri || _load_nuclideUri()).default.getPath(path);
-          }).toJS());
+          yield service.rmdirAll(pathGroup.toJS());
         });
 
         return function (_x8) {
@@ -205,7 +197,7 @@ function _load_immutable() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _FileTreeHelpers;
@@ -217,7 +209,7 @@ function _load_FileTreeHelpers() {
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
 var _nuclideRemoteConnection;
@@ -228,7 +220,16 @@ function _load_nuclideRemoteConnection() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const MOVE_TIMEOUT = 10000;
+const MOVE_TIMEOUT = 10000; /**
+                             * Copyright (c) 2015-present, Facebook, Inc.
+                             * All rights reserved.
+                             *
+                             * This source code is licensed under the license found in the LICENSE file in
+                             * the root directory of this source tree.
+                             *
+                             * 
+                             * @format
+                             */
 
 function getHgRepositoryForNode(node) {
   const repository = node.repo;
@@ -264,9 +265,7 @@ function isValidRename(node, destPath_) {
 
 function resetIsMoving() {
   isMoving = false;
-}
-
-module.exports = {
+}exports.default = {
   getHgRepositoryForNode,
   isValidRename,
   renameNode,

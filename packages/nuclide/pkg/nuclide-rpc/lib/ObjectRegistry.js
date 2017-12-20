@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,19 +7,28 @@ exports.ObjectRegistry = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-rpc');
 
 // All remotable objects have some set of named functions,
 // and they also have a dispose method.
-
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 // Handles lifetimes of marshalling wrappers remote objects.
 //
@@ -206,7 +206,7 @@ class ObjectRegistry {
 
     return (0, _asyncToGenerator.default)(function* () {
       const ids = Array.from(_this2._registrationsById.keys());
-      logger.info(`Disposing ${ ids.length } registrations`);
+      logger.info(`Disposing ${ids.length} registrations`);
 
       yield Promise.all(ids.map((() => {
         var _ref = (0, _asyncToGenerator.default)(function* (id) {
@@ -223,10 +223,9 @@ class ObjectRegistry {
       })()));
 
       const subscriptions = Array.from(_this2._subscriptions.keys());
-      logger.info(`Disposing ${ subscriptions.length } subscriptions`);
+      logger.info(`Disposing ${subscriptions.length} subscriptions`);
       for (const id of subscriptions) {
         try {
-
           _this2.disposeSubscription(id);
         } catch (e) {
           logger.error('Error disposing subscription', e);
@@ -247,7 +246,7 @@ class ObjectRegistry {
       const objectId = _this3._idsByProxy.get(proxy);
       if (objectId != null) {
         _this3._idsByProxy.set(proxy, null);
-        return yield objectId;
+        return objectId;
       } else {
         return null;
       }

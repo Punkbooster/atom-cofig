@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -32,7 +23,17 @@ var _atom = require('atom');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const { remote } = _electron.default;
+const { remote } = _electron.default; /**
+                                       * Copyright (c) 2015-present, Facebook, Inc.
+                                       * All rights reserved.
+                                       *
+                                       * This source code is licensed under the license found in the LICENSE file in
+                                       * the root directory of this source tree.
+                                       *
+                                       * 
+                                       * @format
+                                       */
+
 if (!(remote != null)) {
   throw new Error('Invariant violation: "remote != null"');
 }
@@ -54,25 +55,13 @@ class DebuggerPauseController {
   }
 
   _scheduleNativeNotification() {
-    const currentWindow = remote.getCurrentWindow();
-    if (currentWindow.isFocused()) {
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      const raiseNativeNotification = (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).getNotificationService)();
-      if (raiseNativeNotification != null) {
-        raiseNativeNotification('Nuclide Debugger', 'Paused at a breakpoint');
+    const raiseNativeNotification = (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).getNotificationService)();
+    if (raiseNativeNotification != null) {
+      const pendingNotification = raiseNativeNotification('Nuclide Debugger', 'Paused at a breakpoint', 3000, false);
+      if (pendingNotification != null) {
+        this._disposables.add(pendingNotification);
       }
-    }, 3000);
-
-    // If the user focuses the window at any time, then they are assumed to have seen the debugger
-    // pause, and we will not display a notification.
-    currentWindow.once('focus', () => {
-      clearTimeout(timeoutId);
-    });
-
-    this._disposables.add(new _atom.Disposable(() => clearTimeout(timeoutId)));
+    }
   }
 
   dispose() {

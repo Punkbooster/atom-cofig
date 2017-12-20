@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,18 +8,18 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _atom = require('atom');
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _Icon;
 
 function _load_Icon() {
-  return _Icon = require('../../nuclide-ui/Icon');
+  return _Icon = require('nuclide-commons-ui/Icon');
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _DebuggerDispatcher;
@@ -43,7 +34,24 @@ function _load_passesGK() {
   return _passesGK = _interopRequireDefault(require('../../commons-node/passesGK'));
 }
 
+var _DebuggerStore;
+
+function _load_DebuggerStore() {
+  return _DebuggerStore = require('./DebuggerStore');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const GK_THREAD_SWITCH_UI = 'nuclide_debugger_thread_switch_ui';
 const GK_TIMEOUT = 5000;
@@ -61,6 +69,8 @@ class ThreadStore {
     this._owningProcessId = 0;
     this._selectedThreadId = 0;
     this._stopThreadId = 0;
+    this._threadsReloading = false;
+    this._debuggerMode = (_DebuggerStore || _load_DebuggerStore()).DebuggerMode.STOPPED;
   }
 
   setDatatipService(service) {
@@ -74,10 +84,12 @@ class ThreadStore {
         this._emitter.emit('change');
         break;
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.UPDATE_THREADS:
+        this._threadsReloading = false;
         this._updateThreads(payload.data.threadData);
         this._emitter.emit('change');
         break;
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.UPDATE_THREAD:
+        this._threadsReloading = false;
         this._updateThread(payload.data.thread);
         this._emitter.emit('change');
         break;
@@ -85,8 +97,24 @@ class ThreadStore {
         this._updateStopThread(payload.data.id);
         this._emitter.emit('change');
         break;
+      case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.UPDATE_SELECTED_THREAD:
+        this._updateSelectedThread(payload.data.id);
+        this._emitter.emit('change');
+        break;
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.NOTIFY_THREAD_SWITCH:
         this._notifyThreadSwitch(payload.data.sourceURL, payload.data.lineNumber, payload.data.message);
+        break;
+      case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.DEBUGGER_MODE_CHANGE:
+        if (this._debuggerMode === (_DebuggerStore || _load_DebuggerStore()).DebuggerMode.RUNNING && payload.data === (_DebuggerStore || _load_DebuggerStore()).DebuggerMode.PAUSED) {
+          // If the debugger just transitioned from running to paused, the debug server should
+          // be sending updated thread stacks. This may take a moment.
+          this._threadsReloading = true;
+        } else if (payload.data === (_DebuggerStore || _load_DebuggerStore()).DebuggerMode.RUNNING) {
+          // The UI is never waiting for threads if it's running.
+          this._threadsReloading = false;
+        }
+        this._debuggerMode = payload.data;
+        this._emitter.emit('change');
         break;
       default:
         return;
@@ -98,6 +126,7 @@ class ThreadStore {
     this._owningProcessId = threadData.owningProcessId;
     this._stopThreadId = threadData.stopThreadId;
     this._selectedThreadId = threadData.stopThreadId;
+    this._threadsReloading = false;
     threadData.threads.forEach(thread => this._threadMap.set(Number(thread.id), thread));
   }
 
@@ -112,6 +141,10 @@ class ThreadStore {
 
   _updateStopThread(id) {
     this._stopThreadId = Number(id);
+    this._selectedThreadId = Number(id);
+  }
+
+  _updateSelectedThread(id) {
     this._selectedThreadId = Number(id);
   }
 
@@ -145,13 +178,17 @@ class ThreadStore {
       // only handle real files for now
       const datatipService = _this._datatipService;
       if (datatipService != null && path != null && atom.workspace != null) {
+        // This should be goToLocation instead but since the searchAllPanes option is correctly
+        // provided it's not urgent.
+        // eslint-disable-next-line nuclide-internal/atom-apis
         atom.workspace.open(path, { searchAllPanes: true }).then(function (editor) {
           const buffer = editor.getBuffer();
           const rowRange = buffer.rangeForRow(notificationLineNumber);
-          _this._threadChangeDatatip = datatipService.createPinnedDataTip(_this._createAlertComponentClass(message), rowRange, true, /* pinnable */
-          editor, function (pinnedDatatip) {
-            datatipService.deletePinnedDatatip(pinnedDatatip);
-          });
+          _this._threadChangeDatatip = datatipService.createPinnedDataTip({
+            component: _this._createAlertComponentClass(message),
+            range: rowRange,
+            pinnable: true
+          }, editor);
         });
       }
     })();
@@ -165,15 +202,19 @@ class ThreadStore {
     return this._selectedThreadId;
   }
 
+  getThreadsReloading() {
+    return this._threadsReloading;
+  }
+
   onChange(callback) {
     return this._emitter.on('change', callback);
   }
 
   _createAlertComponentClass(message) {
-    return () => _reactForAtom.React.createElement(
+    return () => _react.default.createElement(
       'div',
       { className: 'nuclide-debugger-thread-switch-alert' },
-      _reactForAtom.React.createElement((_Icon || _load_Icon()).Icon, { icon: 'alert' }),
+      _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: 'alert' }),
       message
     );
   }
@@ -184,4 +225,3 @@ class ThreadStore {
   }
 }
 exports.default = ThreadStore;
-module.exports = exports['default'];

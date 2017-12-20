@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -45,10 +36,10 @@ let getIsDirectory = (() => {
 
 let main = (() => {
   var _ref3 = (0, _asyncToGenerator.default)(function* (argv) {
-    yield (0, (_errors || _load_errors()).setupLogging)();
+    (0, (_errors || _load_errors()).setupLogging)();
     (0, (_errors || _load_errors()).setupErrorHandling)();
 
-    logger.debug(`nuclide-remote-atom with arguments: ${ argv._ }`);
+    logger.debug(`nuclide-remote-atom with arguments: ${argv._}`);
 
     // TODO(t10180337): Consider a batch API for openFile().
     if (argv._ != null && argv._.length > 0) {
@@ -56,31 +47,31 @@ let main = (() => {
 
       for (const arg of argv._) {
         const { filePath, line, column } = parseLocationParameter(arg);
-        // eslint-disable-next-line babel/no-await-in-loop
+        // eslint-disable-next-line no-await-in-loop
         const realpath = yield getRealPath(filePath);
-        // eslint-disable-next-line babel/no-await-in-loop
+        // eslint-disable-next-line no-await-in-loop
         const isDirectory = yield getIsDirectory(realpath);
         try {
           if ((_nuclideUri || _load_nuclideUri()).default.isRemote(realpath)) {
             const result = commands.openRemoteFile(realpath, line, column, Boolean(argv.wait)).refCount();
             if (argv.wait) {
-              // eslint-disable-next-line babel/no-await-in-loop
+              // eslint-disable-next-line no-await-in-loop
               yield result.toPromise();
             } else {
-              // eslint-disable-next-line babel/no-await-in-loop
+              // eslint-disable-next-line no-await-in-loop
               yield result.take(1).toPromise();
             }
           } else if (isDirectory) {
             // file/line/wait are ignored on directories
-            // eslint-disable-next-line babel/no-await-in-loop
+            // eslint-disable-next-line no-await-in-loop
             yield commands.addProject(realpath);
           } else {
             const result = commands.openFile(realpath, line, column, Boolean(argv.wait)).refCount();
             if (argv.wait) {
-              // eslint-disable-next-line babel/no-await-in-loop
+              // eslint-disable-next-line no-await-in-loop
               yield result.toPromise();
             } else {
-              // eslint-disable-next-line babel/no-await-in-loop
+              // eslint-disable-next-line no-await-in-loop
               yield result.take(1).toPromise();
             }
           }
@@ -138,13 +129,13 @@ function _load_CommandClient() {
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _errors;
@@ -153,10 +144,10 @@ function _load_errors() {
   return _errors = require('./errors');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _yargs;
@@ -167,7 +158,16 @@ function _load_yargs() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-atom-rpc'); /**
+                                                                                       * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                       * All rights reserved.
+                                                                                       *
+                                                                                       * This source code is licensed under the license found in the LICENSE file in
+                                                                                       * the root directory of this source tree.
+                                                                                       *
+                                                                                       * 
+                                                                                       * @format
+                                                                                       */
 
 const LocationSuffixRegExp = /(:\d+)(:\d+)?$/;
 

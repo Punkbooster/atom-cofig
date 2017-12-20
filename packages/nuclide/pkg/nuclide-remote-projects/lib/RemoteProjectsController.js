@@ -1,13 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _nuclideRemoteConnection;
 
@@ -15,7 +10,9 @@ function _load_nuclideRemoteConnection() {
   return _nuclideRemoteConnection = require('../../nuclide-remote-connection');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _atom = require('atom');
 
@@ -25,10 +22,16 @@ function _load_StatusBarTile() {
   return _StatusBarTile = _interopRequireDefault(require('./StatusBarTile'));
 }
 
+var _textEditor;
+
+function _load_textEditor() {
+  return _textEditor = require('nuclide-commons-atom/text-editor');
+}
+
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _ConnectionState;
@@ -61,7 +64,7 @@ class RemoteProjectsController {
   _updateConnectionStatus(paneItem) {
     this._disposeSubscription();
 
-    if (!atom.workspace.isTextEditor(paneItem)) {
+    if (!(0, (_textEditor || _load_textEditor()).isValidTextEditor)(paneItem)) {
       this._renderStatusBar((_ConnectionState || _load_ConnectionState()).default.NONE);
       return;
     }
@@ -97,7 +100,9 @@ class RemoteProjectsController {
     this._statusBarDiv = document.createElement('div');
     this._statusBarDiv.className = 'nuclide-remote-projects inline-block';
 
-    const tooltip = atom.tooltips.add(this._statusBarDiv, { title: 'Click to show details of connection.' });
+    const tooltip = atom.tooltips.add(this._statusBarDiv, {
+      title: 'Click to show details of connection.'
+    });
 
     if (!this._statusBarDiv) {
       throw new Error('Invariant violation: "this._statusBarDiv"');
@@ -117,7 +122,7 @@ class RemoteProjectsController {
       if (parentNode) {
         parentNode.removeChild(this._statusBarDiv);
       }
-      _reactForAtom.ReactDOM.unmountComponentAtNode(this._statusBarDiv);
+      _reactDom.default.unmountComponentAtNode(this._statusBarDiv);
       this._statusBarDiv = null;
       rightTile.destroy();
       tooltip.dispose();
@@ -134,10 +139,7 @@ class RemoteProjectsController {
       return;
     }
 
-    const component = _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement((_StatusBarTile || _load_StatusBarTile()).default, {
-      connectionState: connectionState,
-      fileUri: fileUri
-    }), this._statusBarDiv);
+    const component = _reactDom.default.render(_react.default.createElement((_StatusBarTile || _load_StatusBarTile()).default, { connectionState: connectionState, fileUri: fileUri }), this._statusBarDiv);
 
     if (!(component instanceof (_StatusBarTile || _load_StatusBarTile()).default)) {
       throw new Error('Invariant violation: "component instanceof StatusBarTile"');
@@ -150,5 +152,13 @@ class RemoteProjectsController {
     this._disposables.dispose();
   }
 }
-
-module.exports = RemoteProjectsController;
+exports.default = RemoteProjectsController; /**
+                                             * Copyright (c) 2015-present, Facebook, Inc.
+                                             * All rights reserved.
+                                             *
+                                             * This source code is licensed under the license found in the LICENSE file in
+                                             * the root directory of this source tree.
+                                             *
+                                             * 
+                                             * @format
+                                             */

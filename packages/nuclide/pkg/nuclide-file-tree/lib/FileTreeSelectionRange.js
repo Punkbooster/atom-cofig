@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,6 +10,17 @@ var _FileTreeNode;
 function _load_FileTreeNode() {
   return _FileTreeNode = require('./FileTreeNode');
 }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class RangeKey {
   constructor(rootKey, nodeKey) {
@@ -96,7 +98,6 @@ function findShownNode(node) {
 }
 
 class RangeUtil {
-
   /**
    * Returns the current node if it is shown and selected
    * Otherwise, returns a nearby selected node.

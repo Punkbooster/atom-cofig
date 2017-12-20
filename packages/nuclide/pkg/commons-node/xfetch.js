@@ -1,12 +1,17 @@
 'use strict';
-'use babel';
 
-/*
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * 
+ * @format
  */
 
 /**
@@ -40,8 +45,4 @@
 // The export is typed with `typeof fetch` so flow treats the polyfill as the
 // real `fetch`.
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = typeof global.fetch === 'function' ? global.fetch : require('node-fetch');
-module.exports = exports['default'];
+exports.default = typeof global.fetch === 'function' ? global.fetch : require('node-fetch'); // eslint-disable-line nuclide-internal/no-commonjs

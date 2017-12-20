@@ -1,18 +1,35 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.AttachUIComponent = undefined;
+
+var _react = _interopRequireDefault(require('react'));
+
+var _AtomInput;
+
+function _load_AtomInput() {
+  return _AtomInput = require('nuclide-commons-ui/AtomInput');
+}
+
+var _Table;
+
+function _load_Table() {
+  return _Table = require('nuclide-commons-ui/Table');
+}
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _nuclideUri;
+
+function _load_nuclideUri() {
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
 
 var _nuclideDebuggerBase;
 
@@ -20,31 +37,7 @@ function _load_nuclideDebuggerBase() {
   return _nuclideDebuggerBase = require('../../nuclide-debugger-base');
 }
 
-var _reactForAtom = require('react-for-atom');
-
-var _AtomInput;
-
-function _load_AtomInput() {
-  return _AtomInput = require('../../nuclide-ui/AtomInput');
-}
-
-var _Table;
-
-function _load_Table() {
-  return _Table = require('../../nuclide-ui/Table');
-}
-
-var _Button;
-
-function _load_Button() {
-  return _Button = require('../../nuclide-ui/Button');
-}
-
-var _ButtonGroup;
-
-function _load_ButtonGroup() {
-  return _ButtonGroup = require('../../nuclide-ui/ButtonGroup');
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function getColumns() {
   return [{
@@ -54,13 +47,22 @@ function getColumns() {
   }, {
     title: 'PID',
     key: 'pid',
-    width: 0.10
+    width: 0.1
   }, {
     title: 'Command Name',
     key: 'command',
     width: 0.65
   }];
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 function getCompareFunction(sortedColumn, sortDescending) {
   switch (sortedColumn) {
@@ -85,21 +87,72 @@ function getCompareFunction(sortedColumn, sortDescending) {
   return () => 0;
 }
 
-class AttachUIComponent extends _reactForAtom.React.Component {
+class AttachUIComponent extends _react.default.Component {
 
   constructor(props) {
     super(props);
 
-    this._handleFilterTextChange = this._handleFilterTextChange.bind(this);
-    this._handleSelectTableRow = this._handleSelectTableRow.bind(this);
-    this._handleCancelButtonClick = this._handleCancelButtonClick.bind(this);
-    this._handleAttachClick = this._handleAttachClick.bind(this);
-    this._handleParentVisibilityChanged = this._handleParentVisibilityChanged.bind(this);
-    this._updateAttachTargetList = this._updateAttachTargetList.bind(this);
-    this._updateList = this._updateList.bind(this);
-    this._handleSort = this._handleSort.bind(this);
+    this._updateList = () => {
+      let filterText = null;
+      let newSelectedTarget = null;
+      if (!this._deserializedSavedSettings && this.state.attachTargetInfos.length > 0) {
+        // Deserialize the saved settings the first time the process list updates.
+        this._deserializedSavedSettings = true;
+        (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).deserializeDebuggerConfig)(...this._getSerializationArgs(), (transientSettings, savedSettings) => {
+          newSelectedTarget = this.state.attachTargetInfos.find(target => target.pid === transientSettings.attachPid && target.name === transientSettings.attachName);
+          filterText = transientSettings.filterText;
+        });
+      }
+
+      if (newSelectedTarget == null) {
+        newSelectedTarget = this.state.selectedAttachTarget == null ? null : this._getAttachTargetOfPid(this.state.selectedAttachTarget.pid);
+      }
+      this._targetListUpdating = false;
+      this.setState({
+        attachTargetInfos: this.props.store.getAttachTargetInfos(),
+        selectedAttachTarget: newSelectedTarget,
+        filterText: filterText || this.state.filterText
+      });
+    };
+
+    this._handleSort = (sortedColumn, sortDescending) => {
+      this.setState({
+        sortedColumn,
+        sortDescending
+      });
+    };
+
+    this._handleFilterTextChange = text => {
+      this.setState({
+        filterText: text
+      });
+    };
+
+    this._handleSelectTableRow = (item, selectedIndex) => {
+      const attachTarget = this._getAttachTargetOfPid(item.pid);
+      this.setState({
+        selectedAttachTarget: attachTarget
+      });
+    };
+
+    this._handleAttachClick = () => {
+      this._attachToProcess();
+    };
+
+    this._updateAttachTargetList = () => {
+      // Fire and forget.
+      if (!this._targetListUpdating) {
+        this._targetListUpdating = true;
+        this.props.actions.updateAttachTargetList();
+      }
+    };
+
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
+    this._targetListUpdating = false;
+    this._deserializedSavedSettings = false;
+    this._disposables.add(this.props.store.onAttachTargetListChanged(this._updateList));
+
     this.state = {
-      targetListChangeDisposable: this.props.store.onAttachTargetListChanged(this._updateList),
       attachTargetInfos: [],
       selectedAttachTarget: null,
       filterText: '',
@@ -108,27 +161,35 @@ class AttachUIComponent extends _reactForAtom.React.Component {
     };
   }
 
-  componentWillMount() {
-    this.props.parentEmitter.on((_nuclideDebuggerBase || _load_nuclideDebuggerBase()).DebuggerLaunchAttachEventTypes.ENTER_KEY_PRESSED, this._handleAttachClick);
-    this.props.parentEmitter.on((_nuclideDebuggerBase || _load_nuclideDebuggerBase()).DebuggerLaunchAttachEventTypes.VISIBILITY_CHANGED, this._handleParentVisibilityChanged);
+  _getSerializationArgs() {
+    return [(_nuclideUri || _load_nuclideUri()).default.isRemote(this.props.targetUri) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(this.props.targetUri) : 'local', 'attach', 'native'];
+  }
+
+  componentDidMount() {
+    this.props.actions.updateParentUIVisibility(true);
     this.props.actions.updateAttachUIVisibility(true);
+    this._disposables.add(atom.commands.add('atom-workspace', {
+      'core:confirm': () => {
+        if (this._debugButtonShouldEnable()) {
+          this._handleAttachClick();
+        }
+      }
+    }));
   }
 
   componentWillUnmount() {
+    this.props.actions.updateParentUIVisibility(false);
     this.props.actions.updateAttachUIVisibility(false);
-    if (this.state.targetListChangeDisposable != null) {
-      this.state.targetListChangeDisposable.dispose();
-    }
-    this.props.parentEmitter.removeListener((_nuclideDebuggerBase || _load_nuclideDebuggerBase()).DebuggerLaunchAttachEventTypes.VISIBILITY_CHANGED, this._handleParentVisibilityChanged);
-    this.props.parentEmitter.removeListener((_nuclideDebuggerBase || _load_nuclideDebuggerBase()).DebuggerLaunchAttachEventTypes.ENTER_KEY_PRESSED, this._handleAttachClick);
+    this._disposables.dispose();
   }
 
-  _updateList() {
-    const newSelectedTarget = this.state.selectedAttachTarget == null ? null : this._getAttachTargetOfPid(this.state.selectedAttachTarget.pid);
-    this.setState({
-      attachTargetInfos: this.props.store.getAttachTargetInfos(),
-      selectedAttachTarget: newSelectedTarget
-    });
+  setState(newState) {
+    super.setState(newState);
+    this.props.configIsValidChanged(this._debugButtonShouldEnable());
+  }
+
+  _debugButtonShouldEnable() {
+    return this.state.selectedAttachTarget != null;
   }
 
   _getAttachTargetOfPid(pid) {
@@ -140,20 +201,9 @@ class AttachUIComponent extends _reactForAtom.React.Component {
     return null;
   }
 
-  _handleSort(sortedColumn, sortDescending) {
-    this.setState({
-      sortedColumn,
-      sortDescending
-    });
-  }
-
   render() {
     const filterRegex = new RegExp(this.state.filterText, 'i');
-    const {
-      attachTargetInfos,
-      sortedColumn,
-      sortDescending
-    } = this.state;
+    const { attachTargetInfos, sortedColumn, sortDescending } = this.state;
     const compareFn = getCompareFunction(sortedColumn, sortDescending);
     const { selectedAttachTarget } = this.state;
     let selectedIndex = null;
@@ -170,16 +220,17 @@ class AttachUIComponent extends _reactForAtom.React.Component {
       }
       return row;
     });
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'block' },
-      _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+      _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
         placeholderText: 'Search...',
-        initialValue: this.state.filterText,
+        value: this.state.filterText,
         onDidChange: this._handleFilterTextChange,
-        size: 'sm'
+        size: 'sm',
+        autofocus: true
       }),
-      _reactForAtom.React.createElement((_Table || _load_Table()).Table, {
+      _react.default.createElement((_Table || _load_Table()).Table, {
         columns: getColumns(),
         fixedHeader: true,
         maxBodyHeight: '30em',
@@ -192,63 +243,12 @@ class AttachUIComponent extends _reactForAtom.React.Component {
         selectedIndex: selectedIndex,
         onSelect: this._handleSelectTableRow,
         collapsable: true
-      }),
-      _reactForAtom.React.createElement(
-        'div',
-        { className: 'nuclide-debugger-native-launch-attach-actions' },
-        _reactForAtom.React.createElement(
-          (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
-          null,
-          _reactForAtom.React.createElement(
-            (_Button || _load_Button()).Button,
-            { onClick: this._handleCancelButtonClick },
-            'Cancel'
-          ),
-          _reactForAtom.React.createElement(
-            (_Button || _load_Button()).Button,
-            {
-              buttonType: (_Button || _load_Button()).ButtonTypes.PRIMARY,
-              onClick: this._handleAttachClick,
-              disabled: selectedIndex == null },
-            'Attach'
-          )
-        )
-      )
+      })
     );
-  }
-
-  _handleFilterTextChange(text) {
-    this.setState({
-      filterText: text
-    });
-  }
-
-  _handleSelectTableRow(item, selectedIndex) {
-    const attachTarget = this._getAttachTargetOfPid(item.pid);
-    this.setState({
-      selectedAttachTarget: attachTarget
-    });
   }
 
   _handleDoubleClickTableRow() {
     this._attachToProcess();
-  }
-
-  _handleAttachClick() {
-    this._attachToProcess();
-  }
-
-  _handleParentVisibilityChanged(visible) {
-    this.props.actions.updateParentUIVisibility(visible);
-  }
-
-  _handleCancelButtonClick() {
-    this.props.actions.toggleLaunchAttachDialog();
-  }
-
-  _updateAttachTargetList() {
-    // Fire and forget.
-    this.props.actions.updateAttachTargetList();
   }
 
   _attachToProcess() {
@@ -256,8 +256,11 @@ class AttachUIComponent extends _reactForAtom.React.Component {
     if (attachTarget != null) {
       // Fire and forget.
       this.props.actions.attachDebugger(attachTarget);
-      this.props.actions.showDebuggerPanel();
-      this.props.actions.toggleLaunchAttachDialog();
+      (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).serializeDebuggerConfig)(...this._getSerializationArgs(), {}, {
+        attachPid: attachTarget.pid,
+        attachName: attachTarget.name,
+        filterText: this.state.filterText
+      });
     }
   }
 }

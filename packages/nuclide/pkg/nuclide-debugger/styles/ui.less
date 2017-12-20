@@ -9,6 +9,7 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  padding: @component-padding;
 }
 
 .nuclide-debugger-root select.form-control {
@@ -20,16 +21,6 @@
 .nuclide-debugger-root .control-bar {
   display: flex;
   flex-direction: row-reverse;
-}
-
-.nuclide-debugger-root-close-button {
-  background: transparent;
-  border: none;
-  padding: 0;
-  position: absolute;
-  top: 2.5em;
-  right: 0.5em;
-  z-index: 1;
 }
 
 .nuclide-debugger-root .inspector {
@@ -48,22 +39,38 @@
   flex-basis: 0;
   overflow: auto;
   padding-right: 0.5em;
+  display: flex;
+  flex-direction: column;
 
   span {
     -webkit-user-select: initial;
   }
 }
 
+.nuclide-debugger-container-new-disabled {
+  opacity: 0.5;
+}
+
+.nuclide-debugger-state-notice {
+  color: @text-color-highlight;
+  font-weight: bold;
+  padding-top: 1.0em;
+  padding-bottom: 0.5em;
+  text-align: center;
+}
+
 .nuclide-debugger-section-header {
-  border-bottom: 1px @base-border-color solid;
-  padding-bottom: 2px;
+  padding: 0px 5px;
 }
 
-.nuclide-debugger-section-header:last-of-type {
-  border-bottom: none;
+.nuclide-debugger-controls-section {
+  border: 1px @base-border-color solid;
+  padding-top: 5px;
 }
 
-.nuclide-debugger-webview-hidden {
+.nuclide-debugger-webview {
+  // This is only used because we're piggybacking on its state management. It
+  // needs to be in the DOM, but we don't want to see it.
   height: 0;
   overflow: hidden;
 }
@@ -89,7 +96,8 @@ Use flexbox cross-axis stretch to fill the vertical space.
   .nuclide-debugger-vfill-parent();
   .nuclide-debugger-vfill-child(); // child relative to .inspector
 
-  &::shadow object {
+  &::shadow object,
+  object {
     .nuclide-debugger-vfill-child();
     // The object element is generated with inline style height:100%.
     height: auto !important;
@@ -97,10 +105,68 @@ Use flexbox cross-axis stretch to fill the vertical space.
 }
 
 /* General debugger UI */
+.nuclide-debugger-starting-message {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: @component-padding;
+  padding: 5px;
+}
+
 .nuclide-debugger-section-content {
   max-height: 20em;
-  overflow-y: auto;
-  margin-bottom: 15px;
+  overflow-y: visible;
+  overflow-x: visible;
+  margin-bottom: 5px;
+}
+
+.nuclide-debugger-pane-content {
+  max-height: 20em;
+  overflow-y: visible;
+  overflow-x: visible;
+  margin-bottom: 5px;
+  padding: 10px;
+}
+
+.nuclide-debugger-breakpoint {
+  padding-left: 0.25em;
+
+  span {
+    -webkit-user-select: none;
+  }
+}
+
+.nuclide-debugger-breakpoint-condition {
+  font-size: 8pt;
+  padding: 3px 0px 3px 25px;
+  color: @text-color-warning;
+  .icon {
+    height: 8px;
+  }
+}
+
+.nuclide-debugger-breakpoint-hitcount {
+  font-size: 8pt;
+  padding: 3px 0px 3px 25px;
+  color: @text-color-success;
+}
+
+.nuclide-debugger-breakpoint-unresolved {
+  text-decoration: line-through;
+}
+
+.nuclide-debugger-breakpoint-disabled {
+  text-decoration: line-through;
+}
+
+.nuclide-debugger-breakpoint-with-condition {
+  color: @text-color-warning;
+}
+
+.nuclide-debugger-breakpoint-condition {
+  font-size: 8pt;
+  padding: 3px 0px 3px 25px;
+  color: @text-color-warning;
 }
 
 /* Watch Expressions */
@@ -116,18 +182,29 @@ Use flexbox cross-axis stretch to fill the vertical space.
   font-family: Menlo, Monaco, Consolas, monospace;
   justify-content: space-between;
   min-height: 23px; // Match height of AtomInput to prevent list items from jumping around.
-  overflow: auto;
+  overflow: visible;
 }
 
 .nuclide-debugger-expression-value-content {
   display: flex;
   flex-direction: row;
   flex-grow: 1;
+  overflow-x: visible;
+}
+
+.nuclide-debugger-watch-expression-value-content {
+  width: 100%;
+  overflow: visible;
 }
 
 .nuclide-debugger-watch-expression-xout {
   cursor: pointer;
   opacity: 0;
+}
+
+.nuclide-debugger-watch-expression-xout.icon::before {
+  margin-right: 0px;
+  text-align: center;
 }
 
 .nuclide-debugger-watch-expression-row:hover {
@@ -162,9 +239,14 @@ Use flexbox cross-axis stretch to fill the vertical space.
 }
 
 .nuclide-debugger-callstack-item-selected {
-  background-color: @background-color-info;
   color: @text-color-highlight;
   font-weight: bold;
+}
+
+.nuclide-debugger-callstack-list-empty {
+  font-style: italic;
+  padding: 1em;
+  text-align: center;
 }
 
 .nuclide-debugger-callstack-name {
@@ -172,6 +254,11 @@ Use flexbox cross-axis stretch to fill the vertical space.
 }
 
 /* Stepping controls */
+.nuclide-debugger-stepping-button-separated {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
 .nuclide-debugger-stepping-component {
   display: flex;
   flex-wrap: wrap;
@@ -195,6 +282,16 @@ Use flexbox cross-axis stretch to fill the vertical space.
   }
 }
 
+.nuclide-debugger-stepping-playpause-button {
+  width: 10px;
+  text-align: left;
+}
+
+.nuclide-debugger-stepping-playpause-button-loading {
+  position: relative;
+  left: -2px;
+}
+
 .nuclide-debugger-stepping-buttongroup {
   margin-right: 1em;
 }
@@ -203,6 +300,11 @@ Use flexbox cross-axis stretch to fill the vertical space.
   cursor: pointer;
   margin-right: 0.5em;
   margin-top: 4px;
+}
+
+.nuclide-debugger-set-source-path-button {
+  position: relative;
+  left: 10px;
 }
 
 .nuclide-debugger-exception-fragment {
@@ -230,4 +332,35 @@ Use flexbox cross-axis stretch to fill the vertical space.
     padding: 1px 4px;
     font-weight: bold;
     color: @text-color-warning;
+}
+
+.nuclide-debugger-thread-loading {
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Breakpoint config dialog */
+.nuclide-debugger-bp-config-header {
+  align-items: baseline;
+  margin-bottom: 1em;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.nuclide-debugger-bp-config-actions {
+  display: flex;
+  flex: 1;
+  justify-content: flex-end;
+  padding-top: 10px;
+  position: relative;
+  right: 8px;
+  bottom: 8px;
+}
+
+.nuclide-debugger-bp-dialog {
+  font-family: @font-family;
+  font-size: 12pt;
 }

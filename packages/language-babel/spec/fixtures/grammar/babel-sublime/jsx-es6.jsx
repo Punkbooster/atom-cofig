@@ -31,11 +31,11 @@ export default React.createClass({
 //                  ^               keyword.operator.accessor.js
 //                   ^^^^^^^^^^^    entity.name.function.js
 //                              ^   meta.brace.round.js
-//                               ^  meta.brace.curly.js
+//                               ^  meta.brace.curly.litobj.js
 
   mixins: [InputsMixin],
 //^^^^^^^ ^^^^^^^^^^^^^^  meta.method-call.with-arguments.js
-//^^^^^^^                 constant.other.object.key.js
+//^^^^^^                  constant.other.object.key.js
 //^^^^^^                  string.unquoted.js
 //      ^                 punctuation.separator.key-value.js
 //        ^           ^   meta.brace.square.js
@@ -87,7 +87,7 @@ export default React.createClass({
 //    ^                         keyword.operator.accessor.js
 //     ^^^^                     entity.name.function.js
 //         ^                 ^  meta.brace.round.js
-//          ^               ^   meta.brace.curly.js
+//          ^               ^   meta.brace.curly.litobj.js
 //           ^^^^^  ^^^^^^^^    variable.other.readwrite.shorthandpropertyname.js
 //                ^             meta.delimiter.comma.js
       .end((err, res) =>
@@ -110,8 +110,8 @@ export default React.createClass({
 //          ^                             keyword.operator.accessor.js
 //           ^^^^^^^^                     entity.name.function.js
 //                   ^               ^^   meta.brace.round.js
-//                    ^             ^     meta.brace.curly.js
-//                     ^^^^^^^^           constant.other.object.key.js
+//                    ^             ^     meta.brace.curly.litobj.js
+//                     ^^^^^^^            constant.other.object.key.js
 //                     ^^^^^^^            string.unquoted.js
 //                            ^           punctuation.separator.key-value.js
 //                              ^         keyword.operator.logical.js
@@ -367,7 +367,7 @@ export default React.createClass({
 //^  meta.function.method.js
 //^  meta.brace.curly.js
 });
-// <- meta.method-call.with-arguments.js meta.brace.curly.js
+// <- meta.method-call.with-arguments.js meta.brace.curly.litobj.js
  // <- meta.method-call.with-arguments.js meta.brace.round.js
 //^  punctuation.terminator.statement.js
 

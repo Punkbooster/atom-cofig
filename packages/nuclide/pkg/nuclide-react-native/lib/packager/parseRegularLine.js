@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -15,9 +6,19 @@ Object.defineProperty(exports, "__esModule", {
 exports.parseRegularLine = parseRegularLine;
 
 
-const TIMESTAMP_FORMATS = ['\\d{1,2}:\\d{2}:\\d{2} (?:A|P)M', '\\d{1,2}/\\d{1,2}/\\d{4}, \\d{1,2}:\\d{2}:\\d{2} (?:A|P)M', '\\d{4}-\\d{2}-\\d{2} \\d{1,2}:\\d{2}:\\d{2}\\.\\d+'];
-const TIMESTAMP = TIMESTAMP_FORMATS.map(str => `(?:\\[?${ str }\\]?)`).join('|');
-const NORMAL_LINE = new RegExp(`^\\s*(?:${ TIMESTAMP })\\s*(.*?)\\s*$`);
+const TIMESTAMP_FORMATS = ['\\d{1,2}:\\d{2}:\\d{2} (?:A|P)M', '\\d{1,2}/\\d{1,2}/\\d{4}, \\d{1,2}:\\d{2}:\\d{2} (?:A|P)M', '\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2}', '\\d{4}-\\d{2}-\\d{2} \\d{1,2}:\\d{2}:\\d{2}\\.\\d+']; /**
+                                                                                                                                                                                                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                                                                                                                                                                * All rights reserved.
+                                                                                                                                                                                                                                *
+                                                                                                                                                                                                                                * This source code is licensed under the license found in the LICENSE file in
+                                                                                                                                                                                                                                * the root directory of this source tree.
+                                                                                                                                                                                                                                *
+                                                                                                                                                                                                                                * 
+                                                                                                                                                                                                                                * @format
+                                                                                                                                                                                                                                */
+
+const TIMESTAMP = TIMESTAMP_FORMATS.map(str => `(?:\\[?${str}\\]?)`).join('|');
+const NORMAL_LINE = new RegExp(`^\\s*(?:${TIMESTAMP})\\s*(.*?)\\s*$`);
 const ERROR_LINE = /^\s*ERROR\s*(.*?)\s*$/;
 
 function parseRegularLine(line) {

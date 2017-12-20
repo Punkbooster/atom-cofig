@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,10 +7,10 @@ Object.defineProperty(exports, "__esModule", {
 var _Icon;
 
 function _load_Icon() {
-  return _Icon = require('./Icon');
+  return _Icon = require('nuclide-commons-ui/Icon');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _classnames;
 
@@ -35,63 +26,66 @@ function _load_nullthrows() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class Tabs extends _reactForAtom.React.Component {
+class Tabs extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
 
-  constructor(props) {
-    super(props);
-
-    this._handleTabChange = this._handleTabChange.bind(this);
-    this._renderTabMenu = this._renderTabMenu.bind(this);
-  }
-
-  _handleTabChange(selectedTabName) {
-    if (typeof this.props.onActiveTabChange === 'function') {
-      this.props.onActiveTabChange((0, (_nullthrows || _load_nullthrows()).default)(this.props.tabs.find(tab => tab.name === selectedTabName)));
-    }
-  }
-
-  _renderTabMenu() {
-    const closeButton = this.props.closeable ? _reactForAtom.React.createElement('div', { className: 'close-icon', onClick: this.props.onClose }) : null;
-    const tabs = this.props.tabs.map(tab => {
-      const icon = tab.icon == null ? null : _reactForAtom.React.createElement((_Icon || _load_Icon()).Icon, { icon: tab.icon });
-      const handler = {};
-      handler[this.props.triggeringEvent] = this._handleTabChange.bind(this, tab.name);
-      return _reactForAtom.React.createElement(
-        'li',
-        Object.assign({
-          className: (0, (_classnames || _load_classnames()).default)({
-            tab: true,
-            active: this.props.activeTabName === tab.name
-          }),
-          key: tab.name
-        }, handler),
-        _reactForAtom.React.createElement(
-          'div',
-          { className: 'title' },
-          icon,
-          tab.tabContent
-        ),
-        closeButton
+    return _temp = super(...args), this._handleTabChange = selectedTabName => {
+      if (typeof this.props.onActiveTabChange === 'function') {
+        this.props.onActiveTabChange((0, (_nullthrows || _load_nullthrows()).default)(this.props.tabs.find(tab => tab.name === selectedTabName)));
+      }
+    }, this._renderTabMenu = () => {
+      const closeButton = this.props.closeable ? _react.default.createElement('div', { className: 'close-icon', onClick: this.props.onClose }) : null;
+      const tabs = this.props.tabs.map(tab => {
+        const icon = tab.icon == null ? null : _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: tab.icon });
+        const handler = {};
+        handler[this.props.triggeringEvent] = this._handleTabChange.bind(this, tab.name);
+        return _react.default.createElement(
+          'li',
+          Object.assign({
+            className: (0, (_classnames || _load_classnames()).default)({
+              tab: true,
+              active: this.props.activeTabName === tab.name
+            }),
+            key: tab.name
+          }, handler),
+          _react.default.createElement(
+            'div',
+            { className: 'title' },
+            icon,
+            tab.tabContent
+          ),
+          closeButton
+        );
+      });
+      return _react.default.createElement(
+        'ul',
+        { className: 'tab-bar list-inline inset-panel' },
+        tabs
       );
-    });
-    return _reactForAtom.React.createElement(
-      'ul',
-      { className: 'tab-bar list-inline inset-panel' },
-      tabs
-    );
+    }, _temp;
   }
 
   render() {
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'nuclide-tabs' },
       this._renderTabMenu()
     );
   }
 }
-exports.default = Tabs;
+exports.default = Tabs; /**
+                         * Copyright (c) 2015-present, Facebook, Inc.
+                         * All rights reserved.
+                         *
+                         * This source code is licensed under the license found in the LICENSE file in
+                         * the root directory of this source tree.
+                         *
+                         * 
+                         * @format
+                         */
+
 Tabs.defaultProps = {
   closeable: false,
   triggeringEvent: 'onClick'
 };
-module.exports = exports['default'];

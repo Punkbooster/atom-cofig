@@ -1,28 +1,20 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.activate = activate;
 exports.deactivate = deactivate;
-exports.serialize = serialize;
-exports.toggleContextView = toggleContextView;
-exports.showContextView = showContextView;
-exports.hideContextView = hideContextView;
-exports.consumeDefinitionService = consumeDefinitionService;
-exports.consumeToolBar = consumeToolBar;
-exports.getDistractionFreeModeProvider = getDistractionFreeModeProvider;
+exports.consumeDefinitionProvider = consumeDefinitionProvider;
 exports.provideNuclideContextView = provideNuclideContextView;
 exports.getHomeFragments = getHomeFragments;
+exports.deserializeContextViewPanelState = deserializeContextViewPanelState;
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _ContextViewManager;
 
@@ -32,41 +24,36 @@ function _load_ContextViewManager() {
 
 var _atom = require('atom');
 
-const INITIAL_PANEL_WIDTH = 300;
-const INITIAL_PANEL_VISIBILITY = false;
+var _destroyItemWhere;
 
-let currentService = null;
-let manager = null;
+function _load_destroyItemWhere() {
+  return _destroyItemWhere = require('nuclide-commons-atom/destroyItemWhere');
+}
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+let manager = null; /**
+                     * Copyright (c) 2015-present, Facebook, Inc.
+                     * All rights reserved.
+                     *
+                     * This source code is licensed under the license found in the LICENSE file in
+                     * the root directory of this source tree.
+                     *
+                     * 
+                     * @format
+                     */
+
 let disposables;
-const initialViewState = {};
 
-function activate(state = {}) {
-  initialViewState.width = state.width || INITIAL_PANEL_WIDTH;
-  initialViewState.visible = state.visible || INITIAL_PANEL_VISIBILITY;
-  disposables = new _atom.CompositeDisposable();
-  // Toggle
-  disposables.add(atom.commands.add('atom-workspace', 'nuclide-context-view:toggle', this.toggleContextView.bind(this)));
-
-  // Show
-  disposables.add(atom.commands.add('atom-workspace', 'nuclide-context-view:show', this.showContextView.bind(this)));
-
-  // Hide
-  disposables.add(atom.commands.add('atom-workspace', 'nuclide-context-view:hide', this.hideContextView.bind(this)));
+function activate() {
+  disposables = new _atom.CompositeDisposable(_registerCommandAndOpener());
 }
 
 function deactivate() {
-  currentService = null;
   disposables.dispose();
   if (manager != null) {
-    manager.consumeDefinitionService(null);
     manager.dispose();
     manager = null;
-  }
-}
-
-function serialize() {
-  if (manager != null) {
-    return manager.serialize();
   }
 }
 
@@ -74,21 +61,9 @@ function serialize() {
  * if the user doesn't pass the Context View GK check. */
 function getContextViewManager() {
   if (manager == null) {
-    manager = new (_ContextViewManager || _load_ContextViewManager()).ContextViewManager(initialViewState.width, initialViewState.visible);
+    manager = new (_ContextViewManager || _load_ContextViewManager()).ContextViewManager();
   }
   return manager;
-}
-
-function toggleContextView() {
-  getContextViewManager().toggle();
-}
-
-function showContextView() {
-  getContextViewManager().show();
-}
-
-function hideContextView() {
-  getContextViewManager().hide();
 }
 
 /**
@@ -110,45 +85,8 @@ const Service = {
   }
 };
 
-function consumeDefinitionService(service) {
-  if (service !== currentService) {
-    currentService = service;
-    getContextViewManager().consumeDefinitionService(currentService);
-  }
-  return new _atom.Disposable(() => {
-    currentService = null;
-    if (manager != null) {
-      manager.consumeDefinitionService(null);
-    }
-  });
-}
-
-function consumeToolBar(getToolBar) {
-  const toolBar = getToolBar('nuclide-context-view');
-  const { element } = toolBar.addButton({
-    icon: 'info',
-    callback: 'nuclide-context-view:toggle',
-    tooltip: 'Toggle Context View',
-    priority: 300
-  });
-  element.classList.add('nuclide-context-view-toolbar-button');
-  const disposable = new _atom.Disposable(() => {
-    toolBar.removeItems();
-  });
-  disposables.add(disposable);
-  return disposable;
-}
-
-function getDistractionFreeModeProvider() {
-  return {
-    name: 'nuclide-context-view',
-    isVisible() {
-      return manager != null && manager._isVisible;
-    },
-    toggle() {
-      atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-context-view:toggle');
-    }
-  };
+function consumeDefinitionProvider(provider) {
+  return getContextViewManager().consumeDefinitionProvider(provider);
 }
 
 function provideNuclideContextView() {
@@ -162,9 +100,24 @@ function getHomeFragments() {
       icon: 'info',
       description: 'Easily navigate between symbols and their definitions in your code',
       command: () => {
-        atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-context-view:toggle', { visible: true });
+        // eslint-disable-next-line nuclide-internal/atom-apis
+        atom.workspace.open((_ContextViewManager || _load_ContextViewManager()).WORKSPACE_VIEW_URI);
       }
     },
     priority: 2
   };
+}
+
+function deserializeContextViewPanelState() {
+  return getContextViewManager();
+}
+
+function _registerCommandAndOpener() {
+  return new (_UniversalDisposable || _load_UniversalDisposable()).default(atom.workspace.addOpener(uri => {
+    if (uri === (_ContextViewManager || _load_ContextViewManager()).WORKSPACE_VIEW_URI) {
+      return getContextViewManager();
+    }
+  }), () => (0, (_destroyItemWhere || _load_destroyItemWhere()).destroyItemWhere)(item => item instanceof (_ContextViewManager || _load_ContextViewManager()).ContextViewManager), atom.commands.add('atom-workspace', 'nuclide-context-view:toggle', () => {
+    atom.workspace.toggle((_ContextViewManager || _load_ContextViewManager()).WORKSPACE_VIEW_URI);
+  }));
 }

@@ -1,26 +1,15 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.syncBlockDecorations = syncBlockDecorations;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
-var _renderReactRoot;
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
-function _load_renderReactRoot() {
-  return _renderReactRoot = require('../commons-atom/renderReactRoot');
-}
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Instead of destroying all the decorations and re-rendering them on each edit,
@@ -35,12 +24,22 @@ function _load_renderReactRoot() {
  *
  * @return an array of markers to be destroyed when the decorations are no longer needed.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function syncBlockDecorations(editorElement, diffBlockType, source, shouldUpdate, getElementWithProps, syncWidth = false) {
   const editor = editorElement.getModel();
   const decorations = editor.getDecorations({ diffBlockType });
   const renderedLineNumbers = new Set();
   const { component } = editorElement;
-  const editorWidthPx = syncWidth && component != null ? `${ component.scrollViewNode.clientWidth }px` : '';
 
   const markers = [];
 
@@ -58,16 +57,10 @@ function syncBlockDecorations(editorElement, diffBlockType, source, shouldUpdate
       continue;
     }
 
-    if (shouldUpdate(value, properties) || item.style.width !== editorWidthPx) {
-      // Refresh the  rendered element.
-      const reactRoot = item;
-
-      _reactForAtom.ReactDOM.unmountComponentAtNode(reactRoot);
+    if (shouldUpdate(value, properties)) {
       const { element, customProps } = getElementWithProps(value);
-      _reactForAtom.ReactDOM.render(element, reactRoot);
+      _reactDom.default.render(element, item);
 
-      reactRoot.setReactElement(element);
-      reactRoot.style.width = editorWidthPx;
       Object.assign(properties, customProps);
 
       // Invalidate the block decoration measurements.
@@ -87,12 +80,17 @@ function syncBlockDecorations(editorElement, diffBlockType, source, shouldUpdate
     }
 
     const { element, customProps } = getElementWithProps(value);
-    const marker = editor.markBufferPosition([lineNumber, 0], { invalidate: 'never' });
+    const marker = editor.markBufferPosition([lineNumber, 0], {
+      invalidate: 'never'
+    });
 
     // The position should be `after` if the element is at the end of the file.
     const position = lineNumber >= editor.getLineCount() - 1 ? 'after' : 'before';
-    const item = (0, (_renderReactRoot || _load_renderReactRoot()).renderReactRoot)(element);
-    item.style.width = editorWidthPx;
+    const item = document.createElement('div');
+    _reactDom.default.render(element, item);
+    marker.onDidDestroy(() => {
+      _reactDom.default.unmountComponentAtNode(item);
+    });
     editor.decorateMarker(marker, Object.assign({}, customProps, {
       type: 'block',
       item,

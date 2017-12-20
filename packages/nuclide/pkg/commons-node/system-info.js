@@ -1,18 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.isRunningInTest = exports.isDevelopment = exports.OS_TYPE = undefined;
+exports.isRunningInTest = exports.OS_TYPE = undefined;
 exports.isRunningInClient = isRunningInClient;
 exports.getAtomNuclideDir = getAtomNuclideDir;
 exports.getAtomVersion = getAtomVersion;
@@ -36,10 +27,21 @@ var _os = _interopRequireDefault(require('os'));
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('./nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const NUCLIDE_PACKAGE_JSON_PATH = require.resolve('../../package.json');
 const NUCLIDE_BASEDIR = (_nuclideUri || _load_nuclideUri()).default.dirname(NUCLIDE_PACKAGE_JSON_PATH);
@@ -52,10 +54,6 @@ const OS_TYPE = exports.OS_TYPE = {
   LINUX: 'linux',
   OSX: 'darwin'
 };
-
-const isDevelopment = exports.isDevelopment = (0, (_once || _load_once()).default)(() => {
-  return _fs.default.existsSync((_nuclideUri || _load_nuclideUri()).default.join(NUCLIDE_BASEDIR, 'DEVELOPMENT'));
-});
 
 // Prior to Atom v1.7.0, `atom.inSpecMode` had a chance of performing an IPC call that could be
 // expensive depending on how much work the other process was doing. Because this value will not

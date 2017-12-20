@@ -1,15 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/* eslint-disable no-console */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -31,7 +20,7 @@ exports.default = (() => {
     const out = Object.keys(process.versions).map(function (key) {
       return [key, process.versions[key]];
     }).concat([['atom', atom.getVersion()]]).map(function ([name, version]) {
-      return `${ ctx.yellow(name) }=${ ctx.green(version) }`;
+      return `${ctx.yellow(name)}=${ctx.green(version)}`;
     }).sort().join('\n');
     console.log(out);
     return 0;
@@ -42,6 +31,15 @@ exports.default = (() => {
   }
 
   return runCommand;
-})();
+})(); /**
+       * Copyright (c) 2015-present, Facebook, Inc.
+       * All rights reserved.
+       *
+       * This source code is licensed under the license found in the LICENSE file in
+       * the root directory of this source tree.
+       *
+       * 
+       * @format
+       */
 
-module.exports = exports['default'];
+/* eslint-disable no-console */

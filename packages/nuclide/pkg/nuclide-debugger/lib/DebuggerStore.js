@@ -1,13 +1,9 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DebuggerStore = exports.DebuggerMode = undefined;
 
 var _atom = require('atom');
 
@@ -23,13 +19,27 @@ function _load_DebuggerDispatcher() {
   return _DebuggerDispatcher = require('./DebuggerDispatcher');
 }
 
-const DebuggerMode = Object.freeze({
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const DebuggerMode = exports.DebuggerMode = Object.freeze({
   STARTING: 'starting',
   RUNNING: 'running',
   PAUSED: 'paused',
   STOPPING: 'stopping',
   STOPPED: 'stopped'
 });
+
+// This is to work around flow's missing support of enums.
+DebuggerMode;
 
 const DEBUGGER_CHANGE_EVENT = 'change';
 const DEBUGGER_MODE_CHANGE_EVENT = 'debugger mode change';
@@ -58,6 +68,8 @@ class DebuggerStore {
     this._registerExecutor = null;
     this._consoleDisposable = null;
     this._customControlButtons = [];
+    this._debugProcessInfo = null;
+    this._setSourcePathCallback = null;
     this.loaderBreakpointResumePromise = new Promise(resolve => {
       this._onLoaderBreakpointResume = resolve;
     });
@@ -66,8 +78,15 @@ class DebuggerStore {
   dispose() {
     this._emitter.dispose();
     this._dispatcher.unregister(this._dispatcherToken);
-    if (this._debuggerInstance) {
-      this._debuggerInstance.dispose();
+    const debuggerInstance = this._debuggerInstance;
+    if (debuggerInstance != null) {
+      // On package deactivation, this field is expected to be nulled out, which must happen here
+      // because the dispatcher for this store is now unregistered.
+      this._debuggerInstance = null;
+      debuggerInstance.dispose();
+    }
+    if (this._debugProcessInfo != null) {
+      this._debugProcessInfo.dispose();
     }
   }
 
@@ -81,6 +100,10 @@ class DebuggerStore {
 
   getConsoleExecutorFunction() {
     return this._registerExecutor;
+  }
+
+  getBridge() {
+    return this._model.getBridge();
   }
 
   getDebuggerInstance() {
@@ -99,6 +122,10 @@ class DebuggerStore {
     return this._debuggerMode;
   }
 
+  isDebugging() {
+    return this._debuggerMode !== DebuggerMode.STOPPED && this._debuggerMode !== DebuggerMode.STOPPING;
+  }
+
   getTogglePauseOnException() {
     return this._togglePauseOnException;
   }
@@ -111,12 +138,28 @@ class DebuggerStore {
     return this._enableSingleThreadStepping;
   }
 
+  getIsReadonlyTarget() {
+    return this._debugProcessInfo != null && this._debugProcessInfo.getDebuggerCapabilities().readOnlyTarget;
+  }
+
   getSettings() {
     return this._debuggerSettings;
   }
 
   getEvaluationExpressionProviders() {
     return this._evaluationExpressionProviders;
+  }
+
+  getCanSetSourcePaths() {
+    return this._setSourcePathCallback != null;
+  }
+
+  getCanRestartDebugger() {
+    return this._debugProcessInfo != null;
+  }
+
+  getDebugProcessInfo() {
+    return this._debugProcessInfo;
   }
 
   initializeSingleThreadStepping(mode) {
@@ -145,17 +188,23 @@ class DebuggerStore {
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.TOGGLE_PAUSE_ON_EXCEPTION:
         const pauseOnException = payload.data;
         this._togglePauseOnException = pauseOnException;
-        this._model.getBridge().setPauseOnException(pauseOnException);
+        if (this.isDebugging()) {
+          this.getBridge().setPauseOnException(pauseOnException);
+        }
         break;
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.TOGGLE_PAUSE_ON_CAUGHT_EXCEPTION:
         const pauseOnCaughtException = payload.data;
         this._togglePauseOnCaughtException = pauseOnCaughtException;
-        this._model.getBridge().setPauseOnCaughtException(pauseOnCaughtException);
+        if (this.isDebugging()) {
+          this.getBridge().setPauseOnCaughtException(pauseOnCaughtException);
+        }
         break;
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.TOGGLE_SINGLE_THREAD_STEPPING:
         const singleThreadStepping = payload.data;
         this._enableSingleThreadStepping = singleThreadStepping;
-        this._model.getBridge().setSingleThreadStepping(singleThreadStepping);
+        if (this.isDebugging()) {
+          this.getBridge().setSingleThreadStepping(singleThreadStepping);
+        }
         break;
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.DEBUGGER_MODE_CHANGE:
         this._debuggerMode = payload.data;
@@ -206,14 +255,24 @@ class DebuggerStore {
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.UPDATE_CUSTOM_CONTROL_BUTTONS:
         this._customControlButtons = payload.data;
         break;
+      case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.UPDATE_CONFIGURE_SOURCE_PATHS_CALLBACK:
+        this._setSourcePathCallback = payload.data;
+        break;
+      case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.CONFIGURE_SOURCE_PATHS:
+        if (this._setSourcePathCallback != null) {
+          this._setSourcePathCallback();
+        }
+        break;
+      case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.SET_DEBUG_PROCESS_INFO:
+        if (this._debugProcessInfo != null) {
+          this._debugProcessInfo.dispose();
+        }
+        this._debugProcessInfo = payload.data;
+        break;
       default:
         return;
     }
     this._emitter.emit(DEBUGGER_CHANGE_EVENT);
   }
 }
-
-module.exports = {
-  DebuggerMode,
-  DebuggerStore
-};
+exports.DebuggerStore = DebuggerStore;

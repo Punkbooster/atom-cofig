@@ -12,10 +12,14 @@
 #
 # 'atom-text-editor':
 #   'enter': 'editor:newline'
-#
+# 
 # 'atom-workspace':
 #   'ctrl-shift-p': 'core:move-up'
 #   'ctrl-p': 'core:move-down'
+#	
+# 'atom-text-editor[data-grammar~="jsx"]:not([mini])':
+#   'tab': 'emmet:expand-abbreviation-with-tab'
+#
 #
 # You can find more information about keymaps in these guides:
 # * http://flight-manual.atom.io/using-atom/sections/basic-customization/#_customizing_keybindings

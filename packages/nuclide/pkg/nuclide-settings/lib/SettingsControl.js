@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -32,9 +23,20 @@ function _load_SettingsSelect() {
   return _SettingsSelect = _interopRequireDefault(require('./SettingsSelect'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 function SettingsControl(props) {
   const { keyPath, value, onChange, schema } = props;
@@ -42,7 +44,7 @@ function SettingsControl(props) {
 
   if (schema) {
     if (schema.enum) {
-      return _reactForAtom.React.createElement((_SettingsSelect || _load_SettingsSelect()).default, {
+      return _react.default.createElement((_SettingsSelect || _load_SettingsSelect()).default, {
         description: description,
         keyPath: keyPath,
         onChange: onChange,
@@ -55,7 +57,7 @@ function SettingsControl(props) {
       } // Not implemented.
 
     } else if (isBoolean(value) || schema.type === 'boolean') {
-      return _reactForAtom.React.createElement((_SettingsCheckbox || _load_SettingsCheckbox()).default, {
+      return _react.default.createElement((_SettingsCheckbox || _load_SettingsCheckbox()).default, {
         description: description,
         keyPath: keyPath,
         onChange: onChange,
@@ -64,7 +66,7 @@ function SettingsControl(props) {
       });
     } else if (Array.isArray(value) || schema.type === 'array') {
       if (isEditableArray(value)) {
-        return _reactForAtom.React.createElement((_SettingsInput || _load_SettingsInput()).default, {
+        return _react.default.createElement((_SettingsInput || _load_SettingsInput()).default, {
           description: description,
           keyPath: keyPath,
           onChange: onChange,
@@ -80,7 +82,7 @@ function SettingsControl(props) {
 
     } else {
       const type = isNumber(value) ? 'number' : 'string';
-      return _reactForAtom.React.createElement((_SettingsInput || _load_SettingsInput()).default, {
+      return _react.default.createElement((_SettingsInput || _load_SettingsInput()).default, {
         description: description,
         keyPath: keyPath,
         onChange: onChange,
@@ -116,4 +118,3 @@ function isEditableArray(array) {
   }
   return true;
 }
-module.exports = exports['default'];

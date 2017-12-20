@@ -1,22 +1,23 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/*
- * adapted from https://github.com/atom/underscore-plus/blob/master/src/underscore-plus.coffee
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = humanizeKeystroke;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+/*
+ * adapted from https://github.com/atom/underscore-plus/blob/master/src/underscore-plus.coffee
+ */
 
 const MAC_MODIFIER_KEYMAP = {
   alt: '\u2325',
@@ -47,10 +48,10 @@ const NON_MAC_MODIFIER_KEYMAP = {
 // Human key combos should always explicitly state the shift key. This map is a disambiguator.
 // 'shift-version': 'no-shift-version'
 const SHIFT_KEYMAP = {
-  '_': '-',
+  _: '-',
   ':': ';',
   '?': '/',
-  '"': '\'',
+  '"': "'",
   '{': '[',
   '}': ']',
   '+': '=',
@@ -144,4 +145,3 @@ function humanizeKeystroke(keystroke, platform_) {
   }
   return humanizedKeystrokes.join(' ');
 }
-module.exports = exports['default'];

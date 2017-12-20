@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,13 +10,13 @@ var _atom = require('atom');
 var _debounce;
 
 function _load_debounce() {
-  return _debounce = _interopRequireDefault(require('../../commons-node/debounce'));
+  return _debounce = _interopRequireDefault(require('nuclide-commons/debounce'));
 }
 
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _nuclideAnalytics;
@@ -34,13 +25,26 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+/* global getComputedStyle */
 
 const VALID_NUX_POSITIONS = new Set(['top', 'bottom', 'left', 'right', 'auto']);
 // The maximum number of times the NuxView will attempt to attach to the DOM.
@@ -50,7 +54,7 @@ const RESIZE_EVENT_DEBOUNCE_DURATION = 100; // milliseconds
 // The frequency with which to poll the element that the NUX is bound to.
 const POLL_ELEMENT_TIMEOUT = 100; // milliseconds
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-nux');
 
 function validatePlacement(position) {
   return VALID_NUX_POSITIONS.has(position);
@@ -101,8 +105,8 @@ class NuxView {
       this._onNuxComplete(false);
       // An error is logged and tracked instead of simply throwing an error since this function
       // will execute outside of the parent scope's execution and cannot be caught.
-      const error = `NuxView #${ this._index } for NUX#"${ this._tourId }" ` + 'failed to succesfully attach to the DOM.';
-      logger.error(`ERROR: ${ error }`);
+      const error = `NuxView #${this._index} for NUX#"${this._tourId}" ` + 'failed to succesfully attach to the DOM.';
+      logger.error(`ERROR: ${error}`);
       this._track(error, error);
       return;
     }
@@ -143,7 +147,7 @@ class NuxView {
       if (element.style.position !== 'fixed') {
         isHidden = element.offsetParent === null;
       } else {
-        isHidden = window.getComputedStyle(element).display === 'none';
+        isHidden = getComputedStyle(element).display === 'none';
       }
       if (isHidden) {
         // Consider the NUX to be dismissed and mark it as completed.
@@ -188,8 +192,8 @@ class NuxView {
     // In this case we show a hint to the user.
     const nextLinkButton = `\
       <span
-        class="nuclide-nux-link ${ nextLinkStyle } nuclide-nux-next-link-${ this._index }"
-        ${ nextLinkStyle === LINK_DISABLED ? 'title="Interact with the indicated UI element to proceed."' : '' }>
+        class="nuclide-nux-link ${nextLinkStyle} nuclide-nux-next-link-${this._index}"
+        ${nextLinkStyle === LINK_DISABLED ? 'title="Interact with the indicated UI element to proceed."' : ''}>
         Continue
       </span>
     `;
@@ -202,13 +206,13 @@ class NuxView {
     const content = `\
       <span class="nuclide-nux-content-container">
         <div class="nuclide-nux-content">
-            ${ this._content }
+            ${this._content}
         </div>
         <div class="nuclide-nux-navigation">
-          <span class="nuclide-nux-link ${ LINK_ENABLED } nuclide-nux-dismiss-link-${ this._index }">
-            ${ !this._finalNuxInTour ? 'Dismiss' : 'Complete' } Tour
+          <span class="nuclide-nux-link ${LINK_ENABLED} nuclide-nux-dismiss-link-${this._index}">
+            ${!this._finalNuxInTour ? 'Dismiss' : 'Complete'} Tour
           </span>
-          ${ !this._finalNuxInTour ? nextLinkButton : '' }
+          ${!this._finalNuxInTour ? nextLinkButton : ''}
       </div>
     </span>`;
 
@@ -225,16 +229,29 @@ class NuxView {
     this._disposables.add(this._tooltipDisposable);
 
     if (nextLinkStyle === LINK_ENABLED) {
-      const nextElementClickListener = this._handleDisposableClick.bind(this, true /* continue to the next NUX in the tour */);
-      const nextElement = document.querySelector(`.nuclide-nux-next-link-${ this._index }`);
+      const nextElementClickListener = this._handleDisposableClick.bind(this, true /* continue to the next NUX in the tour */
+      );
+      const nextElement = document.querySelector(`.nuclide-nux-next-link-${this._index}`);
+
+      if (!(nextElement != null)) {
+        throw new Error('Invariant violation: "nextElement != null"');
+      }
+
       nextElement.addEventListener('click', nextElementClickListener);
       this._disposables.add(new _atom.Disposable(() => nextElement.removeEventListener('click', nextElementClickListener)));
     }
 
     // Record the NUX as dismissed iff it is not the last NUX in the tour.
     // Clicking "Complete Tour" on the last NUX should be tracked as succesful completion.
-    const dismissElementClickListener = !this._finalNuxInTour ? this._handleDisposableClick.bind(this, false /* skip to the end of the tour */) : this._handleDisposableClick.bind(this, true /* continue to the next NUX in the tour */);
-    const dismissElement = document.querySelector(`.nuclide-nux-dismiss-link-${ this._index }`);
+    const dismissElementClickListener = !this._finalNuxInTour ? this._handleDisposableClick.bind(this, false /* skip to the end of the tour */
+    ) : this._handleDisposableClick.bind(this, true /* continue to the next NUX in the tour */
+    );
+    const dismissElement = document.querySelector(`.nuclide-nux-dismiss-link-${this._index}`);
+
+    if (!(dismissElement != null)) {
+      throw new Error('Invariant violation: "dismissElement != null"');
+    }
+
     dismissElement.addEventListener('click', dismissElementClickListener);
 
     this._disposables.add(new _atom.Disposable(() => dismissElement.removeEventListener('click', dismissElementClickListener)));
@@ -280,7 +297,7 @@ class NuxView {
   _track(message, error) {
     (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nux-view-action', {
       tourId: this._tourId,
-      message: `${ message }`,
+      message: `${message}`,
       error: (0, (_string || _load_string()).maybeToString)(error)
     });
   }

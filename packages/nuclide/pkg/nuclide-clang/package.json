@@ -4,7 +4,7 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Exposes features from nuclide-clang in Atom",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
     "testRunner": "apm",
@@ -50,22 +50,45 @@
   },
   "activationHooks": [
     "language-c:grammar-used",
+    "language-cpp14:grammar-used",
     "language-objective-c:grammar-used"
   ],
+  "consumedServices": {
+    "atom-ide-busy-signal": {
+      "versions": {
+        "0.1.0": "consumeBusySignal"
+      }
+    },
+    "nuclide.clang.configuration": {
+      "versions": {
+        "0.0.0": "consumeClangConfigurationProvider"
+      }
+    }
+  },
   "providedServices": {
+    "nuclide.clang.declaration-info": {
+      "versions": {
+        "0.0.0": "provideDeclarationInfo"
+      }
+    },
+    "nuclide.related-files.provider": {
+      "versions": {
+        "0.0.0": "provideRelatedFiles"
+      }
+    },
     "autocomplete.provider": {
       "versions": {
         "2.0.0": "createAutocompleteProvider"
       }
     },
-    "nuclide-code-format.provider": {
+    "code-format.file": {
       "versions": {
-        "0.0.0": "provideCodeFormat"
+        "0.1.0": "provideCodeFormat"
       }
     },
-    "nuclide-definition-provider": {
+    "definitions": {
       "versions": {
-        "0.0.0": "provideDefinitions"
+        "0.1.0": "provideDefinitions"
       }
     },
     "linter": {
@@ -78,14 +101,9 @@
         "0.0.0": "createTypeHintProvider"
       }
     },
-    "nuclide-busy-signal": {
+    "outline-view": {
       "versions": {
-        "0.1.0": "provideBusySignal"
-      }
-    },
-    "nuclide-outline-view": {
-      "versions": {
-        "0.0.0": "provideOutlineView"
+        "0.1.0": "provideOutlineView"
       }
     },
     "nuclide-refactor": {

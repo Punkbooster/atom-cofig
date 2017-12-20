@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,97 +7,101 @@ exports.HackSymbolProvider = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+let getHackDirectoriesByService = (() => {
+  var _ref = (0, _asyncToGenerator.default)(function* (directories) {
+    const promises = directories.map((() => {
+      var _ref2 = (0, _asyncToGenerator.default)(function* (directory) {
+        const service = yield (0, (_HackLanguage || _load_HackLanguage()).getHackLanguageForUri)(directory.getPath());
+        return service ? [service, directory.getPath()] : null;
+      });
+
+      return function (_x2) {
+        return _ref2.apply(this, arguments);
+      };
+    })());
+    const serviceDirectories = yield Promise.all(promises);
+
+    const results = (0, (_collection || _load_collection()).collect)((0, (_collection || _load_collection()).arrayCompact)(serviceDirectories));
+
+    return Array.from(results.entries());
+  });
+
+  return function getHackDirectoriesByService(_x) {
+    return _ref.apply(this, arguments);
+  };
+})(); /**
+       * Copyright (c) 2015-present, Facebook, Inc.
+       * All rights reserved.
+       *
+       * This source code is licensed under the license found in the LICENSE file in
+       * the root directory of this source tree.
+       *
+       * 
+       * @format
+       */
+
 var _HackLanguage;
 
 function _load_HackLanguage() {
   return _HackLanguage = require('./HackLanguage');
 }
 
+var _collection;
+
+function _load_collection() {
+  return _collection = require('nuclide-commons/collection');
+}
+
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const ICONS = {
-  'interface': 'icon-puzzle',
-  'function': 'icon-zap',
-  'method': 'icon-zap',
-  'typedef': 'icon-tag',
-  'class': 'icon-code',
-  'abstract class': 'icon-code',
-  'constant': 'icon-quote',
-  'trait': 'icon-checklist',
-  'enum': 'icon-file-binary',
-  'default': 'no-icon',
-  'unknown': 'icon-squirrel'
-};
-
-function bestIconForItem(item) {
-  if (!item.additionalInfo) {
-    return ICONS.default;
-  }
-  // Look for exact match.
-  if (ICONS[item.additionalInfo]) {
-    return ICONS[item.additionalInfo];
-  }
-  // Look for presence match, e.g. in 'static method in FooBarClass'.
-  for (const keyword in ICONS) {
-    if (item.additionalInfo.indexOf(keyword) !== -1) {
-      return ICONS[keyword];
-    }
-  }
-  return ICONS.unknown;
-}
-
 const HackSymbolProvider = exports.HackSymbolProvider = {
-
-  getName() {
-    return 'HackSymbolProvider';
+  providerType: 'GLOBAL',
+  name: 'HackSymbolProvider',
+  display: {
+    title: 'Hack Symbols',
+    prompt: 'Search Hack symbols...',
+    action: 'nuclide-hack-symbol-provider:toggle-provider'
   },
 
-  getProviderType() {
-    return 'DIRECTORY';
-  },
-
-  isRenderable() {
-    return true;
-  },
-
-  getAction() {
-    return 'nuclide-hack-symbol-provider:toggle-provider';
-  },
-
-  getPromptText() {
-    return 'Search Hack symbols. Available prefixes: @function %constant #class';
-  },
-
-  getTabTitle() {
-    return 'Hack Symbols';
-  },
-
-  isEligibleForDirectory(directory) {
-    return (0, (_HackLanguage || _load_HackLanguage()).isFileInHackProject)(directory.getPath());
-  },
-
-  executeQuery(query, directory) {
+  isEligibleForDirectories(directories) {
     return (0, _asyncToGenerator.default)(function* () {
-      if (query.length === 0 || directory == null) {
+      const serviceDirectories = yield getHackDirectoriesByService(directories);
+      const eligibilities = yield Promise.all(serviceDirectories.map(function ([service, dirs]) {
+        return service.supportsSymbolSearch(dirs);
+      }));
+      return eligibilities.some(function (e) {
+        return e;
+      });
+    })();
+  },
+
+  executeQuery(query, directories) {
+    return (0, _asyncToGenerator.default)(function* () {
+      if (query.length === 0) {
         return [];
       }
 
-      const service = yield (0, (_HackLanguage || _load_HackLanguage()).getHackLanguageForUri)(directory.getPath());
-      if (service == null) {
-        return [];
-      }
+      const serviceDirectories = yield getHackDirectoriesByService(directories);
+      const results = yield Promise.all(serviceDirectories.map(function ([service, dirs]) {
+        return service.symbolSearch(query, dirs);
+      }));
+      const flattenedResults = (0, (_collection || _load_collection()).arrayFlatten)((0, (_collection || _load_collection()).arrayCompact)(results));
 
-      const directoryPath = directory.getPath();
-      const results = yield service.executeQuery(directoryPath, query);
-      return results;
+      return flattenedResults;
+      // Why the weird cast? Because services are expected to return their own
+      // custom type with symbol-provider-specific additional detail. We upcast it
+      // now to FileResult which only has the things that Quick-Open cares about
+      // like line, column, ... Later on, Quick-Open invokes getComponentForItem
+      // (below) to render each result: it does a downcast so it can render
+      // whatever additional details.
     })();
   },
 
@@ -116,21 +111,20 @@ const HackSymbolProvider = exports.HackSymbolProvider = {
     const filename = (_nuclideUri || _load_nuclideUri()).default.basename(filePath);
     const name = item.name || '';
 
-    const icon = bestIconForItem(item);
-    const symbolClasses = `file icon ${ icon }`;
-    return _reactForAtom.React.createElement(
+    const symbolClasses = item.icon ? `file icon icon-${item.icon}` : 'file icon no-icon';
+    return _react.default.createElement(
       'div',
-      { title: item.additionalInfo || '' },
-      _reactForAtom.React.createElement(
+      { title: item.hoverText || '' },
+      _react.default.createElement(
         'span',
         { className: symbolClasses },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'code',
           null,
           name
         )
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'span',
         { className: 'omnisearch-symbol-result-filename' },
         filename

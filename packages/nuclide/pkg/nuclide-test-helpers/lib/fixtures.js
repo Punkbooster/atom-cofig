@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -78,17 +69,31 @@ let copyFixture = exports.copyFixture = (() => {
  *
  * @returns the path to the temporary directory that this function creates.
  */
-
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 let generateHgRepo1Fixture = exports.generateHgRepo1Fixture = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* () {
     const testTxt = 'this is a test file\nline 2\n\n  indented line\n';
     const tempDir = yield generateFixture('hg_repo_1', new Map([['.watchmanconfig', '{}\n'], ['test.txt', testTxt]]));
     const repoPath = yield (_fsPromise || _load_fsPromise()).default.realpath(tempDir);
-    yield (0, (_process || _load_process()).checkOutput)('hg', ['init'], { cwd: repoPath });
-    yield (0, (_process || _load_process()).checkOutput)('hg', ['commit', '-A', '-m', 'first commit'], { cwd: repoPath });
+    yield (0, (_process || _load_process()).runCommand)('hg', ['init'], { cwd: repoPath }).toPromise();
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, '.hg', 'hgrc'), '[ui]\nusername = Test <test@mail.com>\n');
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'first commit'], {
+      cwd: repoPath
+    }).toPromise();
     yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, 'test.txt'), testTxt + '\nthis line added on second commit\n');
-    yield (0, (_process || _load_process()).checkOutput)('hg', ['commit', '-A', '-m', 'second commit'], { cwd: repoPath });
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'second commit'], {
+      cwd: repoPath
+    }).toPromise();
     return repoPath;
   });
 
@@ -117,14 +122,20 @@ let generateHgRepo2Fixture = exports.generateHgRepo2Fixture = (() => {
     const testTxt = 'this is a test file\nline 2\n\n  indented line\n';
     const tempDir = yield generateFixture('hg_repo_2', new Map([['.watchmanconfig', '{}\n'], ['test.txt', testTxt]]));
     const repoPath = yield (_fsPromise || _load_fsPromise()).default.realpath(tempDir);
-    yield (0, (_process || _load_process()).checkOutput)('hg', ['init'], { cwd: repoPath });
-    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, '.hg/hgrc'), '[paths]\ndefault = .\n');
-    yield (0, (_process || _load_process()).checkOutput)('hg', ['commit', '-A', '-m', 'first commit'], { cwd: repoPath });
+    yield (0, (_process || _load_process()).runCommand)('hg', ['init'], { cwd: repoPath }).toPromise();
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, '.hg', 'hgrc'), '[paths]\ndefault = .\n[ui]\nusername = Test <test@mail.com>\n');
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'first commit'], {
+      cwd: repoPath
+    }).toPromise();
     yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, 'test.txt'), testTxt + '\nthis line added on second commit\n');
-    yield (0, (_process || _load_process()).checkOutput)('hg', ['commit', '-A', '-m', 'second commit'], { cwd: repoPath });
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'second commit'], {
+      cwd: repoPath
+    }).toPromise();
     yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, '.arcconfig'), '{\n  "arc.feature.start.default": "master"\n}\n');
-    yield (0, (_process || _load_process()).checkOutput)('hg', ['commit', '-A', '-m', 'add .arcconfig to set base'], { cwd: repoPath });
-    yield (0, (_process || _load_process()).checkOutput)('hg', ['bookmark', '--rev', '.~2', 'master', '--config', 'remotenames.disallowedbookmarks='], { cwd: repoPath });
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'add .arcconfig to set base'], {
+      cwd: repoPath
+    }).toPromise();
+    yield (0, (_process || _load_process()).runCommand)('hg', ['bookmark', '--rev', '.~2', 'master', '--config', 'remotenames.disallowedbookmarks='], { cwd: repoPath }).toPromise();
     return repoPath;
   });
 
@@ -172,7 +183,9 @@ let copyBuckVersion = (() => {
 
 let renameBuckFiles = (() => {
   var _ref6 = (0, _asyncToGenerator.default)(function* (projectDir) {
-    const renames = yield (_fsPromise || _load_fsPromise()).default.glob('**/{BUCK,TARGETS}-rename', { cwd: projectDir });
+    const renames = yield (_fsPromise || _load_fsPromise()).default.glob('**/{BUCK,TARGETS}-rename', {
+      cwd: projectDir
+    });
     yield Promise.all(renames.map(function (name) {
       const prevName = (_nuclideUri || _load_nuclideUri()).default.join(projectDir, name);
       const newName = prevName.replace(/-rename$/, '');
@@ -271,25 +284,25 @@ function _load_temp() {
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }

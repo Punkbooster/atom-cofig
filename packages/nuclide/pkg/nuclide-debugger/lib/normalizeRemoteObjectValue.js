@@ -1,18 +1,19 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.normalizeRemoteObjectValue = normalizeRemoteObjectValue;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 function normalizeRemoteObjectValue(remoteObject) {
   if (remoteObject == null) {
@@ -25,7 +26,7 @@ function normalizeRemoteObjectValue(remoteObject) {
     }
 
     modifiedProperties[field] = remoteObject[field];
-    const underscoreField = `_${ field }`;
+    const underscoreField = `_${field}`;
     if (remoteObject.hasOwnProperty(underscoreField) && remoteObject[underscoreField] != null) {
       modifiedProperties[field] = String(remoteObject[underscoreField]);
     } else if (remoteObject.hasOwnProperty(field) && remoteObject[field] != null) {

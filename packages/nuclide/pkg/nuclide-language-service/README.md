@@ -12,6 +12,7 @@ Nuclide including:
 - automatic code preview (via context view)
 - find references
 - code formatting
+- messages from the language service to be shown in the UI
 - debugger expression evaluation
 
 ## Overview
@@ -26,10 +27,41 @@ process contains an instance of the NuclideServer which handles local requests. 
 Atom/NuclideServer design handles both local and remote requests.
 
 The `AtomLanguageService` class implements all of the code in the Atom process for integrating a new
-language into the Atom UI. It communicates to the NuclideServer via the `LanguageService` interface.
-The `LanguageService` interface is typically implemented by the `ServerLanguageService` class.
-The `ServerLanguageService` then defers to an implementation of the `SingleFileLanguageService` interface
-which implements the language specific analysis.
+language into the Atom UI.
+
+* For places where Atom calls into the language (e.g. to obtain the go-to destination
+  for the current caret position), Atom communicates to the NuclideServer via the
+  `LanguageService` interface.
+
+  * Some languages need per-project persistent state, e.g. because they delegate to some
+    out-of-process language server. In these cases the `LanguageService` interface on the server
+    is implemented by `MultiProjectLanguageService`. It's job is to lazily create
+    subsidiary `LanguageService` instances on the server, one per project directory,
+    and delegate all requests it receives to the appropriate project.
+
+  * Other languages don't need per-project persistent state. For these, the `LanguageService`
+    interface on the server is typically implemented by the `ServerLanguageService` class.
+    The `ServerLanguageService` then defers to an implementation of the `SingleFileLanguageService`
+    interface which implements the language specific analysis.
+
+* For places where the language services call into Atom (e.g. to display a message to the console log,
+  or display busy status), Atom offers them a `HostServices` interface.
+
+  * Whenever the language service needs to multiplex (e.g. because two languages want to
+    display their busy status), it *forks* the `HostServices`. It gets its own private
+    fork of `HostServices`, which it must dispose of when done. A given `HostService`
+    instance knows how to aggregate reports from all of its children. Aggregation is done
+    locally where the fork was performed, either on the server or on the client.
+
+* Sometimes it's ambiguous which direction a call should go:
+  whether the language should into the Atom to display something
+  using `HostServices`, or Atom should call into the language to obtain an `Observable`
+  stream of things to display using `LanguageServices`. The simple answer is this:
+  if the language can hold off its work until such time as the Atom has asynchronously
+  subscribed to the observable, then `LanguageServices` and `HostServices` are equally
+  good; if the language can't hold off, then `HostServices` is best because it allows
+  the most laziness; if the language needs a response from Atom, then `HostServices`
+  is the only possibility.
 
 TODO: Add Picture
 
@@ -272,4 +304,60 @@ export class MyLanguageService {
 
 ## Observable Diagnostics
 
-TODO
+Observable diagnostics allows Nuclide to publish diagnostics as soon as the language analyzer can produce them.
+
+To implement push based diagnostics, implement the `observeDiagnostics` member of the `LanguageService` or `SingleFileLanguageService` interfaces. The main steps include:
+- watch for open projects on a given Atom connection
+- manage connections to your language analyzer processes for each open process
+- subscribe to diagnostics for each connected process
+- aggregating and invalidating the diagnostics for the connected processes
+
+### Projects
+
+A project consists of a set of source files which must be analyzed as a unit to produce consistent and complete results. For example, a Hack project is identified by a file named `.hhconfig`. The directory containing a `.hhconfig` file called the project directory. All `.php` and `.hh` files in subdirectores of the project directory are part of the project.
+
+Whenever a `.php` file in a given project directory is opened in Nuclide,
+or a directory containing a `.hhconfig` file is added to the file tree, that
+project is considered to be open.
+
+The `ConfigObserver` class in the nuclide-open-files-rpc package provides
+an Observable of open projects for a given language.
+
+### Analyzer Processes
+
+An analyzer process provides diagnostics(and possibly other language analysis services) for a single project.
+
+Each time a project is opened in Nuclide, an analyzer process for that project
+is started. When a project is closed in Atom the corresponding analyzer process is shut down.
+
+TODO: Process lifetime is currently handled by the `processes`,
+`ensureProcess`, `observeConnections` in HackProcess.js. These
+should be abstracted into a reusable Language agnostic API.
+
+One additional complexity is that a given project may be opened
+by multiple Atom windows simultaneously. A LanguageService must choose between
+starting a new analyzer process per connected Atom window; or having one analyzer
+process per project which is then synchronized to the active Atom window making
+requests.
+
+Each connected Atom window is tracked via a FileCache (which implements the FileNotifier interface).
+
+NOTE: Hack starts a new process when a new Atom window opens a
+project already open in another window. The process connected to
+the other window is closed (by Hack) and the new process subsumes
+ownership of the underlying hack server process. When the previous
+Atom window makes a request on that project it starts another
+connection process (closing the one started by the other window)
+and resynchronizes its open files. It turns out the cost of
+switching the hack server between the different Atom windows is
+quite reasonable.
+
+### Observing Diagnostics for an Analyzer Process
+
+This will be language specific.
+
+### Aggregating and Invalidating Diagnostics
+
+Currently this occurs in `observeDiagnostics` in HackService.js.
+
+TODO: Move this to a reusable component which maps Observable<Observable<FileDiagnosticMessages>> for each project to an Observable<FileDiagnosticMessages> which handles the invalidations and flattening.

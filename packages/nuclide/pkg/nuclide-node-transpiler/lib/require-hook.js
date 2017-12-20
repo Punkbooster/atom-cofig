@@ -1,43 +1,55 @@
-'use strict';
-/* @noflow */
-
-/*
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * @noflow
  */
+'use strict';
 
-/* NON-TRANSPILED FILE */
-/* eslint comma-dangle: [1, always-multiline], prefer-object-spread/prefer-object-spread: 0 */
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
 
 /**
  * This file installs the logic that modifies Node's built in require()
- * function to transpile .js files that start with either `'use babel'` or
- * `"use babel"`.
+ * function to transpile .js files that have the @flow pragma.
  */
 
 const Module = require('module');
 const fs = require('fs');
-const path = require('path');
 
-const basedir = path.join(__dirname, '../../../');
 const builtinJsExt = Module._extensions['.js'];
 
 const NodeTranspiler = require('./NodeTranspiler');
 const nodeTranspiler = new NodeTranspiler();
+const pathRules = require('./path-rules');
+
+let transpiling = null;
 
 function transpiler_require_hook(_module, filename) {
   let moduleExports;
-  // TODO(asuarez): Once "use babel" is removed, `shouldCompile` can be made
-  // to handle paths.
-  if (filename.startsWith(basedir) && !filename.includes('node_modules')) {
+  if (pathRules.isIncluded(filename)) {
     // Keep src as a buffer so calculating its digest with crypto is fast.
     const src = fs.readFileSync(filename);
     let output;
     if (NodeTranspiler.shouldCompile(src)) {
-      output = nodeTranspiler.transformWithCache(src, filename);
+      if (transpiling != null) {
+        // This means that the transpiler tried to transpile itself.
+        throw new Error(`Circular transpile from "${transpiling}" to "${filename}"`);
+      }
+      try {
+        transpiling = filename;
+        output = nodeTranspiler.transformWithCache(src, filename);
+      } catch (err) {
+        throw err;
+      } finally {
+        transpiling = null;
+      }
     } else {
       output = src.toString();
     }

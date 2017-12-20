@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,7 +10,7 @@ exports.registerRecordProviderEpic = registerRecordProviderEpic;
 var _event;
 
 function _load_event() {
-  return _event = require('../../../commons-node/event');
+  return _event = require('nuclide-commons/event');
 }
 
 var _Actions;
@@ -43,6 +34,17 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 /**
  * Register a record provider for every executor.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function registerExecutorEpic(actions, store) {
   return actions.ofType((_Actions || _load_Actions()).REGISTER_EXECUTOR).map(action => {
     if (!(action.type === (_Actions || _load_Actions()).REGISTER_EXECUTOR)) {
@@ -52,10 +54,14 @@ function registerExecutorEpic(actions, store) {
     const { executor } = action.payload;
     return (_Actions || _load_Actions()).registerRecordProvider({
       id: executor.id,
+      // $FlowIssue: Flow is having some trouble with the spread here.
       records: executor.output.map(message => Object.assign({}, message, {
         kind: 'response',
         sourceId: executor.id,
-        scopeName: null }))
+        scopeName: null, // The output won't be in the language's grammar.
+        // Eventually, we'll want to allow providers to specify custom timestamps for records.
+        timestamp: new Date()
+      }))
     });
   });
 }
@@ -87,11 +93,14 @@ function executeEpic(actions, store) {
 
 
     return _rxjsBundlesRxMinJs.Observable.of((_Actions || _load_Actions()).recordReceived({
+      // Eventually, we'll want to allow providers to specify custom timestamps for records.
+      timestamp: new Date(),
       sourceId: currentExecutorId,
       kind: 'request',
       level: 'log',
       text: code,
-      scopeName: executor.scopeName
+      scopeName: executor.scopeName,
+      data: null
     }))
     // Execute the code as a side-effect.
     .finally(() => {
@@ -124,6 +133,6 @@ function registerRecordProviderEpic(actions, store) {
       return a.payload.sourceId === recordProvider.id;
     });
 
-    return _rxjsBundlesRxMinJs.Observable.merge(messageActions, statusActions).takeUntil(unregisteredEvents);
+    return _rxjsBundlesRxMinJs.Observable.merge(_rxjsBundlesRxMinJs.Observable.of((_Actions || _load_Actions()).registerSource(Object.assign({}, recordProvider, { name: recordProvider.id }))), messageActions, statusActions).takeUntil(unregisteredEvents);
   });
 }

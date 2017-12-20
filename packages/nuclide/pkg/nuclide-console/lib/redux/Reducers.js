@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -21,6 +12,17 @@ function _load_Actions() {
 }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 function accumulateState(state, action) {
   switch (action.type) {
@@ -42,11 +44,13 @@ function accumulateState(state, action) {
           records: state.records.slice(-maxMessageCount)
         });
       }
-    case (_Actions || _load_Actions()).REGISTER_RECORD_PROVIDER:
+    case (_Actions || _load_Actions()).REGISTER_SOURCE:
       {
-        const { recordProvider } = action.payload;
+        const { source } = action.payload;
         return Object.assign({}, state, {
-          providers: new Map(state.providers).set(recordProvider.id, recordProvider)
+          providers: new Map(state.providers).set(source.id, Object.assign({}, source, {
+            name: source.name || source.id
+          }))
         });
       }
     case (_Actions || _load_Actions()).CLEAR_RECORDS:
@@ -102,4 +106,3 @@ function accumulateState(state, action) {
 
   return state;
 }
-module.exports = exports['default'];

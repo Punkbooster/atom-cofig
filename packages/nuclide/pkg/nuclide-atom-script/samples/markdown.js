@@ -1,15 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/* eslint-disable no-console */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,7 +11,7 @@ var _fs = _interopRequireDefault(require('fs'));
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _yargs;
@@ -33,10 +22,23 @@ function _load_yargs() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+/* eslint-disable no-console */
+
 exports.default = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (args) {
     const argv = yield new Promise(function (resolve, reject) {
-      resolve((_yargs || _load_yargs()).default.usage(`Usage: atom-script ${ __dirname }/markdown.js -o <output file> <input file>`).help('h').alias('h', 'help').option('out', {
+      resolve((_yargs || _load_yargs()).default.usage(`Usage: atom-script ${__dirname}/markdown.js -o <output file> <input file>`).help('h').alias('h', 'help').option('out', {
         alias: 'o',
         demand: false,
         describe: 'Must specify a path to an output file.',
@@ -52,6 +54,8 @@ exports.default = (() => {
 
     const markdownFile = resolvePath(argv._[0]);
 
+    // don't want to pull in too many Nuclide dependencies here
+    // eslint-disable-next-line nuclide-internal/atom-apis
     const textEditor = yield atom.workspace.open(markdownFile);
     yield atom.packages.activatePackage('markdown-preview');
 
@@ -81,7 +85,7 @@ exports.default = (() => {
     });
     const styles = view.getMarkdownPreviewCSS();
 
-    const title = `${ markdownFile }.html`;
+    const title = `${markdownFile}.html`;
     // It is not obvious from markdown-preview/lib/markdown-preview-view.coffee#saveAs
     // that the data-use-github-style attribute is key to this working.
     // https://github.com/atom/markdown-preview/pull/335 drew my attention to it.
@@ -94,10 +98,10 @@ exports.default = (() => {
 <html>
   <head>
       <meta charset="utf-8" />
-      <title>${ title }</title>
-      <style>${ styles }</style>
+      <title>${title}</title>
+      <style>${styles}</style>
   </head>
-  <body class="markdown-preview" data-use-github-style>${ htmlBody }</body>
+  <body class="markdown-preview" data-use-github-style>${htmlBody}</body>
 </html>`;
 
     if (argv.out == null) {
@@ -133,4 +137,3 @@ function resolvePath(fileName) {
     return fileName;
   }
 }
-module.exports = exports['default'];

@@ -1,28 +1,20 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
 
-let uniqueKeySeed = 0;
-
-/**
- * Event types that the EventEmitter passed to getComponent may listen on.
- */
-const DebuggerLaunchAttachEventTypes = exports.DebuggerLaunchAttachEventTypes = Object.freeze({
-  ENTER_KEY_PRESSED: 'ENTER_KEY_PRESSED',
-  VISIBILITY_CHANGED: 'VISIBILITY_CHANGED'
-});
+let uniqueKeySeed = 0; /**
+                        * Copyright (c) 2015-present, Facebook, Inc.
+                        * All rights reserved.
+                        *
+                        * This source code is licensed under the license found in the LICENSE file in
+                        * the root directory of this source tree.
+                        *
+                        * 
+                        * @format
+                        */
 
 /**
  * Base class of all launch/attach providers.
@@ -36,6 +28,31 @@ class DebuggerLaunchAttachProvider {
     this._uniqueKey = uniqueKeySeed++;
   }
 
+  getCallbacksForAction(action) {
+    return {
+      /**
+       * Whether this provider is enabled or not.
+       */
+      isEnabled: () => {
+        return Promise.resolve(true);
+      },
+
+      /**
+       * Returns a list of supported debugger types + environments for the specified action.
+       */
+      getDebuggerTypeNames: () => {
+        return [this._debuggingTypeName];
+      },
+
+      /**
+       * Returns the UI component for configuring the specified debugger type and action.
+       */
+      getComponent: (debuggerTypeName, configIsValidChanged) => {
+        throw new Error('abstract method');
+      }
+    };
+  }
+
   /**
    * Returns a unique key which can be associated with the component.
    */
@@ -44,33 +61,10 @@ class DebuggerLaunchAttachProvider {
   }
 
   /**
-   * Returns the debugging type name for this provider(e.g. Natve, Php, Node etc...).
-   */
-  getDebuggingTypeName() {
-    return this._debuggingTypeName;
-  }
-
-  /**
    * Returns target uri for this provider.
    */
   getTargetUri() {
     return this._targetUri;
-  }
-
-  /**
-   * Returns a list of supported debugger actions.
-   */
-  getActions() {
-    return Promise.reject(new Error('abstract method'));
-  }
-
-  /**
-   * Returns the UI component for input debug action.
-   * The component may use the parentEventEmitter to listen for keyboard events
-   * defined by DebuggerLaunchAttachEventTypes.
-   */
-  getComponent(action, parentEventEmitter) {
-    throw new Error('abstract method');
   }
 
   /**

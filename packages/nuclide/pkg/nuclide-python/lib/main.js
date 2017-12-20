@@ -1,35 +1,24 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-exports.activate = activate;
-exports.createAutocompleteProvider = createAutocompleteProvider;
-exports.provideOutlines = provideOutlines;
-exports.provideDefinitions = provideDefinitions;
-exports.provideReferences = provideReferences;
-exports.provideCodeFormat = provideCodeFormat;
-exports.provideLint = provideLint;
-exports.provideBusySignal = provideBusySignal;
-exports.deactivate = deactivate;
+let connectionToPythonService = (() => {
+  var _ref = (0, _asyncToGenerator.default)(function* (connection) {
+    const pythonService = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getServiceByConnection)(PYTHON_SERVICE_NAME, connection);
+    const fileNotifier = yield (0, (_nuclideOpenFiles || _load_nuclideOpenFiles()).getNotifierByConnection)(connection);
+    const languageService = yield pythonService.initialize(fileNotifier, {
+      showGlobalVariables: (0, (_config || _load_config()).getShowGlobalVariables)(),
+      autocompleteArguments: (0, (_config || _load_config()).getAutocompleteArguments)(),
+      includeOptionalArguments: (0, (_config || _load_config()).getIncludeOptionalArguments)()
+    });
 
-var _nuclideBusySignal;
+    return languageService;
+  });
 
-function _load_nuclideBusySignal() {
-  return _nuclideBusySignal = require('../../nuclide-busy-signal');
-}
+  return function connectionToPythonService(_x) {
+    return _ref.apply(this, arguments);
+  };
+})();
 
 var _constants;
 
@@ -43,141 +32,139 @@ function _load_config() {
   return _config = require('./config');
 }
 
-var _AutocompleteHelpers;
-
-function _load_AutocompleteHelpers() {
-  return _AutocompleteHelpers = _interopRequireDefault(require('./AutocompleteHelpers'));
-}
-
-var _DefinitionHelpers;
-
-function _load_DefinitionHelpers() {
-  return _DefinitionHelpers = _interopRequireDefault(require('./DefinitionHelpers'));
-}
-
-var _OutlineHelpers;
-
-function _load_OutlineHelpers() {
-  return _OutlineHelpers = _interopRequireDefault(require('./OutlineHelpers'));
-}
-
-var _ReferenceHelpers;
-
-function _load_ReferenceHelpers() {
-  return _ReferenceHelpers = _interopRequireDefault(require('./ReferenceHelpers'));
-}
-
-var _CodeFormatHelpers;
-
-function _load_CodeFormatHelpers() {
-  return _CodeFormatHelpers = _interopRequireDefault(require('./CodeFormatHelpers'));
-}
-
 var _LintHelpers;
 
 function _load_LintHelpers() {
   return _LintHelpers = _interopRequireDefault(require('./LintHelpers'));
 }
 
+var _nuclideRemoteConnection;
+
+function _load_nuclideRemoteConnection() {
+  return _nuclideRemoteConnection = require('../../nuclide-remote-connection');
+}
+
+var _nuclideOpenFiles;
+
+function _load_nuclideOpenFiles() {
+  return _nuclideOpenFiles = require('../../nuclide-open-files');
+}
+
+var _nuclideLanguageService;
+
+function _load_nuclideLanguageService() {
+  return _nuclideLanguageService = require('../../nuclide-language-service');
+}
+
+var _createPackage;
+
+function _load_createPackage() {
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
+}
+
+var _pythonPlatform;
+
+function _load_pythonPlatform() {
+  return _pythonPlatform = require('./pythonPlatform');
+}
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-let busySignalProvider = null;
-// eslint-disable-next-line nuclide-internal/no-cross-atom-imports
-function activate() {
-  busySignalProvider = new (_nuclideBusySignal || _load_nuclideBusySignal()).DedupedBusySignalProviderBase();
-}
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
-function createAutocompleteProvider() {
-  return {
-    selector: '.source.python',
-    disableForSelector: '.source.python .comment, .source.python .string',
+const PYTHON_SERVICE_NAME = 'PythonService';
+
+const atomConfig = {
+  name: 'Python',
+  grammars: (_constants || _load_constants()).GRAMMARS,
+  outline: {
+    version: '0.1.0',
+    priority: 1,
+    analyticsEventName: 'python.outline'
+  },
+  codeFormat: {
+    version: '0.1.0',
+    priority: 1,
+    analyticsEventName: 'python.formatCode',
+    canFormatRanges: false,
+    canFormatAtPosition: false
+  },
+  findReferences: {
+    version: '0.1.0',
+    analyticsEventName: 'python.get-references'
+  },
+  autocomplete: {
+    version: '2.0.0',
     inclusionPriority: 5,
     suggestionPriority: 5, // Higher than the snippets provider.
-    getSuggestions(request) {
-      return (_AutocompleteHelpers || _load_AutocompleteHelpers()).default.getAutocompleteSuggestions(request);
-    }
-  };
-}
-
-function provideOutlines() {
-  return {
-    grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
-    priority: 1,
-    name: 'Python',
-    getOutline(editor) {
-      return (_OutlineHelpers || _load_OutlineHelpers()).default.getOutline(editor);
-    }
-  };
-}
-
-function provideDefinitions() {
-  return {
-    grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
+    disableForSelector: '.source.python .comment, .source.python .string',
+    excludeLowerPriority: false,
+    analyticsEventName: 'nuclide-python:getAutocompleteSuggestions',
+    autocompleteCacherConfig: null,
+    onDidInsertSuggestionAnalyticsEventName: 'nuclide-python.autocomplete-chosen'
+  },
+  definition: {
+    version: '0.1.0',
     priority: 20,
-    name: 'PythonDefinitionProvider',
-    getDefinition(editor, position) {
-      return (_DefinitionHelpers || _load_DefinitionHelpers()).default.getDefinition(editor, position);
-    },
-    getDefinitionById(filePath, id) {
-      return (_DefinitionHelpers || _load_DefinitionHelpers()).default.getDefinitionById(filePath, id);
-    }
-  };
-}
+    definitionEventName: 'python.get-definition'
+  }
+};
 
-function provideReferences() {
-  return {
-    isEditorSupported(textEditor) {
-      return (0, _asyncToGenerator.default)(function* () {
-        const fileUri = textEditor.getPath();
-        if (!fileUri || !(_constants || _load_constants()).GRAMMAR_SET.has(textEditor.getGrammar().scopeName)) {
-          return false;
-        }
-        return true;
-      })();
-    },
-    findReferences(editor, position) {
-      return (_ReferenceHelpers || _load_ReferenceHelpers()).default.getReferences(editor, position);
-    }
-  };
-}
+class Activation {
 
-function provideCodeFormat() {
-  return {
-    selector: 'source.python',
-    inclusionPriority: 1,
-    formatEntireFile(editor, range) {
-      if (!busySignalProvider) {
-        throw new Error('Invariant violation: "busySignalProvider"');
-      }
+  constructor(rawState) {
+    this._busySignalService = null;
 
-      return busySignalProvider.reportBusy(`Python: formatting \`${ editor.getTitle() }\``, () => (_CodeFormatHelpers || _load_CodeFormatHelpers()).default.formatEntireFile(editor, range));
-    }
-  };
-}
-
-function provideLint() {
-  return {
-    grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
-    scope: 'file',
-    lintOnFly: (0, (_config || _load_config()).getLintOnFly)(),
-    name: 'nuclide-python',
-    invalidateOnClose: true,
-    lint(editor) {
-      if (!busySignalProvider) {
-        throw new Error('Invariant violation: "busySignalProvider"');
-      }
-
-      return busySignalProvider.reportBusy(`Python: Waiting for flake8 lint results for \`${ editor.getTitle() }\``, () => (_LintHelpers || _load_LintHelpers()).default.lint(editor));
-    }
-  };
-}
-
-function provideBusySignal() {
-  if (!busySignalProvider) {
-    throw new Error('Invariant violation: "busySignalProvider"');
+    this._pythonLanguageService = new (_nuclideLanguageService || _load_nuclideLanguageService()).AtomLanguageService(connectionToPythonService, atomConfig);
+    this._pythonLanguageService.activate();
+    this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._pythonLanguageService);
   }
 
-  return busySignalProvider;
+  consumeBusySignal(service) {
+    this._subscriptions.add(service);
+    this._busySignalService = service;
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
+      this._busySignalService = null;
+    });
+  }
+
+  provideLint() {
+    return {
+      grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
+      scope: 'file',
+      lintOnFly: (0, (_config || _load_config()).getLintOnFly)(),
+      name: 'nuclide-python',
+      lint(editor) {
+        if (this._busySignalService == null) {
+          return (_LintHelpers || _load_LintHelpers()).default.lint(editor);
+        }
+        return this._busySignalService.reportBusyWhile(`Python: Waiting for flake8 lint results for \`${editor.getTitle()}\``, () => (_LintHelpers || _load_LintHelpers()).default.lint(editor));
+      }
+    };
+  }
+
+  consumePlatformService(service) {
+    this._subscriptions.add(service.register((_pythonPlatform || _load_pythonPlatform()).providePythonPlatformGroup));
+  }
+
+  dispose() {
+    this._subscriptions.dispose();
+  }
 }
 
-function deactivate() {}
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -38,11 +29,7 @@ let parseTarget = exports.parseTarget = (() => {
       // Strip off the leading slashes from the fully-qualified build target.
       const basePath = fullTarget.substring('//'.length);
 
-      let buildFileName = yield getBuildFileName(buckRoot);
-      if (buildFileName == null) {
-        buildFileName = 'BUCK';
-      }
-
+      const buildFileName = yield (0, (_buildFiles || _load_buildFiles()).getBuildFileName)(buckRoot);
       path = (_nuclideUri || _load_nuclideUri()).default.join(buckRoot, basePath, buildFileName);
     } else {
       // filePath is already an absolute path.
@@ -67,14 +54,23 @@ let parseTarget = exports.parseTarget = (() => {
  * position property of the target location will be set to null.
  * If `target.path` file cannot be found or read, Promise resolves to null.
  */
-
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 let findTargetLocation = exports.findTargetLocation = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* (target) {
     let data;
     try {
       const fs = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileSystemServiceByNuclideUri)(target.path);
-      data = (yield fs.readFile((_nuclideUri || _load_nuclideUri()).default.getPath(target.path))).toString('utf8');
+      data = (yield fs.readFile(target.path)).toString('utf8');
     } catch (e) {
       return null;
     }
@@ -195,7 +191,7 @@ let findRelativeFilePath = (() => {
     let stat;
     try {
       const fs = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileSystemServiceByNuclideUri)(potentialPath);
-      stat = yield fs.stat((_nuclideUri || _load_nuclideUri()).default.getPath(potentialPath));
+      stat = yield fs.stat(potentialPath);
     } catch (e) {
       return null;
     }
@@ -223,10 +219,16 @@ function _load_nuclideBuckBase() {
   return _nuclideBuckBase = require('../../nuclide-buck-base');
 }
 
+var _buildFiles;
+
+function _load_buildFiles() {
+  return _buildFiles = require('./buildFiles');
+}
+
 var _range;
 
 function _load_range() {
-  return _range = require('../../commons-atom/range');
+  return _range = require('nuclide-commons-atom/range');
 }
 
 var _nuclideRemoteConnection;
@@ -238,13 +240,13 @@ function _load_nuclideRemoteConnection() {
 var _goToLocation;
 
 function _load_goToLocation() {
-  return _goToLocation = require('../../commons-atom/go-to-location');
+  return _goToLocation = require('nuclide-commons-atom/go-to-location');
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _escapeStringRegexp;
@@ -254,18 +256,6 @@ function _load_escapeStringRegexp() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const buildFileNameCache = new Map();
-function getBuildFileName(buckRoot) {
-  let buildFileName = buildFileNameCache.get(buckRoot);
-  if (buildFileName != null) {
-    return buildFileName;
-  }
-  const buckService = (0, (_nuclideBuckBase || _load_nuclideBuckBase()).getBuckService)(buckRoot);
-  buildFileName = buckService == null ? Promise.resolve(null) : buckService.getBuckConfig(buckRoot, 'buildfile', 'name').catch(() => null);
-  buildFileNameCache.set(buckRoot, buildFileName);
-  return buildFileName;
-}
 
 const VALID_BUILD_FILE_NAMES = new Set(['BUCK', 'BUCK.autodeps', 'TARGETS']);
 

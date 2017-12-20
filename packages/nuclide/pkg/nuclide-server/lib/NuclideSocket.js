@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -57,24 +48,35 @@ function _load_XhrConnectionHeartbeat() {
 var _event;
 
 function _load_event() {
-  return _event = require('../../commons-node/event');
+  return _event = require('nuclide-commons/event');
 }
 
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-server');
 
 const PING_SEND_INTERVAL = 5000;
 const PING_WAIT_INTERVAL = 5000;
@@ -123,7 +125,7 @@ class NuclideSocket {
 
     const { protocol, host } = _url.default.parse(serverUri);
     // TODO verify that `host` is non-null rather than using maybeToString
-    this._websocketUri = `ws${ protocol === 'https:' ? 's' : '' }://${ (0, (_string || _load_string()).maybeToString)(host) }`;
+    this._websocketUri = `ws${protocol === 'https:' ? 's' : ''}://${(0, (_string || _load_string()).maybeToString)(host)}`;
 
     this._heartbeat = new (_XhrConnectionHeartbeat || _load_XhrConnectionHeartbeat()).XhrConnectionHeartbeat(serverUri, options);
     this._heartbeat.onConnectionRestored(() => {
@@ -168,7 +170,7 @@ class NuclideSocket {
     // in uncaught exceptions. This is due to EventEmitter treating 'error'
     // events specially.
     const onSocketError = error => {
-      logger.error(`WebSocket Error while connecting... ${ error.message }`);
+      logger.error(`WebSocket Error while connecting... ${error.message}`);
       if (this.isDisconnected()) {
         logger.info('WebSocket reconnecting after error.');
         this._scheduleReconnect();

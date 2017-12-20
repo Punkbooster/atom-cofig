@@ -1,24 +1,25 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _mouseToPosition;
 
 function _load_mouseToPosition() {
-  return _mouseToPosition = require('../../commons-atom/mouse-to-position');
+  return _mouseToPosition = require('nuclide-commons-atom/mouse-to-position');
 }
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _contextMenu;
+
+function _load_contextMenu() {
+  return _contextMenu = require('../../commons-atom/context-menu');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -45,7 +46,11 @@ class BreakpointDisplayController {
     this._debuggerActions = debuggerActions;
     this._editor = editor;
     this._markers = [];
+    this._markerInfo = new Map();
     this._lastShadowBreakpointMarker = null;
+    this._boundGlobalMouseMoveHandler = this._handleGlobalMouseLeave.bind(this);
+    this._boundCreateContextMenuHandler = this._handleCreateContextMenu.bind(this);
+    this._debugging = this._isDebugging();
 
     // Configure the gutter.
     const gutter = editor.addGutter({
@@ -55,8 +60,19 @@ class BreakpointDisplayController {
       priority: -1100
     });
     this._gutter = gutter;
-    this._disposables.add(gutter.onDidDestroy(this._handleGutterDestroyed.bind(this)), editor.observeGutters(this._registerGutterMouseHandlers.bind(this)), this._breakpointStore.onNeedUIUpdate(this._handleBreakpointsChanged.bind(this)), this._editor.onDidDestroy(this._handleTextEditorDestroyed.bind(this)));
+    this._disposables.add(gutter.onDidDestroy(this._handleGutterDestroyed.bind(this)), editor.observeGutters(this._registerGutterMouseHandlers.bind(this)), this._breakpointStore.onNeedUIUpdate(this._handleBreakpointsChanged.bind(this)), this._editor.onDidDestroy(this._handleTextEditorDestroyed.bind(this)), this._registerEditorContextMenuHandler());
     this._update();
+  }
+
+  _isDebugging() {
+    const debuggerStore = this._breakpointStore.getDebuggerStore();
+    return debuggerStore != null && debuggerStore.isDebugging();
+  }
+
+  _registerEditorContextMenuHandler() {
+    const editorElement = atom.views.getView(this._editor);
+    editorElement.addEventListener('contextmenu', this._boundCreateContextMenuHandler);
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => editorElement.removeEventListener('contextmenu', this._boundCreateContextMenuHandler));
   }
 
   _registerGutterMouseHandlers(gutter) {
@@ -66,12 +82,30 @@ class BreakpointDisplayController {
     }
     const boundClickHandler = this._handleGutterClick.bind(this);
     const boundMouseMoveHandler = this._handleGutterMouseMove.bind(this);
+    const boundMouseEnterHandler = this._handleGutterMouseEnter.bind(this);
     const boundMouseLeaveHandler = this._handleGutterMouseLeave.bind(this);
     // Add mouse listeners gutter for setting breakpoints.
     gutterView.addEventListener('click', boundClickHandler);
     gutterView.addEventListener('mousemove', boundMouseMoveHandler);
+    gutterView.addEventListener('mouseenter', boundMouseEnterHandler);
     gutterView.addEventListener('mouseleave', boundMouseLeaveHandler);
-    this._disposables.add(() => gutterView.removeEventListener('click', boundClickHandler), () => gutterView.removeEventListener('mousemove', boundMouseMoveHandler), () => gutterView.removeEventListener('mouseleave', boundMouseLeaveHandler));
+    gutterView.addEventListener('contextmenu', this._boundCreateContextMenuHandler);
+    this._disposables.add(() => gutterView.removeEventListener('click', boundClickHandler), () => gutterView.removeEventListener('mousemove', boundMouseMoveHandler), () => gutterView.removeEventListener('mouseenter', boundMouseEnterHandler), () => gutterView.removeEventListener('mouseleave', boundMouseLeaveHandler), () => gutterView.removeEventListener('contextmenu', this._boundCreateContextMenuHandler), () => window.removeEventListener('mousemove', this._boundGlobalMouseMoveHandler));
+  }
+
+  _handleCreateContextMenu(event) {
+    if (event.button !== 2 || !this._isDebugging()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const menuTemplate = atom.contextMenu.templateForEvent(event);
+    const debuggerGroupIndex = menuTemplate.findIndex(item => item.label === 'Debugger');
+    const [debuggerGroup] = menuTemplate.splice(debuggerGroupIndex, 1);
+    menuTemplate.unshift(...debuggerGroup.submenu, { type: 'separator' });
+    (0, (_contextMenu || _load_contextMenu()).showMenuForEvent)(event, menuTemplate);
   }
 
   dispose() {
@@ -99,6 +133,25 @@ class BreakpointDisplayController {
     this._gutter = null;
   }
 
+  _needsUpdate(line, bp) {
+    // Checks if an existing marker no longer matches the properties of the breakpoint
+    // it corresponds to.
+    if (bp == null) {
+      return true;
+    }
+
+    const info = this._markerInfo.get(line);
+    if (info == null) {
+      return true;
+    }
+
+    if (info.enabled !== bp.enabled || info.resolved !== bp.resolved) {
+      return true;
+    }
+
+    return false;
+  }
+
   /**
    * Update the display with the current set of breakpoints for this editor.
    */
@@ -107,6 +160,8 @@ class BreakpointDisplayController {
     if (gutter == null) {
       return;
     }
+
+    const debugging = this._isDebugging();
 
     const path = this._editor.getPath();
     if (path == null) {
@@ -120,21 +175,33 @@ class BreakpointDisplayController {
     // Destroy markers that no longer correspond to breakpoints.
     this._markers.forEach(marker => {
       const line = marker.getStartBufferPosition().row;
-      if (unhandledLines.has(line)) {
+      const bp = this._breakpointStore.getBreakpointAtLine(path, line);
+      if (debugging === this._debugging && unhandledLines.has(line) && !this._needsUpdate(line, bp)) {
         markersToKeep.push(marker);
         unhandledLines.delete(line);
       } else {
+        this._markerInfo.delete(line);
         marker.destroy();
       }
     });
 
+    this._debugging = debugging;
+
     // Add new markers for breakpoints without corresponding markers.
-    for (const [line] of breakpoints) {
+    for (const [line, breakpoint] of breakpoints) {
       if (!unhandledLines.has(line)) {
         // This line has been handled.
         continue;
       }
-      const marker = this._createBreakpointMarkerAtLine(line, false);
+      const marker = this._createBreakpointMarkerAtLine(line, false, // isShadow
+      breakpoint.enabled, breakpoint.resolved);
+
+      // Remember the properties of the marker at this line so it's easy to tell if it
+      // needs to be updated when the breakpoint properties change.
+      this._markerInfo.set(line, {
+        enabled: breakpoint.enabled,
+        resolved: breakpoint.resolved
+      });
       marker.onDidChange(this._handleMarkerChange.bind(this));
       markersToKeep.push(marker);
     }
@@ -176,7 +243,19 @@ class BreakpointDisplayController {
     if (!path) {
       return;
     }
-    this._debuggerActions.toggleBreakpoint(path, this._getCurrentMouseEventLine(event));
+
+    // Don't toggle a breakpoint if the user clicked on something in the gutter that is not
+    // the debugger, such as clicking on a line number to select the line.
+    if (!target.classList.contains('nuclide-debugger-shadow-breakpoint-icon') && !target.classList.contains('nuclide-debugger-breakpoint-icon') && !target.classList.contains('nuclide-debugger-breakpoint-icon-disabled') && !target.classList.contains('nuclide-debugger-breakpoint-icon-unresolved')) {
+      return;
+    }
+
+    try {
+      const curLine = this._getCurrentMouseEventLine(event);
+      this._debuggerActions.toggleBreakpoint(path, curLine);
+    } catch (e) {
+      return;
+    }
   }
 
   _getCurrentMouseEventLine(event) {
@@ -186,14 +265,38 @@ class BreakpointDisplayController {
   }
 
   _handleGutterMouseMove(event) {
-    const curLine = this._getCurrentMouseEventLine(event);
-    if (this._isLineOverLastShadowBreakpoint(curLine)) {
+    try {
+      const curLine = this._getCurrentMouseEventLine(event);
+      if (this._isLineOverLastShadowBreakpoint(curLine)) {
+        return;
+      }
+      // User moves to a new line we need to delete the old shadow breakpoint
+      // and create a new one.
+      this._removeLastShadowBreakpoint();
+      this._createShadowBreakpointAtLine(this._editor, curLine);
+    } catch (e) {
       return;
     }
-    // User moves to a new line we need to delete the old shadow breakpoint
-    // and create a new one.
-    this._removeLastShadowBreakpoint();
-    this._createShadowBreakpointAtLine(this._editor, curLine);
+  }
+
+  _handleGutterMouseEnter(event) {
+    window.addEventListener('mousemove', this._boundGlobalMouseMoveHandler);
+  }
+
+  // This is a giant hack to make sure that the breakpoint actually disappears.
+  // The issue is that mouseleave event is sometimes not triggered on the gutter
+  // I(vjeux) and matthewithanm spent multiple entire days trying to figure out
+  // why without success, so this is going to have to do :(
+  _handleGlobalMouseLeave(event) {
+    if (!this._editor) {
+      return;
+    }
+    const view = atom.views.getView(this._editor);
+    const rect = view.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
+      this._removeLastShadowBreakpoint();
+      window.removeEventListener('mousemove', this._boundGlobalMouseMoveHandler);
+    }
   }
 
   _handleGutterMouseLeave(event) {
@@ -213,15 +316,35 @@ class BreakpointDisplayController {
   }
 
   _createShadowBreakpointAtLine(editor, line) {
-    this._lastShadowBreakpointMarker = this._createBreakpointMarkerAtLine(line, true);
+    const breakpointsAtLine = this._markers.filter(marker => marker.getStartBufferPosition().row === line);
+
+    // Don't create a shadow breakpoint at a line that already has a breakpoint.
+    if (breakpointsAtLine.length === 0) {
+      this._lastShadowBreakpointMarker = this._createBreakpointMarkerAtLine(line, true, // isShadow
+      true, // enabled
+      false);
+    }
   }
 
-  _createBreakpointMarkerAtLine(line, isShadow) {
+  _createBreakpointMarkerAtLine(line, isShadow, enabled, resolved) {
     const marker = this._editor.markBufferPosition([line, 0], {
       invalidate: 'never'
     });
+
+    // If the debugger is not attached, display all breakpoints as resolved.
+    // Once the debugger attaches, it will determine what's actually resolved or not.
+    const unresolved = this._debugging && !resolved;
     const elem = document.createElement('span');
-    elem.className = isShadow ? 'nuclide-debugger-shadow-breakpoint-icon' : 'nuclide-debugger-breakpoint-icon';
+    elem.dataset.line = line.toString();
+    elem.className = isShadow ? 'nuclide-debugger-shadow-breakpoint-icon' : !enabled ? 'nuclide-debugger-breakpoint-icon-disabled' : unresolved ? 'nuclide-debugger-breakpoint-icon-unresolved' : 'nuclide-debugger-breakpoint-icon';
+
+    if (!isShadow) {
+      if (!enabled) {
+        elem.title = 'Disabled breakpoint';
+      } else if (unresolved) {
+        elem.title = 'Unresolved breakpoint';
+      }
+    }
 
     if (!(this._gutter != null)) {
       throw new Error('Invariant violation: "this._gutter != null"');
@@ -231,5 +354,13 @@ class BreakpointDisplayController {
     return marker;
   }
 }
-
-module.exports = BreakpointDisplayController;
+exports.default = BreakpointDisplayController; /**
+                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                * All rights reserved.
+                                                *
+                                                * This source code is licensed under the license found in the LICENSE file in
+                                                * the root directory of this source tree.
+                                                *
+                                                * 
+                                                * @format
+                                                */

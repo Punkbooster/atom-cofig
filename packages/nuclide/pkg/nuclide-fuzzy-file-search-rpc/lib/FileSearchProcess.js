@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -28,13 +19,9 @@ let newFileSearch = (() => {
       throw new Error('Provided path is not a directory : ' + directory);
     }
 
-    const task = new (_nuclideTask || _load_nuclideTask()).default();
-    yield task.invokeRemoteMethod({
-      file: require.resolve('./FileSearch'),
-      method: 'initFileSearchForDirectory',
-      args: [directory, ignoredNames]
-    });
-    return new FileSearchProcess(task, directory, ignoredNames);
+    const fileSearchProcess = new FileSearchProcess(directory, ignoredNames);
+    yield fileSearchProcess.initialize();
+    return fileSearchProcess;
   });
 
   return function newFileSearch(_x, _x2) {
@@ -84,22 +71,22 @@ let disposeSearchForDirectory = exports.disposeSearchForDirectory = (() => {
 
 exports.getExistingSearchDirectories = getExistingSearchDirectories;
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _nuclideTask;
@@ -110,37 +97,69 @@ function _load_nuclideTask() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-fuzzy-file-search-rpc');
 
 /**
  * This is an object that lives in the main process that delegates calls to the
  * FileSearch in the forked process.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class FileSearchProcess {
 
-  constructor(task, directory, ignoredNames) {
-    this._task = task;
-    task.onError(buffer => {
-      logger.error('File search process crashed with message:', buffer.toString());
-      this.dispose();
-    });
-    task.onExit(() => this.dispose());
+  constructor(directory, ignoredNames) {
     this._directory = directory;
     this._ignoredNames = ignoredNames;
   }
 
-  query(query) {
+  initialize() {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const task = _this._task;
+      const task = new (_nuclideTask || _load_nuclideTask()).default();
+      _this._task = task;
+      task.onError(function (buffer) {
+        logger.error('File search process crashed with message:', buffer.toString());
+        _this.dispose();
+      });
+      task.onExit(function () {
+        return _this.dispose();
+      });
+
+      try {
+        yield task.invokeRemoteMethod({
+          file: require.resolve('./process/FileSearch'),
+          method: 'initFileSearchForDirectory',
+          args: [_this._directory, _this._ignoredNames]
+        });
+      } catch (e) {
+        _this.dispose();
+        throw e;
+      }
+    })();
+  }
+
+  query(query) {
+    var _this2 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const task = _this2._task;
       if (task == null) {
         throw new Error('Task has been disposed');
       }
       return task.invokeRemoteMethod({
-        file: require.resolve('./FileSearch'),
+        file: require.resolve('./process/FileSearch'),
         method: 'doSearch',
-        args: [_this._directory, query]
+        args: [_this2._directory, query]
       });
     })();
   }

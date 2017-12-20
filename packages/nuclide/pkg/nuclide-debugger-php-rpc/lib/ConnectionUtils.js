@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,18 +9,27 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 let getHackRoot = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (filePath) {
-    return yield (_fsPromise || _load_fsPromise()).default.findNearestFile('.hhconfig', filePath);
+    return (_fsPromise || _load_fsPromise()).default.findNearestFile('.hhconfig', filePath);
   });
 
   return function getHackRoot(_x) {
     return _ref.apply(this, arguments);
   };
-})();
+})(); /**
+       * Copyright (c) 2015-present, Facebook, Inc.
+       * All rights reserved.
+       *
+       * This source code is licensed under the license found in the LICENSE file in
+       * the root directory of this source tree.
+       *
+       * 
+       * @format
+       */
 
 let setRootDirectoryUri = exports.setRootDirectoryUri = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* (directoryUri) {
     const hackRootDirectory = yield getHackRoot(directoryUri);
-    (_utils || _load_utils()).default.log(`setRootDirectoryUri: from ${ directoryUri } to ${ (0, (_string || _load_string()).maybeToString)(hackRootDirectory) }`);
+    (_utils || _load_utils()).default.debug(`setRootDirectoryUri: from ${directoryUri} to ${(0, (_string || _load_string()).maybeToString)(hackRootDirectory)}`);
     // TODO: make xdebug_includes.php path configurable from hhconfig.
     const hackDummyRequestFilePath = (_nuclideUri || _load_nuclideUri()).default.join(hackRootDirectory ? hackRootDirectory : '', '/scripts/xdebug_includes.php');
 
@@ -70,19 +70,19 @@ function _load_helpers() {
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -97,27 +97,33 @@ function isDummyConnection(message) {
 }
 
 function failConnection(socket, errorMessage) {
-  (_utils || _load_utils()).default.log(errorMessage);
+  (_utils || _load_utils()).default.error(errorMessage);
   socket.end();
   socket.destroy();
 }
 
 function isCorrectConnection(isAttachConnection, message) {
-  const { pid, idekeyRegex, attachScriptRegex, launchScriptPath } = (0, (_config || _load_config()).getConfig)();
+  const {
+    pid,
+    idekeyRegex,
+    attachScriptRegex,
+    launchScriptPath,
+    launchWrapperCommand
+  } = (0, (_config || _load_config()).getConfig)();
   if (!message || !message.init || !message.init.$) {
-    (_utils || _load_utils()).default.logError('Incorrect init');
+    (_utils || _load_utils()).default.error('Incorrect init');
     return false;
   }
 
   const init = message.init;
-  if (!init.engine || !init.engine || !init.engine[0] || init.engine[0]._ !== 'xdebug') {
-    (_utils || _load_utils()).default.logError('Incorrect engine');
+  if (!init.engine || !init.engine || !init.engine[0] || init.engine[0]._.toLowerCase() !== 'xdebug') {
+    (_utils || _load_utils()).default.error('Incorrect engine');
     return false;
   }
 
   const attributes = init.$;
   if (attributes.xmlns !== 'urn:debugger_protocol_v1' || attributes['xmlns:xdebug'] !== 'http://xdebug.org/dbgp/xdebug' || attributes.language !== 'PHP') {
-    (_utils || _load_utils()).default.logError('Incorrect attributes');
+    (_utils || _load_utils()).default.error('Incorrect attributes');
     return false;
   }
 
@@ -135,6 +141,10 @@ function isCorrectConnection(isAttachConnection, message) {
     // TODO: Pass arguments separately from script path so this check can be simpler.
     if (!(launchScriptPath != null)) {
       throw new Error('Null launchScriptPath in launch mode');
+    }
+
+    if (launchWrapperCommand != null) {
+      return (_nuclideUri || _load_nuclideUri()).default.basename(requestScriptPath) === launchWrapperCommand;
     }
 
     return (0, (_string || _load_string()).shellParse)(launchScriptPath)[0] === requestScriptPath;

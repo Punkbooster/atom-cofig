@@ -1,12 +1,19 @@
 'use strict';
-'use babel';
 
-/*
+// eslint-disable-next-line nuclide-internal/no-commonjs
+require('jasmine-node');
+
+// These are undocumented APIs. The type of jasmine is redefined here, so that
+// we don't pollute the real lib def with this nonsense.
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * 
+ * @format
  */
 
 /**
@@ -14,10 +21,6 @@
  * https://github.com/atom/jasmine-focused/blob/c922330/src/jasmine-focused.coffee
  */
 
-require('jasmine-node');
-
-// These are undocumented APIs. The type of jasmine is redefined here, so that
-// we don't pollute the real lib def with this nonsense.
 const jasmine = global.jasmine;
 
 function setGlobalFocusPriority(priority) {

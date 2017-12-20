@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -38,45 +29,40 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 class DefinitionProvider {
 
-  constructor(name, grammars, priority, definitionEventName, definitionByIdEventName, connectionToLanguageService) {
+  constructor(name, grammars, priority, definitionEventName, connectionToLanguageService) {
     this.name = name;
     this.priority = priority;
     this.grammarScopes = grammars;
     this._definitionEventName = definitionEventName;
-    this._definitionByIdEventName = definitionByIdEventName;
     this._connectionToLanguageService = connectionToLanguageService;
   }
 
   static register(name, grammars, config, connectionToLanguageService) {
-    return atom.packages.serviceHub.provide('nuclide-definition-provider', config.version, new DefinitionProvider(name, grammars, config.priority, config.definitionEventName, config.definitionByIdEventName, connectionToLanguageService));
+    return atom.packages.serviceHub.provide('definitions', config.version, new DefinitionProvider(name, grammars, config.priority, config.definitionEventName, connectionToLanguageService));
   }
 
   getDefinition(editor, position) {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)(_this._definitionEventName, (0, _asyncToGenerator.default)(function* () {
+      return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)(_this._definitionEventName, (0, _asyncToGenerator.default)(function* () {
         const fileVersion = yield (0, (_nuclideOpenFiles || _load_nuclideOpenFiles()).getFileVersionOfEditor)(editor);
         const languageService = _this._connectionToLanguageService.getForUri(editor.getPath());
         if (languageService == null || fileVersion == null) {
           return null;
         }
-        return yield (yield languageService).getDefinition(fileVersion, position);
+        return (yield languageService).getDefinition(fileVersion, position);
       }));
     })();
   }
-
-  getDefinitionById(filePath, id) {
-    var _this2 = this;
-
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)(this._definitionByIdEventName, (0, _asyncToGenerator.default)(function* () {
-      const languageService = _this2._connectionToLanguageService.getForUri(filePath);
-      if (languageService == null) {
-        return null;
-      }
-
-      return yield (yield languageService).getDefinitionById(filePath, id);
-    }));
-  }
 }
-exports.DefinitionProvider = DefinitionProvider;
+exports.DefinitionProvider = DefinitionProvider; /**
+                                                  * Copyright (c) 2015-present, Facebook, Inc.
+                                                  * All rights reserved.
+                                                  *
+                                                  * This source code is licensed under the license found in the LICENSE file in
+                                                  * the root directory of this source tree.
+                                                  *
+                                                  * 
+                                                  * @format
+                                                  */

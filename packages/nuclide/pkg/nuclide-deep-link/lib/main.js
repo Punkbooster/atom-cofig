@@ -1,22 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 var _createPackage;
 
 function _load_createPackage() {
-  return _createPackage = _interopRequireDefault(require('../../commons-atom/createPackage'));
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
 }
 
 var _DeepLinkService;
@@ -40,10 +27,19 @@ class Activation {
   provideDeepLinkService() {
     // Only expose the public methods of the service.
     return {
-      subscribeToPath: (path, callback) => {
-        return this._service.subscribeToPath(path, callback);
-      }
+      subscribeToPath: this._service.subscribeToPath.bind(this._service),
+      sendDeepLink: this._service.sendDeepLink.bind(this._service)
     };
   }
-}exports.default = (0, (_createPackage || _load_createPackage()).default)(Activation);
-module.exports = exports['default'];
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
+
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

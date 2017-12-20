@@ -1,30 +1,15 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _BreakpointStore;
 
 function _load_BreakpointStore() {
   return _BreakpointStore = _interopRequireDefault(require('./BreakpointStore.js'));
-}
-
-var _DebuggerActions;
-
-function _load_DebuggerActions() {
-  return _DebuggerActions = _interopRequireDefault(require('./DebuggerActions'));
 }
 
 var _DebuggerInspector;
@@ -45,10 +30,16 @@ function _load_Bridge() {
   return _Bridge = _interopRequireDefault(require('./Bridge'));
 }
 
-var _Button;
+var _LoadingSpinner;
 
-function _load_Button() {
-  return _Button = require('../../nuclide-ui/Button');
+function _load_LoadingSpinner() {
+  return _LoadingSpinner = require('nuclide-commons-ui/LoadingSpinner');
+}
+
+var _env;
+
+function _load_env() {
+  return _env = require('../../nuclide-node-transpiler/lib/env');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -57,14 +48,31 @@ function getStateFromStore(store) {
   return {
     processSocket: store.getProcessSocket()
   };
-}class DebuggerControllerView extends _reactForAtom.React.Component {
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
+
+class DebuggerControllerView extends _react.default.Component {
 
   constructor(props) {
     super(props);
-    this.state = getStateFromStore(props.store);
 
-    this._handleClickClose = this._handleClickClose.bind(this);
-    this._updateStateFromStore = this._updateStateFromStore.bind(this);
+    this._updateStateFromStore = store => {
+      if (store != null) {
+        this.setState(getStateFromStore(store));
+      } else {
+        this.setState(getStateFromStore(this.props.store));
+      }
+    };
+
+    this.state = getStateFromStore(props.store);
   }
 
   componentWillMount() {
@@ -93,48 +101,31 @@ function getStateFromStore(store) {
   }
 
   render() {
-    if (this.state.processSocket) {
-      return _reactForAtom.React.createElement((_DebuggerInspector || _load_DebuggerInspector()).default, {
-        actions: this.props.actions,
-        bridge: this.props.bridge,
+    if (this.state.processSocket && (_env || _load_env()).__DEV__) {
+      return _react.default.createElement((_DebuggerInspector || _load_DebuggerInspector()).default, {
         breakpointStore: this.props.breakpointStore,
-        socket: this.state.processSocket,
-        showOldView: this.props.showOldView,
-        toggleOldView: this.props.toggleOldView
+        openDevTools: this.props.openDevTools,
+        stopDebugging: this.props.stopDebugging
       });
     }
     if (this.props.store.getDebuggerMode() === 'starting') {
-      return _reactForAtom.React.createElement(
+      return _react.default.createElement(
         'div',
-        { className: 'padded' },
-        _reactForAtom.React.createElement((_Button || _load_Button()).Button, {
-          title: 'Close',
-          icon: 'x',
-          className: 'nuclide-debugger-root-close-button',
-          onClick: this._handleClickClose
-        }),
-        _reactForAtom.React.createElement(
-          'p',
+        { className: 'nuclide-debugger-starting-message' },
+        _react.default.createElement(
+          'div',
           null,
-          'Starting Debugger'
-        ),
-        _reactForAtom.React.createElement('progress', { className: 'starting' })
+          _react.default.createElement(
+            'span',
+            { className: 'inline-block' },
+            'Starting Debugger...'
+          ),
+          _react.default.createElement((_LoadingSpinner || _load_LoadingSpinner()).LoadingSpinner, { className: 'inline-block', size: 'EXTRA_SMALL' })
+        )
       );
     }
     return null;
   }
 
-  _handleClickClose() {
-    this.props.actions.stopDebugging();
-  }
-
-  _updateStateFromStore(store) {
-    if (store != null) {
-      this.setState(getStateFromStore(store));
-    } else {
-      this.setState(getStateFromStore(this.props.store));
-    }
-  }
 }
 exports.default = DebuggerControllerView;
-module.exports = exports['default'];

@@ -1,27 +1,16 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 var _atom = require('atom');
 
 var _createPackage;
 
 function _load_createPackage() {
-  return _createPackage = _interopRequireDefault(require('../../commons-atom/createPackage'));
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _RequestEditDialog;
 
@@ -64,7 +53,7 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 var _bindObservableAsProps;
 
 function _load_bindObservableAsProps() {
-  return _bindObservableAsProps = require('../../nuclide-ui/bindObservableAsProps');
+  return _bindObservableAsProps = require('nuclide-commons-ui/bindObservableAsProps');
 }
 
 var _nuclideAnalytics;
@@ -76,6 +65,17 @@ function _load_nuclideAnalytics() {
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class Activation {
 
@@ -118,18 +118,19 @@ class Activation {
     if (this._requestEditDialog != null) {
       return this._requestEditDialog;
     }
+    const BoundEditDialog = (0, (_bindObservableAsProps || _load_bindObservableAsProps()).bindObservableAsProps)(
     // $FlowFixMe -- Flow doesn't know about the Observable symbol used by from().
-    const BoundEditDialog = (0, (_bindObservableAsProps || _load_bindObservableAsProps()).bindObservableAsProps)(_rxjsBundlesRxMinJs.Observable.from(this._store), (_RequestEditDialog || _load_RequestEditDialog()).RequestEditDialog);
+    _rxjsBundlesRxMinJs.Observable.from(this._store), (_RequestEditDialog || _load_RequestEditDialog()).RequestEditDialog);
     const container = document.createElement('div');
     const requestEditDialog = atom.workspace.addModalPanel({
       item: container,
       visible: false
     });
-    _reactForAtom.ReactDOM.render(_reactForAtom.React.createElement(BoundEditDialog, { actionCreators: this._actionCreators }), container);
+    _reactDom.default.render(_react.default.createElement(BoundEditDialog, { actionCreators: this._actionCreators }), container);
     this._disposables.add(new _atom.Disposable(() => {
       requestEditDialog.destroy();
       this._requestEditDialog = null;
-      _reactForAtom.ReactDOM.unmountComponentAtNode(container);
+      _reactDom.default.unmountComponentAtNode(container);
     }));
     this._requestEditDialog = requestEditDialog;
     return requestEditDialog;
@@ -144,5 +145,6 @@ class Activation {
   dispose() {
     this._disposables.dispose();
   }
-}exports.default = (0, (_createPackage || _load_createPackage()).default)(Activation);
-module.exports = exports['default'];
+}
+
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

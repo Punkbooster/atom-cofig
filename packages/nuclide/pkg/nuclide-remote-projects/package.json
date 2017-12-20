@@ -4,7 +4,7 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Manages remote projects",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "configMetadata": {
       "pathComponents": [
@@ -13,12 +13,6 @@
       ]
     },
     "config": {
-      "confirmServerActionOnLastProject": {
-        "title": "Confirm Server Action On Last Project",
-        "type": "boolean",
-        "description": "Confirm whether to Shutdown or Keep the server after all remote projects are disconnected",
-        "default": true
-      },
       "connectionProfiles": {
         "title": "Connection Profiles",
         "type": "array",
@@ -31,7 +25,7 @@
         "title": "Shutdown Server After Disconnect",
         "type": "boolean",
         "description": "Shutdown nuclide server after all remote projects are disconnected",
-        "default": true
+        "default": false
       }
     },
     "packageType": "Atom",
@@ -62,7 +56,17 @@
   "consumedServices": {
     "status-bar": {
       "versions": {
-        "1.0.0": "consumeStatusBar"
+        "^1.0.0": "consumeStatusBar"
+      }
+    },
+    "nuclide-notifications.provideRaiseNativeNotification": {
+      "versions": {
+        "0.0.0": "consumeNotifications"
+      }
+    },
+    "working-sets.provider": {
+      "versions": {
+        "0.0.0": "consumeWorkingSetsStore"
       }
     }
   }

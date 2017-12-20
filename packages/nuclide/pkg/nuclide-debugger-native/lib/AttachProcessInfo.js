@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -37,10 +28,21 @@ function _load_nuclideRemoteConnection() {
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class AttachProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).DebuggerProcessInfo {
 
@@ -49,8 +51,21 @@ class AttachProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBa
     this._targetInfo = targetInfo;
   }
 
-  supportThreads() {
-    return true;
+  clone() {
+    return new AttachProcessInfo(this._targetUri, this._targetInfo);
+  }
+
+  getDebuggerCapabilities() {
+    return Object.assign({}, super.getDebuggerCapabilities(), {
+      conditionalBreakpoints: true,
+      continueToLocation: true,
+      singleThreadStepping: true,
+      threads: true
+    });
+  }
+
+  getDebuggerProps() {
+    return super.getDebuggerProps();
   }
 
   debug() {
@@ -84,7 +99,8 @@ class AttachProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBa
       logLevel: (0, (_utils || _load_utils()).getConfig)().serverLogLevel,
       pythonBinaryPath: (0, (_utils || _load_utils()).getConfig)().pythonBinaryPath,
       buckConfigRootFile: (0, (_utils || _load_utils()).getConfig)().buckConfigRootFile,
-      lldbPythonPath: (0, (_utils || _load_utils()).getConfig)().lldbPythonPath
+      lldbPythonPath: (0, (_utils || _load_utils()).getConfig)().lldbPythonPath,
+      envPythonPath: ''
     };
     const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getServiceByNuclideUri)('NativeDebuggerService', this.getTargetUri());
 
@@ -93,10 +109,6 @@ class AttachProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBa
     }
 
     return new service.NativeDebuggerService(debuggerConfig);
-  }
-
-  supportSingleThreadStepping() {
-    return true;
   }
 }
 exports.AttachProcessInfo = AttachProcessInfo;

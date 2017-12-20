@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -23,7 +14,7 @@ function _load_nuclideAnalytics() {
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _NuxView;
@@ -31,6 +22,17 @@ var _NuxView;
 function _load_NuxView() {
   return _NuxView = require('./NuxView');
 }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class NuxTour {
 
@@ -108,8 +110,8 @@ class NuxTour {
     (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nux-tour-action', {
       tourId: this._id,
       tourName: this._name,
-      step: `${ this._currentStep + 1 }/${ this._nuxList.length + 1 }`,
-      completed: `${ completed.toString() }`,
+      step: `${this._currentStep + 1}/${this._nuxList.length + 1}`,
+      completed: `${completed.toString()}`,
       error: (0, (_string || _load_string()).maybeToString)(error)
     });
   }

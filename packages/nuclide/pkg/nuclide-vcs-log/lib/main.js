@@ -1,15 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-// TODO: Make it possible to move or split a pane with a VcsLogPaneItem.
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -21,36 +10,50 @@ exports.addItemsToFileTreeContextMenu = addItemsToFileTreeContextMenu;
 
 var _atom = require('atom');
 
-var _VcsLogPaneItem;
-
-function _load_VcsLogPaneItem() {
-  return _VcsLogPaneItem = _interopRequireDefault(require('./VcsLogPaneItem'));
-}
-
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
+
+var _VcsLogComponent;
+
+function _load_VcsLogComponent() {
+  return _VcsLogComponent = _interopRequireDefault(require('./VcsLogComponent'));
+}
+
+var _VcsLogGadget;
+
+function _load_VcsLogGadget() {
+  return _VcsLogGadget = _interopRequireDefault(require('./VcsLogGadget'));
+}
+
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 var _projects;
 
 function _load_projects() {
-  return _projects = require('../../commons-atom/projects');
+  return _projects = require('nuclide-commons-atom/projects');
+}
+
+var _bindObservableAsProps;
+
+function _load_bindObservableAsProps() {
+  return _bindObservableAsProps = require('nuclide-commons-ui/bindObservableAsProps');
 }
 
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _querystring = _interopRequireDefault(require('querystring'));
 
-var _nuclideHgGitBridge;
+var _nuclideVcsBase;
 
-function _load_nuclideHgGitBridge() {
-  return _nuclideHgGitBridge = require('../../nuclide-hg-git-bridge');
+function _load_nuclideVcsBase() {
+  return _nuclideVcsBase = require('../../nuclide-vcs-base');
 }
 
 var _util;
@@ -67,12 +70,32 @@ function _load_nuclideAnalytics() {
 
 var _url = _interopRequireDefault(require('url'));
 
+var _react = _interopRequireDefault(require('react'));
+
+var _viewableFromReactElement;
+
+function _load_viewableFromReactElement() {
+  return _viewableFromReactElement = require('../../commons-atom/viewableFromReactElement');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const SHOW_LOG_FILE_TREE_CONTEXT_MENU_PRIORITY = 500;
+const SHOW_LOG_FILE_TREE_CONTEXT_MENU_PRIORITY = 500; /**
+                                                       * Copyright (c) 2015-present, Facebook, Inc.
+                                                       * All rights reserved.
+                                                       *
+                                                       * This source code is licensed under the license found in the LICENSE file in
+                                                       * the root directory of this source tree.
+                                                       *
+                                                       * 
+                                                       * @format
+                                                       */
+
+// TODO: Make it possible to move or split a pane with a VcsLogPaneItem.
+
+const NUM_LOG_RESULTS = 100;
 
 const CONTEXT_MENU_LABEL = 'Show history';
-const MAX_NUM_LOG_RESULTS = 100;
 const VCS_LOG_URI_PREFIX = 'atom://nucide-vcs-log/view';
 const VCS_LOG_URI_PATHS_QUERY_PARAM = 'path';
 
@@ -99,7 +122,8 @@ class Activation {
 
 
       const path = query[VCS_LOG_URI_PATHS_QUERY_PARAM];
-      return createLogPaneForPath(path);
+      const component = createLogPaneForPath(path);
+      return component ? (0, (_viewableFromReactElement || _load_viewableFromReactElement()).viewableFromReactElement)(component) : null;
     }));
 
     // TODO(mbolin): Once the nuclide-file-tree.context-menu is generalized to automatically add
@@ -173,7 +197,7 @@ function getRepositoryWithLogMethodForPath(path) {
     return null;
   }
 
-  const repository = (0, (_nuclideHgGitBridge || _load_nuclideHgGitBridge()).repositoryForPath)(path);
+  const repository = (0, (_nuclideVcsBase || _load_nuclideVcsBase()).repositoryForPath)(path);
   // For now, we only expect HgRepository to work. We should also find a way to
   // make this work for Git.
   if (repository != null && repository.getType() === 'hg') {
@@ -202,6 +226,8 @@ function openLogPaneForURI(uri) {
   const openerURI = VCS_LOG_URI_PREFIX + '?' + _querystring.default.stringify({
     [VCS_LOG_URI_PATHS_QUERY_PARAM]: uri
   });
+  // Not a file URI
+  // eslint-disable-next-line nuclide-internal/atom-apis
   atom.workspace.open(openerURI);
 }
 
@@ -215,25 +241,51 @@ function createLogPaneForPath(path) {
     return null;
   }
 
-  const pane = new (_VcsLogPaneItem || _load_VcsLogPaneItem()).default();
   const { showDifferentialRevision } = (_featureConfig || _load_featureConfig()).default.get('nuclide-vcs-log');
 
   if (!(typeof showDifferentialRevision === 'boolean')) {
     throw new Error('Invariant violation: "typeof showDifferentialRevision === \'boolean\'"');
   }
 
-  pane.initialize({
-    iconName: 'repo',
-    initialProps: {
-      files: [path],
-      showDifferentialRevision
-    },
-    title: `${ repository.getType() } log ${ (0, (_string || _load_string()).maybeToString)((0, (_projects || _load_projects()).getAtomProjectRelativePath)(path)) }`
+  const title = `${repository.getType()} log ${(0, (_string || _load_string()).maybeToString)((0, (_projects || _load_projects()).getAtomProjectRelativePath)(path))}`;
+
+  const currentDiff = new _rxjsBundlesRxMinJs.BehaviorSubject({
+    oldId: null,
+    newId: null
+  });
+  const onDiffClick = (oldId, newId) => {
+    currentDiff.next({
+      oldId: null,
+      newId: null
+    });
+    currentDiff.next({
+      oldId,
+      newId
+    });
+  };
+
+  const contentLoader = currentDiff.switchMap(ids => {
+    const { oldId, newId } = ids;
+    if (oldId == null || newId == null) {
+      return _rxjsBundlesRxMinJs.Observable.of({ oldContent: null, newContent: null });
+    }
+    return _rxjsBundlesRxMinJs.Observable.forkJoin(oldId !== '' ? repository.fetchFileContentAtRevision(path, oldId) : _rxjsBundlesRxMinJs.Observable.of(''), newId !== '' ? repository.fetchFileContentAtRevision(path, newId) : _rxjsBundlesRxMinJs.Observable.of('')).startWith([null, null]).map(([oldContent, newContent]) => ({ oldContent, newContent }));
   });
 
-  repository.log([path], MAX_NUM_LOG_RESULTS).then(response => pane.updateWithLogEntries(response.entries));
+  const props = _rxjsBundlesRxMinJs.Observable.combineLatest(_rxjsBundlesRxMinJs.Observable.fromPromise(repository.log([path], NUM_LOG_RESULTS)).map(log => log.entries).startWith(null), contentLoader).map(([logEntries, content]) => {
+    return {
+      files: [path],
+      showDifferentialRevision,
+      repository,
+      onDiffClick,
+      logEntries,
+      oldContent: content.oldContent,
+      newContent: content.newContent
+    };
+  });
 
-  return pane;
+  const component = (0, (_bindObservableAsProps || _load_bindObservableAsProps()).bindObservableAsProps)(props, (_VcsLogComponent || _load_VcsLogComponent()).default);
+  return _react.default.createElement((_VcsLogGadget || _load_VcsLogGadget()).default, { iconName: 'repo', title: title, component: component });
 }
 
 let activation;

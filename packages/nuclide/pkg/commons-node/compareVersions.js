@@ -1,24 +1,24 @@
 'use strict';
-'use babel';
 
-/*
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = compareVersions;
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * 
+ * @format
  */
 
 /**
  * Compare two version strings. This is much more lax than semver and allows, for example, versions
  * like "9".
  */
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = compareVersions;
-
 function compareVersions(a, b) {
   const aParts = a.split('.').map(x => parseInt(x, 10));
   const bParts = b.split('.').map(x => parseInt(x, 10));
@@ -34,4 +34,3 @@ function compareVersions(a, b) {
   }
   return 0;
 }
-module.exports = exports['default'];

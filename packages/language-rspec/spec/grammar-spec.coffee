@@ -51,9 +51,29 @@ describe 'rspec grammar', ->
     expect(tokens[3]).toEqual value: ' PostController ', scopes: ['source.ruby.rspec', 'meta.rspec.behaviour']
     expect(tokens[4]).toEqual value: 'do', scopes: ['source.ruby.rspec', 'meta.rspec.behaviour', 'keyword.control.ruby.start-block']
 
+    {tokens} = grammar.tokenizeLine('describe = create(:describe)')
+    expect(tokens[0]).toEqual value: 'describe = create(:describe)', scopes: ['source.ruby.rspec']
+
+    {tokens} = grammar.tokenizeLine('describe=create(:describe)')
+    expect(tokens[0]).toEqual value: 'describe=create(:describe)', scopes: ['source.ruby.rspec']
+
+  it 'tokenizes expect', ->
+    {tokens} = grammar.tokenizeLine('expect(a).to eq b')
+    expect(tokens[0]).toEqual value: 'expect', scopes: ['source.ruby.rspec', 'keyword.other.example.rspec']
+    expect(tokens[1]).toEqual value: '(a).to ', scopes: ['source.ruby.rspec']
+    expect(tokens[2]).toEqual value: 'eq', scopes: ['source.ruby.rspec', 'keyword.other.matcher.rspec']
+    expect(tokens[3]).toEqual value: ' b', scopes: ['source.ruby.rspec']
+
+    {tokens} = grammar.tokenizeLine('expect do')
+    expect(tokens[0]).toEqual value: 'expect', scopes: ['source.ruby.rspec', 'keyword.other.example.rspec']
+    expect(tokens[1]).toEqual value: ' do', scopes: ['source.ruby.rspec']
+
+    {tokens} = grammar.tokenizeLine('expect = a == b')
+    expect(tokens[0]).toEqual value: 'expect = a == b', scopes: ['source.ruby.rspec']
+
   it 'tokenizes keywords', ->
     keywordLists =
-      'keyword.other.example.rspec': ['it', 'specify', 'example', 'scenario', 'pending', 'skip', 'xit', 'xspecify', 'xexample']
+      'keyword.other.example.rspec': ['it', 'specify', 'example', 'scenario', 'pending', 'skip', 'xit', 'xspecify', 'xexample', 'expect', 'should_not', 'should']
       'keyword.other.hook.rspec': ['before', 'after', 'around']
 
     for scope, list of keywordLists

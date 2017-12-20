@@ -1,34 +1,35 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _AtomInput;
 
 function _load_AtomInput() {
-  return _AtomInput = require('../../nuclide-ui/AtomInput');
+  return _AtomInput = require('nuclide-commons-ui/AtomInput');
 }
 
 var _Checkbox;
 
 function _load_Checkbox() {
-  return _Checkbox = require('../../nuclide-ui/Checkbox');
+  return _Checkbox = require('nuclide-commons-ui/Checkbox');
 }
 
-var _atom = require('atom');
+var _react = _interopRequireDefault(require('react'));
 
-var _reactForAtom = require('react-for-atom');
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -36,15 +37,26 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /**
  * Component that displays UI to create a new file.
  */
-class FileDialogComponent extends _reactForAtom.React.Component {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class FileDialogComponent extends _react.default.Component {
 
   constructor(props) {
     super(props);
+
+    _initialiseProps.call(this);
+
     this._isClosed = false;
-    this._subscriptions = new _atom.CompositeDisposable();
-    this._close = this._close.bind(this);
-    this._confirm = this._confirm.bind(this);
-    this._handleDocumentMouseDown = this._handleDocumentMouseDown.bind(this);
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     const options = {};
     for (const name in this.props.additionalOptions) {
       options[name] = true;
@@ -56,7 +68,9 @@ class FileDialogComponent extends _reactForAtom.React.Component {
 
   componentDidMount() {
     const input = this.refs.input;
-    this._subscriptions.add(atom.commands.add(_reactForAtom.ReactDOM.findDOMNode(input), {
+    this._disposables.add(atom.commands.add(
+    // $FlowFixMe
+    _reactDom.default.findDOMNode(input), {
       'core:confirm': this._confirm,
       'core:cancel': this._close
     }));
@@ -72,21 +86,21 @@ class FileDialogComponent extends _reactForAtom.React.Component {
   }
 
   componentWillUnmount() {
-    this._subscriptions.dispose();
+    this._disposables.dispose();
     document.removeEventListener('mousedown', this._handleDocumentMouseDown);
   }
 
   render() {
     let labelClassName;
     if (this.props.iconClassName != null) {
-      labelClassName = `icon ${ this.props.iconClassName }`;
+      labelClassName = `icon ${this.props.iconClassName}`;
     }
 
     const checkboxes = [];
     for (const name in this.props.additionalOptions) {
       const message = this.props.additionalOptions[name];
       const checked = this.state.options[name];
-      const checkbox = _reactForAtom.React.createElement((_Checkbox || _load_Checkbox()).Checkbox, {
+      const checkbox = _react.default.createElement((_Checkbox || _load_Checkbox()).Checkbox, {
         key: name,
         checked: checked,
         onChange: this._handleAdditionalOptionChanged.bind(this, name),
@@ -100,18 +114,15 @@ class FileDialogComponent extends _reactForAtom.React.Component {
     // tree-view.
     //
     // [1] https://github.com/atom/tree-view/blob/v0.200.0/lib/dialog.coffee#L7
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'tree-view-dialog', ref: 'dialog' },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'label',
         { className: labelClassName },
         this.props.message
       ),
-      _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
-        initialValue: this.props.initialValue,
-        ref: 'input'
-      }),
+      _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, { initialValue: this.props.initialValue, ref: 'input' }),
       checkboxes
     );
   }
@@ -122,29 +133,31 @@ class FileDialogComponent extends _reactForAtom.React.Component {
     this.setState({ options });
   }
 
-  _handleDocumentMouseDown(event) {
+}
+exports.default = FileDialogComponent;
+FileDialogComponent.defaultProps = {
+  additionalOptions: {}
+};
+
+var _initialiseProps = function () {
+  this._handleDocumentMouseDown = event => {
     const dialog = this.refs.dialog;
     // If the click did not happen on the dialog or on any of its descendants,
     // the click was elsewhere on the document and should close the modal.
     if (event.target !== dialog && !dialog.contains(event.target)) {
       this._close();
     }
-  }
+  };
 
-  _confirm() {
+  this._confirm = () => {
     this.props.onConfirm(this.refs.input.getText(), this.state.options);
     this._close();
-  }
+  };
 
-  _close() {
+  this._close = () => {
     if (!this._isClosed) {
       this._isClosed = true;
       this.props.onClose();
     }
-  }
-}FileDialogComponent.defaultProps = {
-  additionalOptions: {}
+  };
 };
-
-
-module.exports = FileDialogComponent;

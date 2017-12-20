@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,7 +8,7 @@ exports.LogTailer = undefined;
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _nuclideAnalytics;
@@ -26,13 +17,19 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+
+var _ConsoleContainer;
+
+function _load_ConsoleContainer() {
+  return _ConsoleContainer = require('./ui/ConsoleContainer');
+}
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -54,10 +51,9 @@ class LogTailer {
     this._eventNames = options.trackingEvents;
     this._errorHandler = options.handleError;
     const messages = options.messages.share();
-    this._ready = options.ready == null ? null
-    // Guard against a never-ending ready stream.
+    this._ready = options.ready == null ? null : // Guard against a never-ending ready stream.
     // $FlowFixMe: Add `materialize()` to Rx defs
-    : options.ready.takeUntil(messages.materialize().takeLast(1));
+    options.ready.takeUntil(messages.materialize().takeLast(1));
     this._runningCallbacks = [];
     this._startCount = 0;
     this._statuses = new _rxjsBundlesRxMinJs.BehaviorSubject('stopped');
@@ -70,7 +66,7 @@ class LogTailer {
         this._stop();
       }
     }).catch(err => {
-      (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error(`Error with ${ this._name } tailer.`, err);
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-console').error(`Error with ${this._name} tailer.`, err);
       const wasStarting = this._statuses.getValue() === 'starting';
       this._stop(false);
 
@@ -91,12 +87,12 @@ class LogTailer {
 
       if (!errorWasHandled) {
         // Default error handling.
-        const message = `An unexpected error occurred while running the ${ this._name } process` + (err.message ? `:\n\n**${ err.message }**` : '.');
+        const message = `An unexpected error occurred while running the ${this._name} process` + (err.message ? `:\n\n**${err.message}**` : '.');
         const notification = atom.notifications.addError(message, {
           dismissable: true,
           detail: err.stack == null ? '' : err.stack.toString(),
           buttons: [{
-            text: `Restart ${ this._name }`,
+            text: `Restart ${this._name}`,
             className: 'icon icon-sync',
             onDidClick: () => {
               notification.dismiss();
@@ -166,7 +162,8 @@ class LogTailer {
   }
 
   _start(trackCall) {
-    atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-console:toggle', { visible: true });
+    // eslint-disable-next-line nuclide-internal/atom-apis
+    atom.workspace.open((_ConsoleContainer || _load_ConsoleContainer()).WORKSPACE_VIEW_URI);
 
     const currentStatus = this._statuses.getValue();
     if (currentStatus === 'starting') {
@@ -219,13 +216,22 @@ class LogTailer {
   getMessages() {
     return this._messages;
   }
-
 }
 
-exports.LogTailer = LogTailer;
+exports.LogTailer = LogTailer; /**
+                                * Copyright (c) 2015-present, Facebook, Inc.
+                                * All rights reserved.
+                                *
+                                * This source code is licensed under the license found in the LICENSE file in
+                                * the root directory of this source tree.
+                                *
+                                * 
+                                * @format
+                                */
+
 class ProcessCancelledError extends Error {
   constructor(logProducerName) {
-    super(`${ logProducerName } was stopped`);
+    super(`${logProducerName} was stopped`);
     this.name = 'ProcessCancelledError';
   }
 }

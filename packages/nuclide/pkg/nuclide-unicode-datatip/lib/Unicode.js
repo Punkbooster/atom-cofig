@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -15,11 +6,21 @@ Object.defineProperty(exports, "__esModule", {
 exports.zeroPaddedHex = zeroPaddedHex;
 exports.decodeSurrogateCodePoints = decodeSurrogateCodePoints;
 exports.extractCodePoints = extractCodePoints;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
-const HIGH_SURROGATE_START = 0xD800;
-const HIGH_SURROGATE_END = 0xDBFF;
-const LOW_SURROGATE_START = 0xDC00;
-const LOW_SURROGATE_END = 0xDFFF;
+const HIGH_SURROGATE_START = 0xd800;
+const HIGH_SURROGATE_END = 0xdbff;
+const LOW_SURROGATE_START = 0xdc00;
+const LOW_SURROGATE_END = 0xdfff;
 
 function zeroPaddedHex(codePoint, len) {
   const codePointHex = codePoint.toString(16).toUpperCase();

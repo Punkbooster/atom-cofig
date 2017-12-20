@@ -1,6 +1,15 @@
 {
   "menu": [
     {
+      "label": "View",
+      "submenu": [
+        {
+          "label": "Toggle Debugger",
+          "command": "nuclide-debugger:toggle"
+        }
+      ]
+    },
+    {
       "label": "Nuclide",
       "submenu": [
         {
@@ -15,15 +24,23 @@
               "command": "nuclide-debugger:hide"
             },
             {
-              "label": "Toggle",
-              "command": "nuclide-debugger:toggle"
+              "label": "Reset layout",
+              "command": "nuclide-debugger:reset-layout"
             },
             {
-              "label": "Launch/Attach...",
-              "command": "nuclide-debugger:toggle-launch-attach"
+              "label": "Attach debugger...",
+              "command": "nuclide-debugger:show-attach-dialog"
             },
             {
-              "label": "Stop Debugging",
+              "label": "Launch debugger...",
+              "command": "nuclide-debugger:show-launch-dialog"
+            },
+            {
+              "label": "Restart debugger",
+              "command": "nuclide-debugger:restart-debugging"
+            },
+            {
+              "label": "Detach debugger",
               "command": "nuclide-debugger:stop-debugging"
             },
             {
@@ -31,8 +48,32 @@
               "command": "nuclide-debugger:continue-debugging"
             },
             {
+              "label": "Continue to Location",
+              "command": "nuclide-debugger:run-to-location"
+            },
+            {
+              "label": "Edit Breakpoint",
+              "command": "nuclide-debugger:edit-breakpoint"
+            },
+            {
               "label": "Toggle Breakpoint",
               "command": "nuclide-debugger:toggle-breakpoint"
+            },
+            {
+              "label": "Toggle Breakpoint enabled/disabled",
+              "command": "nuclide-debugger:toggle-breakpoint-enabled"
+            },
+            {
+              "label": "Enable All Breakpoints",
+              "command": "nuclide-debugger:enable-all-breakpoints"
+            },
+            {
+              "label": "Disable All Breakpoints",
+              "command": "nuclide-debugger:disable-all-breakpoints"
+            },
+            {
+              "label": "Remove Breakpoint",
+              "command": "nuclide-debugger:remove-breakpoint"
             },
             {
               "label": "Remove All Breakpoints",

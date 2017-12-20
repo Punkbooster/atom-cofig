@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -33,10 +24,10 @@ function _load_nuclideHgRepositoryClient() {
   return _nuclideHgRepositoryClient = require('../../nuclide-hg-repository-client');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _nuclideSourceControlHelpers;
@@ -45,7 +36,18 @@ function _load_nuclideSourceControlHelpers() {
   return _nuclideSourceControlHelpers = require('../../nuclide-source-control-helpers');
 }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-hg-repository');
 
 /**
  * @param directory Either a RemoteDirectory or Directory we are interested in.
@@ -98,7 +100,7 @@ class HgRepositoryProvider {
   }
 
   repositoryForDirectorySync(directory) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('hg-repository.repositoryForDirectorySync', () => {
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('hg-repository.repositoryForDirectorySync', () => {
       try {
         const repositoryDescription = getRepositoryDescription(directory);
         if (!repositoryDescription) {
@@ -112,12 +114,7 @@ class HgRepositoryProvider {
           workingDirectoryLocalPath
         } = repositoryDescription;
 
-        const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getServiceByNuclideUri)('HgService', directory.getPath());
-
-        if (!service) {
-          throw new Error('Invariant violation: "service"');
-        }
-
+        const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getHgServiceByNuclideUri)(directory.getPath());
         const hgService = new service.HgService(workingDirectoryLocalPath);
         return new (_nuclideHgRepositoryClient || _load_nuclideHgRepositoryClient()).HgRepositoryClient(repoPath, hgService, {
           workingDirectory,
@@ -132,4 +129,3 @@ class HgRepositoryProvider {
   }
 }
 exports.default = HgRepositoryProvider;
-module.exports = exports['default'];

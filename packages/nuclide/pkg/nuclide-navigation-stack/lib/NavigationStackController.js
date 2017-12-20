@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,13 +10,13 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 var _textEditor;
 
 function _load_textEditor() {
-  return _textEditor = require('../../commons-atom/text-editor');
+  return _textEditor = require('nuclide-commons-atom/text-editor');
 }
 
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
 var _NavigationStack;
@@ -37,7 +28,7 @@ function _load_NavigationStack() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _Location;
@@ -49,6 +40,17 @@ function _load_Location() {
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 function log(message) {}
 // Uncomment this to debug
@@ -128,34 +130,34 @@ class NavigationStackController {
   }
 
   updatePosition(editor, newBufferPosition) {
-    log(`updatePosition ${ newBufferPosition.row }, ` + `${ newBufferPosition.column } ${ (0, (_string || _load_string()).maybeToString)(editor.getPath()) }`);
+    log(`updatePosition ${newBufferPosition.row}, ` + `${newBufferPosition.column} ${(0, (_string || _load_string()).maybeToString)(editor.getPath())}`);
 
     this._updateStackLocation(editor);
   }
 
   // scrollTop is in Pixels
   updateScroll(editor, scrollTop) {
-    log(`updateScroll ${ scrollTop } ${ (0, (_string || _load_string()).maybeToString)(editor.getPath()) }`);
+    log(`updateScroll ${scrollTop} ${(0, (_string || _load_string()).maybeToString)(editor.getPath())}`);
 
     this._updateStackLocation(editor);
   }
 
   onCreate(editor) {
-    log(`onCreate ${ (0, (_string || _load_string()).maybeToString)(editor.getPath()) }`);
+    log(`onCreate ${(0, (_string || _load_string()).maybeToString)(editor.getPath())}`);
 
     this._navigationStack.editorOpened(editor);
     this._updateStackLocation(editor);
   }
 
   onDestroy(editor) {
-    log(`onDestroy ${ (0, (_string || _load_string()).maybeToString)(editor.getPath()) }`);
+    log(`onDestroy ${(0, (_string || _load_string()).maybeToString)(editor.getPath())}`);
 
     this._navigationStack.editorClosed(editor);
   }
 
   // Open is always preceded by activate, unless opening the current file
   onOpen(editor) {
-    log(`onOpen ${ (0, (_string || _load_string()).maybeToString)(editor.getPath()) }`);
+    log(`onOpen ${(0, (_string || _load_string()).maybeToString)(editor.getPath())}`);
 
     // Hack alert, an atom.workspace.open of a location in the current editor,
     // we get the location update before the onDidOpen event, and we don't get
@@ -172,18 +174,18 @@ class NavigationStackController {
   }
 
   onActivate(editor) {
-    log(`onActivate ${ (0, (_string || _load_string()).maybeToString)(editor.getPath()) }`);
+    log(`onActivate ${(0, (_string || _load_string()).maybeToString)(editor.getPath())}`);
     this._inActivate = true;
     this._updateStackLocation(editor);
   }
 
   onActiveStopChanging(editor) {
-    log(`onActivePaneStopChanging ${ (0, (_string || _load_string()).maybeToString)(editor.getPath()) }`);
+    log(`onActivePaneStopChanging ${(0, (_string || _load_string()).maybeToString)(editor.getPath())}`);
     this._inActivate = false;
   }
 
   onOptInNavigation(editor) {
-    log(`onOptInNavigation ${ (0, (_string || _load_string()).maybeToString)(editor.getPath()) }`);
+    log(`onOptInNavigation ${(0, (_string || _load_string()).maybeToString)(editor.getPath())}`);
     // Opt-in navigation is handled in the same way as a file open with no preceeding activation
     this.onOpen(editor);
   }
@@ -191,7 +193,7 @@ class NavigationStackController {
   // When closing a project path, we remove all stack entries contained in that
   // path which are not also contained in a project path which is remaining open.
   removePath(removedPath, remainingDirectories) {
-    log(`Removing path ${ removedPath } remaining: ${ JSON.stringify(remainingDirectories) }`);
+    log(`Removing path ${removedPath} remaining: ${JSON.stringify(remainingDirectories)}`);
     this._navigationStack.filter(location => {
       const uri = (0, (_Location || _load_Location()).getPathOfLocation)(location);
       return uri == null || !(_nuclideUri || _load_nuclideUri()).default.contains(removedPath, uri) || remainingDirectories.find(directory => (_nuclideUri || _load_nuclideUri()).default.contains(directory, uri)) != null;
@@ -215,7 +217,7 @@ class NavigationStackController {
         const editor = yield (0, (_Location || _load_Location()).editorOfLocation)(location);
         // Note that this will not actually update the scroll position
         // The scroll position update will happen on the next tick.
-        log(`navigating to: ${ location.scrollTop } ${ JSON.stringify(location.bufferPosition) }`);
+        log(`navigating to: ${location.scrollTop} ${JSON.stringify(location.bufferPosition)}`);
         (0, (_textEditor || _load_textEditor()).setPositionAndScroll)(editor, location.bufferPosition, location.scrollTop);
       } finally {
         _this._isNavigating = false;

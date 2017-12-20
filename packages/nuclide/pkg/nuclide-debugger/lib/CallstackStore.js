@@ -1,24 +1,21 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _DebuggerStore;
+
+function _load_DebuggerStore() {
+  return _DebuggerStore = require('./DebuggerStore');
+}
 
 var _atom = require('atom');
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _DebuggerDispatcher;
@@ -27,19 +24,31 @@ function _load_DebuggerDispatcher() {
   return _DebuggerDispatcher = require('./DebuggerDispatcher');
 }
 
+var _debounce;
+
+function _load_debounce() {
+  return _debounce = _interopRequireDefault(require('nuclide-commons/debounce'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class CallstackStore {
 
-  constructor(dispatcher) {
+  constructor(dispatcher, debuggerStore) {
     const dispatcherToken = dispatcher.register(this._handlePayload.bind(this));
     this._disposables = new _atom.CompositeDisposable(new _atom.Disposable(() => {
       dispatcher.unregister(dispatcherToken);
     }));
+    this._debuggerStore = debuggerStore;
     this._callstack = null;
     this._selectedCallFrameIndex = 0;
     this._selectedCallFrameMarker = null;
     this._emitter = new _atom.Emitter();
+
+    // Debounce calls to _openPathInEditor to work around an Atom bug that causes
+    // two editor windows to be opened if multiple calls to atom.workspace.open
+    // are made close together, even if {searchAllPanes: true} is set.
+    this._openPathInEditor = (0, (_debounce || _load_debounce()).default)(this._openPathInEditor, 100, true);
   }
 
   _handlePayload(payload) {
@@ -77,13 +86,25 @@ class CallstackStore {
   }
 
   _openSourceLocation(sourceURL, lineNumber) {
-    const path = (_nuclideUri || _load_nuclideUri()).default.uriToNuclideUri(sourceURL);
-    if (path != null && atom.workspace != null) {
-      // only handle real files for now.
-      atom.workspace.open(path, { searchAllPanes: true }).then(editor => {
-        this._nagivateToLocation(editor, lineNumber);
-      });
-    }
+    try {
+      const path = (_nuclideUri || _load_nuclideUri()).default.uriToNuclideUri(sourceURL);
+      if (path != null && atom.workspace != null) {
+        // only handle real files for now.
+        // This should be goToLocation instead but since the searchAllPanes option is correctly
+        // provided it's not urgent.
+        this._openPathInEditor(path).then(editor => {
+          this._nagivateToLocation(editor, lineNumber);
+        });
+      }
+    } catch (e) {}
+  }
+
+  _openPathInEditor(path) {
+    // eslint-disable-next-line nuclide-internal/atom-apis
+    return atom.workspace.open(path, {
+      searchAllPanes: true,
+      pending: true
+    });
   }
 
   _nagivateToLocation(editor, line) {
@@ -103,7 +124,9 @@ class CallstackStore {
       const { lineNumber } = options;
       if (path != null && atom.workspace != null) {
         // only handle real files for now
-        atom.workspace.open(path, { searchAllPanes: true }).then(editor => {
+        // This should be goToLocation instead but since the searchAllPanes option is correctly
+        // provided it's not urgent.
+        this._openPathInEditor(path).then(editor => {
           this._clearSelectedCallFrameMarker();
           this._highlightCallFrameLine(editor, lineNumber);
           this._nagivateToLocation(editor, lineNumber);
@@ -115,7 +138,9 @@ class CallstackStore {
   }
 
   _highlightCallFrameLine(editor, line) {
-    const marker = editor.markBufferRange([[line, 0], [line, Infinity]], { invalidate: 'never' });
+    const marker = editor.markBufferRange([[line, 0], [line, Infinity]], {
+      invalidate: 'never'
+    });
     editor.decorateMarker(marker, {
       type: 'line',
       class: 'nuclide-current-line-highlight'
@@ -142,10 +167,22 @@ class CallstackStore {
     return this._selectedCallFrameIndex;
   }
 
+  getDebuggerStore() {
+    return this._debuggerStore;
+  }
+
   dispose() {
     this._clearSelectedCallFrameMarker();
     this._disposables.dispose();
   }
 }
-exports.default = CallstackStore;
-module.exports = exports['default'];
+exports.default = CallstackStore; /**
+                                   * Copyright (c) 2015-present, Facebook, Inc.
+                                   * All rights reserved.
+                                   *
+                                   * This source code is licensed under the license found in the LICENSE file in
+                                   * the root directory of this source tree.
+                                   *
+                                   * 
+                                   * @format
+                                   */

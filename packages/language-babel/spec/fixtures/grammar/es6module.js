@@ -1,5 +1,21 @@
 // SYNTAX TEST "source.js.jsx"
 
+import(moduleSpecifier).then(someModule => someModule.foo());
+// <- meta.function-call.with-arguments.js keyword.control.module.js
+ // <- meta.function-call.with-arguments.js keyword.control.module.js
+//^^^^^^^^^^^^^^^^^^^^^                                        meta.function-call.with-arguments.js
+//^^^^                                                         keyword.control.module.js
+//    ^               ^     ^                            ^^^   meta.brace.round.js
+//     ^^^^^^^^^^^^^^^       ^^^^^^^^^^                        variable.other.readwrite.js
+//                     ^                             ^         keyword.operator.accessor.js
+//                      ^^^^^^^^^^^^^^^ ^^ ^^^^^^^^^^^^^^^^^   meta.method-call.with-arguments.js
+//                      ^^^^                          ^^^      entity.name.function.js
+//                           ^^^^^^^^^^ ^^                     meta.function.arrow.js
+//                                      ^^                     storage.type.function.arrow.js
+//                                         ^^^^^^^^^^          variable.other.object.js
+//                                                    ^^^^^    meta.method-call.without-arguments.js
+//                                                          ^  punctuation.terminator.statement.js
+
 import defaultMember from "module-name"
 // <- keyword.control.module.js
  // <- keyword.control.module.js
@@ -102,6 +118,18 @@ import type {UserID, User} , typeof something from "module-name"
 //                                                  ^^^^^^^^^^^   string.quoted.module.js
 //                                                             ^  punctuation.definition.string.end.js
 
+import {someValue, type someType, typeof someOtherValue} from 'foo'
+// <- keyword.control.module.js
+ // <- keyword.control.module.js
+//^^^^                                                   ^^^^        keyword.control.module.js
+//     ^                                               ^             meta.brace.curly.js
+//      ^^^^^^^^^       ^^^^^^^^         ^^^^^^^^^^^^^^              variable.other.readwrite.js
+//               ^              ^                                    meta.delimiter.comma.js
+//                 ^^^^           ^^^^^^                             keyword.other.typedef.flowtype
+//                                                            ^      punctuation.definition.string.begin.js
+//                                                             ^^^   string.quoted.module.js
+//                                                                ^  punctuation.definition.string.end.js
+
 import defaultMember
 // <- keyword.control.module.js
  // <- keyword.control.module.js
@@ -189,8 +217,8 @@ export let name1: {a: string} = {a: "aaa"}
 //                    ^^^^^^                support.type.builtin.primitive.flowtype
 //                          ^               meta.brace.curly.close.flowtype
 //                            ^             keyword.operator.assignment.js
-//                              ^        ^  meta.brace.curly.js
-//                               ^^         constant.other.object.key.js
+//                              ^        ^  meta.brace.curly.litobj.js
+//                               ^          constant.other.object.key.js
 //                               ^          string.unquoted.js
 //                                ^         punctuation.separator.key-value.js
 //                                  ^^^^^   string.quoted.double.js

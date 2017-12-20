@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,13 +9,13 @@ exports.DropdownButton = DropdownButton;
 var _Button;
 
 function _load_Button() {
-  return _Button = require('./Button');
+  return _Button = require('nuclide-commons-ui/Button');
 }
 
 var _Icon;
 
 function _load_Icon() {
-  return _Icon = require('./Icon');
+  return _Icon = require('nuclide-commons-ui/Icon');
 }
 
 var _classnames;
@@ -35,11 +26,23 @@ function _load_classnames() {
 
 var _electron = _interopRequireDefault(require('electron'));
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const { remote } = _electron.default;
+
 if (!(remote != null)) {
   throw new Error('Invariant violation: "remote != null"');
 }
@@ -47,17 +50,32 @@ if (!(remote != null)) {
 // For backwards compat, we have to do some conversion here.
 
 
-class Dropdown extends _reactForAtom.React.Component {
+class Dropdown extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
 
-  constructor(props) {
-    super(props);
-    this._handleDropdownClick = this._handleDropdownClick.bind(this);
+    return _temp = super(...args), this._handleDropdownClick = event => {
+      const currentWindow = remote.getCurrentWindow();
+      const menu = this._menuFromOptions(this.props.options);
+      menu.popup(currentWindow, event.clientX, event.clientY);
+    }, _temp;
   }
 
   render() {
-    const selectedOption = this.props.options.find(option => option.type !== 'separator' && option.value === this.props.value) || this.props.options[0];
+    const selectedOption = this._findSelectedOption(this.props.options);
 
-    return _reactForAtom.React.createElement(
+    let selectedLabel;
+    if (selectedOption == null) {
+      if (this.props.placeholder != null) {
+        selectedLabel = this.props.placeholder;
+      } else {
+        selectedLabel = this._renderSelectedLabel(this.props.options[0]);
+      }
+    } else {
+      selectedLabel = this._renderSelectedLabel(selectedOption);
+    }
+
+    return _react.default.createElement(
       DropdownButton,
       {
         className: this.props.className,
@@ -68,7 +86,7 @@ class Dropdown extends _reactForAtom.React.Component {
         onExpand: this._handleDropdownClick,
         size: this.props.size,
         tooltip: this.props.tooltip },
-      this._renderSelectedLabel(selectedOption)
+      selectedLabel
     );
   }
 
@@ -88,29 +106,58 @@ class Dropdown extends _reactForAtom.React.Component {
     return text;
   }
 
-  _handleDropdownClick(event) {
-    const currentWindow = remote.getCurrentWindow();
+  _menuFromOptions(options) {
     const menu = new remote.Menu();
-    this.props.options.forEach(option => {
+    options.forEach(option => {
       if (option.type === 'separator') {
         menu.append(new remote.MenuItem({ type: 'separator' }));
-        return;
-      }
-      menu.append(new remote.MenuItem({
-        type: 'checkbox',
-        checked: this.props.value === option.value,
-        label: option.label,
-        enabled: option.disabled !== true,
-        click: () => {
-          if (this.props.onChange != null) {
-            this.props.onChange(option.value);
+      } else if (option.type === 'submenu') {
+        const submenu = option.submenu;
+        menu.append(new remote.MenuItem({
+          type: 'submenu',
+          label: option.label,
+          enabled: option.disabled !== true,
+          submenu: this._menuFromOptions(submenu)
+        }));
+      } else {
+        menu.append(new remote.MenuItem({
+          type: 'checkbox',
+          checked: this._optionIsSelected(this.props.value, option.value),
+          label: option.label,
+          enabled: option.disabled !== true,
+          click: () => {
+            if (this.props.onChange != null) {
+              this.props.onChange(option.value);
+            }
           }
-        }
-      }));
+        }));
+      }
     });
-    menu.popup(currentWindow, event.clientX, event.clientY);
+    return menu;
   }
 
+  _optionIsSelected(dropdownValue, optionValue) {
+    return this.props.selectionComparator ? this.props.selectionComparator(dropdownValue, optionValue) : dropdownValue === optionValue;
+  }
+
+  _findSelectedOption(options) {
+    let result = null;
+    for (const option of options) {
+      if (option.type === 'separator') {
+        continue;
+      } else if (option.type === 'submenu') {
+        const submenu = option.submenu;
+        result = this._findSelectedOption(submenu);
+      } else if (this._optionIsSelected(this.props.value, option.value)) {
+        result = option;
+      }
+
+      if (result) {
+        break;
+      }
+    }
+    return result;
+  }
 }
 
 exports.Dropdown = Dropdown;
@@ -136,13 +183,13 @@ function DropdownButton(props) {
     'nuclide-ui-dropdown-flat': props.isFlat === true
   });
 
-  const label = props.children == null ? null : _reactForAtom.React.createElement(
+  const label = props.children == null ? null : _react.default.createElement(
     'span',
     { className: 'nuclide-dropdown-label-text-wrapper' },
     props.children
   );
 
-  return _reactForAtom.React.createElement(
+  return _react.default.createElement(
     ButtonComponent,
     {
       tooltip: props.tooltip,
@@ -151,10 +198,7 @@ function DropdownButton(props) {
       disabled: props.disabled === true,
       onClick: props.onExpand || noop },
     label,
-    _reactForAtom.React.createElement((_Icon || _load_Icon()).Icon, {
-      icon: 'triangle-down',
-      className: 'nuclide-ui-dropdown-icon'
-    })
+    _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: 'triangle-down', className: 'nuclide-ui-dropdown-icon' })
   );
 }
 

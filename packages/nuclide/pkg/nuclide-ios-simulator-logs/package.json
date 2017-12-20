@@ -4,7 +4,7 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "A nuclide-output provider for iOS Simulator logs",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
     "testRunner": "apm",
@@ -41,7 +41,7 @@
       "whitelistedTags": {
         "title": "Tags to include",
         "description": "Messages that don't have tags that match this pattern will be ignored.",
-        "default": "^(core\\.react|tid:com\\.facebook\\.react\\.JavaScript)$",
+        "default": "^(core\\.react|tid:com\\.facebook\\.react\\.JavaScript|com.apple.console)$",
         "type": "string"
       }
     }

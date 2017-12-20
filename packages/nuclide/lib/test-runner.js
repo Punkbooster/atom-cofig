@@ -1,16 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-// This file is transpiled by Atom - not by nuclide-node-transpiler.
-// `require` is used here to avoid `import` hoisting load other issues.
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,32 +6,55 @@ Object.defineProperty(exports, "__esModule", {
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+var _console = require('console');
+
+var _electron = _interopRequireDefault(require('electron'));
+
+var _fs = _interopRequireDefault(require('fs'));
+
+var _path = _interopRequireDefault(require('path'));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const invariant = require('assert');
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const { ipcRenderer } = _electron.default;
+
+// eslint-disable-next-line nuclide-internal/prefer-nuclide-uri
+
+if (!(ipcRenderer != null)) {
+  throw new Error('Invariant violation: "ipcRenderer != null"');
+}
 
 // When chromiums verbosity is off, patch `console` to output through the main
 // process. `--v=-3` is used by the CI.
-if (process.argv.indexOf('--v=-3')) {
-  const { Console } = require('console');
-  const electron = require('electron');
-  const { ipcRenderer } = electron;
-  invariant(ipcRenderer != null);
+
+
+if (process.argv.includes('--v=-3')) {
   // https://github.com/nodejs/node/blob/v5.1.1/lib/console.js
-  global.console = new Console(
-  /* stdout */{ write(chunk) {
+  global.console = new _console.Console(
+  /* stdout */{
+    write(chunk) {
       ipcRenderer.send('write-to-stdout', chunk);
-    } },
-  /* stderr */{ write(chunk) {
+    }
+  },
+  /* stderr */{
+    write(chunk) {
       ipcRenderer.send('write-to-stderr', chunk);
-    } });
+    }
+  });
 }
 
-require('../pkg/nuclide-node-transpiler');
-
-const fs = require('fs');
-const path = require('path');
-const integrationTestsDir = path.join(__dirname, '../spec');
+const integrationTestsDir = _path.default.join(__dirname, '../spec');
 
 exports.default = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (params) {
@@ -55,9 +66,9 @@ exports.default = (() => {
     // It's assumed that all of the tests belong to the same package.
     const pkg = getPackage(params.testPaths[0]);
     if (pkg == null) {
-      throw new Error(`Couldn't find a parent "package.json" for ${ params.testPaths[0] }`);
+      throw new Error(`Couldn't find a parent "package.json" for ${params.testPaths[0]}`);
     }
-    const nuclideConfig = pkg.nuclide && pkg.nuclide.config;
+    const nuclideConfig = pkg.atomConfig || pkg.nuclide && pkg.nuclide.config;
 
     const statusCode = yield params.legacyTestRunner({
       logFile: params.logFile,
@@ -65,6 +76,11 @@ exports.default = (() => {
       testPaths: params.testPaths,
       buildAtomEnvironment(buildEnvParams) {
         const atomGlobal = params.buildAtomEnvironment(buildEnvParams);
+
+        if (typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__ === 'undefined') {
+          // circumvent React Dev Tools console warning
+          window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {};
+        }
 
         if (isIntegrationTest) {
           jasmine.getEnv().beforeEach(() => {
@@ -83,7 +99,7 @@ exports.default = (() => {
 
           jasmine.getEnv().afterEach(() => {
             if (atomGlobal.confirm.calls.length) {
-              const details = atomGlobal.confirm.argsForCall.map((args, i) => `call #${ i } with ${ JSON.stringify(args) }`);
+              const details = atomGlobal.confirm.argsForCall.map((args, i) => `call #${i} with ${JSON.stringify(args)}`);
               throw new Error('atom.confirm was called.\n' + details);
             }
           });
@@ -95,7 +111,7 @@ exports.default = (() => {
             // and it doesn't load for unit tests, it's necessary to manually
             // construct any default config that they define.
             Object.keys(nuclideConfig).forEach(key => {
-              atomGlobal.config.setSchema(`nuclide.${ pkg.name }.${ key }`, nuclideConfig[key]);
+              atomGlobal.config.setSchema(`${pkg.name}.${key}`, nuclideConfig[key]);
             });
           });
         }
@@ -105,15 +121,21 @@ exports.default = (() => {
     });
 
     yield new Promise(function (resolve) {
-      // Atom intercepts "process.exit" so we have to do our own manual cleanup.
       const temp = require('temp');
-      temp.cleanup(function (err, stats) {
+      if (statusCode === 0) {
+        // Atom intercepts "process.exit" so we have to do our own manual cleanup.
+        temp.cleanup(function (err, stats) {
+          resolve();
+          if (err && err.message !== 'not tracking') {
+            // eslint-disable-next-line no-console
+            console.log(`temp.cleanup() failed. ${err}`);
+          }
+        });
+      } else {
+        // When the test fails, we keep the temp contents for debugging.
+        temp.track(false);
         resolve();
-        if (err && err.message !== 'not tracking') {
-          // eslint-disable-next-line no-console
-          console.log(`temp.cleanup() failed. ${ err }`);
-        }
-      });
+      }
     });
 
     return statusCode;
@@ -125,13 +147,13 @@ exports.default = (() => {
 })();
 
 function getPackage(start) {
-  let current = path.resolve(start);
+  let current = _path.default.resolve(start);
   while (true) {
-    const filename = path.join(current, 'package.json');
-    if (fs.existsSync(filename)) {
-      return JSON.parse(fs.readFileSync(filename, 'utf8'));
+    const filename = _path.default.join(current, 'package.json');
+    if (_fs.default.existsSync(filename)) {
+      return JSON.parse(_fs.default.readFileSync(filename, 'utf8'));
     } else {
-      const next = path.join(current, '..');
+      const next = _path.default.join(current, '..');
       if (next === current) {
         return null;
       } else {
@@ -140,4 +162,3 @@ function getPackage(start) {
     }
   }
 }
-module.exports = exports['default'];

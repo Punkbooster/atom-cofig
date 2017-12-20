@@ -13,7 +13,6 @@
 .tree-view {
   flex-grow: 1;
   flex-shrink: 0;
-  min-width: min-content;
   min-height: min-content; // Switched from tree-view's `100%` to fill height of scroller.
   padding-left: @component-icon-padding;
   padding-right: @component-padding;
@@ -25,6 +24,7 @@
   }
 
   .list-tree {
+    min-width: min-content;
     position: static;
   }
 
@@ -75,8 +75,8 @@
 }
 
 .nuclide-file-tree-entry-highlight {
-  background: @background-color-highlight;
-  border-radius: @component-border-radius;
+  color: @text-color-highlight;
+  font-weight: bold;
 }
 
 .nuclide-file-tree-fixed {
@@ -116,23 +116,32 @@
   opacity: 0.4;
 }
 
-.nuclide-file-tree-toolbar-icon:before,
-.nuclide-file-tree-toolbar-icon {
-  margin-right: 0;
+
+.nuclide-file-tree-locked-height {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
 }
 
 .nuclide-file-tree-working-set-name-missing {
   visibility: hidden;
 }
 
-.nuclide-file-tree-toolbar-icon:hover +
-.nuclide-file-tree-working-set-name-missing {
-  visibility: visible;
-}
-
 // matches the margin in .inline-block-tight
 .nuclide-file-tree-connection-title {
   margin-left: @component-padding/2;
+}
+
+.nuclide-file-tree-open-files-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.nuclide-file-tree-open-files-section > .nuclide-ui-section-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .nuclide-file-tree-open-files {
@@ -141,8 +150,6 @@
 }
 
 .nuclide-file-tree-open-files-list {
-  padding-left: @component-icon-padding;
-  padding-right: @component-padding;
   position: relative;
   width: 100%;
 
@@ -153,8 +160,8 @@
   .icon-primitive-dot:before,
   .icon-x:before {
     font-size: 12px;
-    height: 12px;
-    width: 12px;
+    height: @component-icon-size;
+    width: @component-icon-size;
   }
 }
 
@@ -166,6 +173,10 @@
 .nuclide-file-tree-section-caption {
   padding-left: 5px;
   padding-right: 5px;
+}
+
+.nuclide-file-tree-spinner {
+  position: absolute;
 }
 
 .nuclide-file-tree-sidebar-uncommitted-changes {

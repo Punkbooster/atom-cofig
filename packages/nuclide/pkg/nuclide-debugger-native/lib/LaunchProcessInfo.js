@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -37,7 +28,7 @@ function _load_utils() {
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -49,8 +40,22 @@ class LaunchProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBa
     this._launchTargetInfo = launchTargetInfo;
   }
 
-  supportThreads() {
-    return true;
+  clone() {
+    return new LaunchProcessInfo(this._targetUri, this._launchTargetInfo);
+  }
+
+  getDebuggerCapabilities() {
+    return Object.assign({}, super.getDebuggerCapabilities(), {
+      conditionalBreakpoints: true,
+      continueToLocation: true,
+      readOnlyTarget: this._launchTargetInfo.coreDump != null && this._launchTargetInfo.coreDump !== '',
+      singleThreadStepping: true,
+      threads: true
+    });
+  }
+
+  getDebuggerProps() {
+    return super.getDebuggerProps();
   }
 
   debug() {
@@ -83,10 +88,6 @@ class LaunchProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBa
     })();
   }
 
-  supportSingleThreadStepping() {
-    return true;
-  }
-
   getDebuggerConfig() {
     return {
       logLevel: (0, (_utils || _load_utils()).getConfig)().serverLogLevel,
@@ -108,4 +109,13 @@ class LaunchProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBa
     return new service.NativeDebuggerService(debuggerConfig);
   }
 }
-exports.LaunchProcessInfo = LaunchProcessInfo;
+exports.LaunchProcessInfo = LaunchProcessInfo; /**
+                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                * All rights reserved.
+                                                *
+                                                * This source code is licensed under the license found in the LICENSE file in
+                                                * the root directory of this source tree.
+                                                *
+                                                * 
+                                                * @format
+                                                */

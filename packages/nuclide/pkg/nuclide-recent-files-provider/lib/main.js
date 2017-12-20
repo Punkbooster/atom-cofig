@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -23,9 +14,17 @@ function _load_RecentFilesProvider() {
 
 function registerProvider() {
   return (_RecentFilesProvider || _load_RecentFilesProvider()).RecentFilesProvider;
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 function consumeRecentFilesService(service) {
-  // $FlowFixMe
-  (_RecentFilesProvider || _load_RecentFilesProvider()).RecentFilesProvider.setRecentFilesService(service);
+  (0, (_RecentFilesProvider || _load_RecentFilesProvider()).setRecentFilesService)(service);
 }

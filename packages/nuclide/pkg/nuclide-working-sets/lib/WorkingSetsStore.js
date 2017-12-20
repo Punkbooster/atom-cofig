@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -25,7 +16,7 @@ function _load_nuclideWorkingSetsCommon() {
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _nuclideAnalytics;
@@ -34,19 +25,30 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const NEW_WORKING_SET_EVENT = 'new-working-set';
 const NEW_DEFINITIONS_EVENT = 'new-definitions';
@@ -165,11 +167,22 @@ class WorkingSetsStore {
 
     let newDefinitions;
     if (nameIndex < 0) {
-      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('working-sets-create', { name, uris: workingSet.getUris().join(',') });
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('working-sets-create', {
+        name,
+        uris: workingSet.getUris().join(',')
+      });
 
-      newDefinitions = definitions.concat({ name, uris: workingSet.getUris(), active: false });
+      newDefinitions = definitions.concat({
+        name,
+        uris: workingSet.getUris(),
+        active: false
+      });
     } else {
-      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('working-sets-update', { oldName: name, name: newName, uris: workingSet.getUris().join(',') });
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('working-sets-update', {
+        oldName: name,
+        name: newName,
+        uris: workingSet.getUris().join(',')
+      });
 
       const active = definitions[nameIndex].active;
       newDefinitions = [].concat(definitions.slice(0, nameIndex), { name: newName, uris: workingSet.getUris(), active }, definitions.slice(nameIndex + 1));
@@ -243,7 +256,7 @@ class WorkingSetsStore {
       // Apparently sometimes Atom supplies an invalid directory, or a directory with an
       // invalid paths. See https://github.com/facebook/nuclide/issues/416
       if (dir == null) {
-        const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+        const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-working-sets');
 
         logger.warn('Received a null directory from Atom');
         return false;
@@ -252,7 +265,7 @@ class WorkingSetsStore {
         (_nuclideUri || _load_nuclideUri()).default.parse(dir.getPath());
         return true;
       } catch (e) {
-        const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+        const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-working-sets');
 
         logger.warn('Failed to parse path supplied by Atom', dir.getPath());
         return false;

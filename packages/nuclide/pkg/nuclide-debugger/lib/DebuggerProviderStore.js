@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,7 +13,19 @@ function _load_DebuggerDispatcher() {
   return _DebuggerDispatcher = require('./DebuggerDispatcher');
 }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const CONNECTIONS_UPDATED_EVENT = 'CONNECTIONS_UPDATED_EVENT';
+const PROVIDERS_UPDATED_EVENT = 'PROVIDERS_UPDATED_EVENT';
 
 /**
  * Flux style store holding all data related to debugger provider.
@@ -35,7 +38,8 @@ class DebuggerProviderStore {
     this._debuggerActions = debuggerActions;
     this._emitter = new _atom.Emitter();
     this._debuggerProviders = new Set();
-    this._connections = [];
+    // There is always a local connection.
+    this._connections = ['local'];
   }
 
   _registerDispatcherEvents() {
@@ -58,6 +62,10 @@ class DebuggerProviderStore {
    */
   onConnectionsUpdated(callback) {
     return this._emitter.on(CONNECTIONS_UPDATED_EVENT, callback);
+  }
+
+  onProvidersUpdated(callback) {
+    return this._emitter.on(PROVIDERS_UPDATED_EVENT, callback);
   }
 
   getConnections() {
@@ -86,6 +94,7 @@ class DebuggerProviderStore {
           return;
         }
         this._debuggerProviders.add(payload.data);
+        this._emitter.emit(PROVIDERS_UPDATED_EVENT);
         break;
       case (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.REMOVE_DEBUGGER_PROVIDER:
         if (!this._debuggerProviders.has(payload.data)) {

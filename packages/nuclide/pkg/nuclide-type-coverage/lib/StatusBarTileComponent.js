@@ -1,31 +1,28 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.StatusBarTileComponent = undefined;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _Icon;
+
+function _load_Icon() {
+  return _Icon = require('nuclide-commons-ui/Icon');
+}
 
 var _addTooltip;
 
 function _load_addTooltip() {
-  return _addTooltip = _interopRequireDefault(require('../../nuclide-ui/add-tooltip'));
+  return _addTooltip = _interopRequireDefault(require('nuclide-commons-ui/addTooltip'));
 }
 
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 var _classnames;
@@ -36,11 +33,22 @@ function _load_classnames() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const REALLY_BAD_THRESHOLD = 50;
 const NOT_GREAT_THRESHOLD = 80;
 const COLOR_DISPLAY_SETTING = 'nuclide-type-coverage.colorizeStatusBar';
 
-class StatusBarTileComponent extends _reactForAtom.React.Component {
+class StatusBarTileComponent extends _react.default.Component {
 
   constructor(props) {
     super(props);
@@ -63,9 +71,9 @@ class StatusBarTileComponent extends _reactForAtom.React.Component {
         'nuclide-type-coverage-status-bar-pending': this.props.pending,
         'nuclide-type-coverage-status-bar-ready': !this.props.pending
       }, colorClasses));
-      const formattedPercentage = `${ Math.floor(percentage) }%`;
+      const formattedPercentage = `${Math.floor(percentage)}%`;
       const tooltipString = getTooltipString(formattedPercentage, result.providerName);
-      return _reactForAtom.React.createElement(
+      return _react.default.createElement(
         'div',
         {
           style: { cursor: 'pointer' },
@@ -76,15 +84,23 @@ class StatusBarTileComponent extends _reactForAtom.React.Component {
             delay: 0,
             placement: 'top'
           }) },
+        this._getIconElement(result.icon),
         formattedPercentage
       );
     } else {
       return null;
     }
   }
+
+  _getIconElement(icon) {
+    if (icon == null) {
+      return null;
+    }
+    return _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: icon });
+  }
 }
 
 exports.StatusBarTileComponent = StatusBarTileComponent;
 function getTooltipString(formattedPercentage, providerName) {
-  return `This file is ${ formattedPercentage } covered by ${ providerName }.<br/>` + 'Click to toggle display of uncovered areas.';
+  return `This file is ${formattedPercentage} covered by ${providerName}.<br/>` + 'Click to toggle display of uncovered areas.';
 }

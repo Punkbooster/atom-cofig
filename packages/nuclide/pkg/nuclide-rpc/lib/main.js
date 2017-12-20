@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -21,7 +12,7 @@ var _fs = _interopRequireDefault(require('fs'));
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _module = _interopRequireDefault(require('module'));
@@ -43,12 +34,23 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /** Cache for remote proxies. */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const proxiesCache = new Map();
 
 // Proxy dependencies
 function proxyFilename(definitionPath) {
   if (!(_nuclideUri || _load_nuclideUri()).default.isAbsolute(definitionPath)) {
-    throw new Error(`"${ definitionPath }" definition path must be absolute.`);
+    throw new Error(`"${definitionPath}" definition path must be absolute.`);
   }
 
   const dir = (_nuclideUri || _load_nuclideUri()).default.dirname(definitionPath);

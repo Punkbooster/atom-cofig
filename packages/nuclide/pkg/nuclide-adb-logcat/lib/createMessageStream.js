@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,13 +8,13 @@ exports.default = createMessageStream;
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _createMessage;
@@ -42,8 +33,18 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function createMessageStream(line$) {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
+function createMessageStream(line$) {
   // Separate the lines into groups, beginning with metadata lines.
   const messages = _rxjsBundlesRxMinJs.Observable.create(observer => {
     let buffer = [];
@@ -90,19 +91,16 @@ function createMessageStream(line$) {
         buffer.push(line);
       }
     },
-
     // onError
     error => {
       flush();
       observer.error(error);
     },
-
     // onCompleted
     () => {
       flush();
       observer.complete();
     }),
-
     // We know *for certain* that we have a complete entry once we see the metadata for the next
     // one. But what if the next one takes a long time to happen? After a certain point, we need
     // to just assume we have the complete entry and move on.
@@ -129,4 +127,3 @@ function filter(messages) {
     return tags.some(tag => pattern.test(tag));
   }).map(([message, pattern]) => message);
 }
-module.exports = exports['default'];

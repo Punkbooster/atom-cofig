@@ -1,38 +1,30 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.formatCode = exports.getLocalReferences = exports.getOutline = exports.getDeclarationInfo = exports.getDeclaration = exports.getCompletions = exports.ClangCursorTypes = exports.ClangCursorToDeclarationTypes = undefined;
+exports.formatCode = exports.getLocalReferences = exports.getOutline = exports.getRelatedSourceOrHeader = exports.getDeclarationInfo = exports.getDeclaration = exports.getCompletions = exports.ClangCursorTypes = exports.ClangCursorToDeclarationTypes = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 let getClangService = (() => {
-  var _ref = (0, _asyncToGenerator.default)(function* (src, contents, defaultFlags, blocking) {
-    const server = yield serverManager.getClangServer(src, contents, defaultFlags);
-    if (server == null) {
-      return null;
-    }
-    if (server.getStatus() !== (_ClangServer || _load_ClangServer()).default.Status.READY) {
+  var _ref = (0, _asyncToGenerator.default)(function* (src, contents, requestSettings, defaultFlags, blocking) {
+    const server = serverManager.getClangServer(src, contents, requestSettings, defaultFlags);
+    if (!server.isReady()) {
       if (blocking) {
         yield server.waitForReady();
       } else {
         return null;
       }
     }
+    // It's possible that the server got disposed while waiting.
+    if (server.isDisposed()) {
+      return null;
+    }
     return server.getService();
   });
 
-  return function getClangService(_x, _x2, _x3, _x4) {
+  return function getClangService(_x, _x2, _x3, _x4, _x5) {
     return _ref.apply(this, arguments);
   };
 })();
@@ -45,27 +37,27 @@ let getClangService = (() => {
 
 
 let getCompletions = exports.getCompletions = (() => {
-  var _ref3 = (0, _asyncToGenerator.default)(function* (src, contents, line, column, tokenStartColumn, prefix, defaultFlags) {
-    const service = yield getClangService(src, contents, defaultFlags);
+  var _ref3 = (0, _asyncToGenerator.default)(function* (src, contents, line, column, tokenStartColumn, prefix, requestSettings, defaultFlags) {
+    const service = yield getClangService(src, contents, requestSettings, defaultFlags);
     if (service != null) {
       return service.get_completions(contents, line, column, tokenStartColumn, prefix);
     }
   });
 
-  return function getCompletions(_x5, _x6, _x7, _x8, _x9, _x10, _x11) {
+  return function getCompletions(_x6, _x7, _x8, _x9, _x10, _x11, _x12, _x13) {
     return _ref3.apply(this, arguments);
   };
 })();
 
 let getDeclaration = exports.getDeclaration = (() => {
-  var _ref4 = (0, _asyncToGenerator.default)(function* (src, contents, line, column, defaultFlags) {
-    const service = yield getClangService(src, contents, defaultFlags);
+  var _ref4 = (0, _asyncToGenerator.default)(function* (src, contents, line, column, requestSettings, defaultFlags) {
+    const service = yield getClangService(src, contents, requestSettings, defaultFlags);
     if (service != null) {
       return service.get_declaration(contents, line, column);
     }
   });
 
-  return function getDeclaration(_x12, _x13, _x14, _x15, _x16) {
+  return function getDeclaration(_x14, _x15, _x16, _x17, _x18, _x19) {
     return _ref4.apply(this, arguments);
   };
 })();
@@ -76,54 +68,66 @@ let getDeclaration = exports.getDeclaration = (() => {
 
 
 let getDeclarationInfo = exports.getDeclarationInfo = (() => {
-  var _ref5 = (0, _asyncToGenerator.default)(function* (src, contents, line, column, defaultFlags) {
-    const service = yield getClangService(src, contents, defaultFlags);
+  var _ref5 = (0, _asyncToGenerator.default)(function* (src, contents, line, column, requestSettings, defaultFlags) {
+    const service = yield getClangService(src, contents, requestSettings, defaultFlags);
     if (service != null) {
       return service.get_declaration_info(contents, line, column);
     }
   });
 
-  return function getDeclarationInfo(_x17, _x18, _x19, _x20, _x21) {
+  return function getDeclarationInfo(_x20, _x21, _x22, _x23, _x24, _x25) {
     return _ref5.apply(this, arguments);
   };
 })();
 
+let getRelatedSourceOrHeader = exports.getRelatedSourceOrHeader = (() => {
+  var _ref6 = (0, _asyncToGenerator.default)(function* (src, requestSettings) {
+    return serverManager.getClangFlagsManager().getRelatedSourceOrHeader(src, requestSettings || { compilationDatabase: null, projectRoot: null });
+  });
+
+  return function getRelatedSourceOrHeader(_x26, _x27) {
+    return _ref6.apply(this, arguments);
+  };
+})();
+
 let getOutline = exports.getOutline = (() => {
-  var _ref6 = (0, _asyncToGenerator.default)(function* (src, contents, defaultFlags) {
-    const service = yield getClangService(src, contents, defaultFlags, true);
+  var _ref7 = (0, _asyncToGenerator.default)(function* (src, contents, requestSettings, defaultFlags) {
+    const service = yield getClangService(src, contents, requestSettings, defaultFlags, true);
     if (service != null) {
       return service.get_outline(contents);
     }
   });
 
-  return function getOutline(_x22, _x23, _x24) {
-    return _ref6.apply(this, arguments);
+  return function getOutline(_x28, _x29, _x30, _x31) {
+    return _ref7.apply(this, arguments);
   };
 })();
 
 let getLocalReferences = exports.getLocalReferences = (() => {
-  var _ref7 = (0, _asyncToGenerator.default)(function* (src, contents, line, column, defaultFlags) {
-    const service = yield getClangService(src, contents, defaultFlags, true);
+  var _ref8 = (0, _asyncToGenerator.default)(function* (src, contents, line, column, requestSettings, defaultFlags) {
+    const service = yield getClangService(src, contents, requestSettings, defaultFlags, true);
     if (service != null) {
       return service.get_local_references(contents, line, column);
     }
   });
 
-  return function getLocalReferences(_x25, _x26, _x27, _x28, _x29) {
-    return _ref7.apply(this, arguments);
+  return function getLocalReferences(_x32, _x33, _x34, _x35, _x36, _x37) {
+    return _ref8.apply(this, arguments);
   };
 })();
 
 let formatCode = exports.formatCode = (() => {
-  var _ref8 = (0, _asyncToGenerator.default)(function* (src, contents, cursor, offset, length) {
-    const args = ['-style=file', `-assume-filename=${ src }`, `-cursor=${ cursor }`];
+  var _ref9 = (0, _asyncToGenerator.default)(function* (src, contents, cursor, offset, length) {
+    const args = ['-style=file', `-assume-filename=${src}`, `-cursor=${cursor}`];
     if (offset != null) {
-      args.push(`-offset=${ offset }`);
+      args.push(`-offset=${offset}`);
     }
     if (length != null) {
-      args.push(`-length=${ length }`);
+      args.push(`-length=${length}`);
     }
-    const { stdout } = yield (0, (_process || _load_process()).checkOutput)('clang-format', args, { stdin: contents });
+    const stdout = yield (0, (_process || _load_process()).runCommand)('clang-format', args, {
+      input: contents
+    }).toPromise();
 
     // The first line is a JSON blob indicating the new cursor position.
     const newLine = stdout.indexOf('\n');
@@ -133,26 +137,21 @@ let formatCode = exports.formatCode = (() => {
     };
   });
 
-  return function formatCode(_x30, _x31, _x32, _x33, _x34) {
-    return _ref8.apply(this, arguments);
+  return function formatCode(_x38, _x39, _x40, _x41, _x42) {
+    return _ref9.apply(this, arguments);
   };
 })();
 
-/**
- * Kill the Clang server for a particular source file,
- * as well as all the cached compilation flags.
- * If no file is provided, all servers are reset.
- */
-
-
 exports.compile = compile;
+exports.loadFlagsFromCompilationDatabaseAndCacheThem = loadFlagsFromCompilationDatabaseAndCacheThem;
+exports.resetForSource = resetForSource;
 exports.reset = reset;
 exports.dispose = dispose;
 
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
@@ -160,13 +159,7 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
-}
-
-var _ClangServer;
-
-function _load_ClangServer() {
-  return _ClangServer = _interopRequireDefault(require('./ClangServer'));
+  return _process = require('nuclide-commons/process');
 }
 
 var _ClangServerManager;
@@ -176,6 +169,17 @@ function _load_ClangServerManager() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const serverManager = new (_ClangServerManager || _load_ClangServerManager()).default();
 
@@ -230,12 +234,12 @@ const ClangCursorToDeclarationTypes = exports.ClangCursorToDeclarationTypes = Ob
 
 const ClangCursorTypes = exports.ClangCursorTypes = (0, (_collection || _load_collection()).keyMirror)(ClangCursorToDeclarationTypes);
 
-function compile(src, contents, defaultFlags) {
+function compile(src, contents, requestSettings, defaultFlags) {
   const doCompile = (() => {
     var _ref2 = (0, _asyncToGenerator.default)(function* () {
       // Note: restarts the server if the flags changed.
-      const server = yield serverManager.getClangServer(src, contents, defaultFlags, true);
-      if (server != null) {
+      const server = serverManager.getClangServer(src, contents, requestSettings, defaultFlags, true);
+      if (!server.isDisposed()) {
         return server.compile(contents);
       }
     });
@@ -247,8 +251,23 @@ function compile(src, contents, defaultFlags) {
   return _rxjsBundlesRxMinJs.Observable.fromPromise(doCompile()).publish();
 }
 
-function reset(src) {
+function loadFlagsFromCompilationDatabaseAndCacheThem(requestSettings) {
+  return serverManager.getClangFlagsManager().loadFlagsFromCompilationDatabase(requestSettings).then(fullFlags => (0, (_collection || _load_collection()).mapCompact)((0, (_collection || _load_collection()).mapTransform)(fullFlags, flags => flags.rawData)));
+}
+
+/**
+ * Kill the Clang server for a particular source file,
+ * as well as all the cached compilation flags.
+ */
+function resetForSource(src) {
   serverManager.reset(src);
+}
+
+/**
+ * Reset all servers
+ */
+function reset() {
+  serverManager.reset();
 }
 
 function dispose() {

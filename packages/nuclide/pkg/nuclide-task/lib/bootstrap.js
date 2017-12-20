@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 var _child_process = _interopRequireDefault(require('child_process'));
 
@@ -61,7 +52,16 @@ process.on('message', message => {
   } else {
     sendSuccessResponse(output);
   }
-});
+}); /**
+     * Copyright (c) 2015-present, Facebook, Inc.
+     * All rights reserved.
+     *
+     * This source code is licensed under the license found in the LICENSE file in
+     * the root directory of this source tree.
+     *
+     * 
+     * @format
+     */
 
 process.on('uncaughtException', err => {
   // eslint-disable-next-line no-console

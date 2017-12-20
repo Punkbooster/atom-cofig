@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,7 +8,7 @@ exports.Combobox = undefined;
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
@@ -25,7 +16,7 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 var _AtomInput;
 
 function _load_AtomInput() {
-  return _AtomInput = require('./AtomInput');
+  return _AtomInput = require('nuclide-commons-ui/AtomInput');
 }
 
 var _Portal;
@@ -34,7 +25,9 @@ function _load_Portal() {
   return _Portal = require('./Portal');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -46,10 +39,111 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * TODO use generic search provider
  * TODO move combobox to separate package.
  */
-class Combobox extends _reactForAtom.React.Component {
+class Combobox extends _react.default.Component {
 
   constructor(props) {
     super(props);
+
+    this.receiveUpdate = newOptions => {
+      const filteredOptions = this._getFilteredOptions(newOptions, this.state.textInput);
+      this.setState({
+        error: null,
+        options: newOptions,
+        filteredOptions,
+        selectedIndex: this._getNewSelectedIndex(filteredOptions)
+      });
+    };
+
+    this._handleTextInputChange = () => {
+      const newText = this.refs.freeformInput.getText();
+      if (newText === this.state.textInput) {
+        return;
+      }
+      this.requestUpdate(newText);
+      const filteredOptions = this._getFilteredOptions(this.state.options, newText);
+      this.setState({
+        textInput: newText,
+        optionsVisible: true,
+        filteredOptions,
+        selectedIndex: this._getNewSelectedIndex(filteredOptions)
+      });
+      this.props.onChange(newText);
+    };
+
+    this._handleInputFocus = () => {
+      this.requestUpdate(this.state.textInput);
+      // $FlowFixMe
+      const boundingRect = _reactDom.default.findDOMNode(this).getBoundingClientRect();
+      this.setState({
+        optionsVisible: true,
+        optionsRect: {
+          top: boundingRect.bottom,
+          left: boundingRect.left,
+          width: boundingRect.width
+        }
+      });
+    };
+
+    this._handleInputBlur = event => {
+      const { relatedTarget } = event;
+      if (relatedTarget == null ||
+      // TODO(hansonw): Move this check inside AtomInput.
+      // See https://github.com/atom/atom/blob/master/src/text-editor-element.coffee#L145
+      relatedTarget.tagName === 'INPUT' && relatedTarget.classList.contains('hidden-input') ||
+      // Selecting a menu item registers on the portal container.
+      relatedTarget === this._getOptionsElement().parentNode) {
+        return;
+      }
+      this._handleCancel();
+      const { onBlur } = this.props;
+      if (onBlur != null) {
+        onBlur(this.getText());
+      }
+    };
+
+    this._handleInputClick = () => {
+      this.setState({ optionsVisible: true });
+    };
+
+    this._handleMoveDown = () => {
+      // show the options but don't move the index
+      if (!this.state.optionsVisible) {
+        this.setState({ optionsVisible: true }, this._scrollSelectedOptionIntoViewIfNeeded);
+        return;
+      }
+
+      this.setState({
+        selectedIndex: Math.min(this.props.maxOptionCount - 1, this.state.selectedIndex + 1, this.state.filteredOptions.length - 1)
+      }, this._scrollSelectedOptionIntoViewIfNeeded);
+    };
+
+    this._handleMoveUp = () => {
+      this.setState({
+        selectedIndex: Math.max(0, this.state.selectedIndex - 1)
+      }, this._scrollSelectedOptionIntoViewIfNeeded);
+    };
+
+    this._handleCancel = () => {
+      this.setState({
+        optionsVisible: false
+      });
+    };
+
+    this._handleConfirm = () => {
+      const option = this.state.filteredOptions[this.state.selectedIndex];
+      if (option !== undefined) {
+        this.selectValue(option);
+      }
+    };
+
+    this._scrollSelectedOptionIntoViewIfNeeded = () => {
+      const selectedOption = _reactDom.default.findDOMNode(this.refs.selectedOption);
+      if (selectedOption) {
+        // $FlowFixMe
+        selectedOption.scrollIntoViewIfNeeded();
+      }
+    };
+
     this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this.state = {
       error: null,
@@ -61,21 +155,19 @@ class Combobox extends _reactForAtom.React.Component {
       selectedIndex: -1,
       textInput: props.initialTextInput
     };
-    this.receiveUpdate = this.receiveUpdate.bind(this);
-    this._handleTextInputChange = this._handleTextInputChange.bind(this);
-    this._handleInputBlur = this._handleInputBlur.bind(this);
-    this._handleInputFocus = this._handleInputFocus.bind(this);
-    this._handleMoveDown = this._handleMoveDown.bind(this);
-    this._handleMoveUp = this._handleMoveUp.bind(this);
-    this._handleCancel = this._handleCancel.bind(this);
-    this._handleConfirm = this._handleConfirm.bind(this);
-    this._scrollSelectedOptionIntoViewIfNeeded = this._scrollSelectedOptionIntoViewIfNeeded.bind(this);
   }
 
   componentDidMount() {
-    const node = _reactForAtom.ReactDOM.findDOMNode(this);
-    this._subscriptions.add(atom.commands.add(node, 'core:move-up', this._handleMoveUp), atom.commands.add(node, 'core:move-down', this._handleMoveDown), atom.commands.add(node, 'core:cancel', this._handleCancel), atom.commands.add(node, 'core:confirm', this._handleConfirm), this.refs.freeformInput.onDidChange(this._handleTextInputChange));
-    this.requestUpdate(this.state.textInput);
+    const node = _reactDom.default.findDOMNode(this);
+    this._subscriptions.add(
+    // $FlowFixMe
+    atom.commands.add(node, 'core:move-up', this._handleMoveUp),
+    // $FlowFixMe
+    atom.commands.add(node, 'core:move-down', this._handleMoveDown),
+    // $FlowFixMe
+    atom.commands.add(node, 'core:cancel', this._handleCancel),
+    // $FlowFixMe
+    atom.commands.add(node, 'core:confirm', this._handleConfirm), this.refs.freeformInput.onDidChange(this._handleTextInputChange));
   }
 
   componentWillUnmount() {
@@ -108,16 +200,6 @@ class Combobox extends _reactForAtom.React.Component {
     }, () => this.setState({ loadingOptions: false }));
   }
 
-  receiveUpdate(newOptions) {
-    const filteredOptions = this._getFilteredOptions(newOptions, this.state.textInput);
-    this.setState({
-      error: null,
-      options: newOptions,
-      filteredOptions,
-      selectedIndex: this._getNewSelectedIndex(filteredOptions)
-    });
-  }
-
   selectValue(newValue, didRenderCallback) {
     this.refs.freeformInput.setText(newValue);
     this.setState({
@@ -134,14 +216,21 @@ class Combobox extends _reactForAtom.React.Component {
     return this.refs.freeformInput.getText();
   }
 
-  // TODO use native (fuzzy/strict - configurable?) filter provider
+  focus(showOptions) {
+    this.refs.freeformInput.focus();
+    this.setState({ optionsVisible: showOptions });
+  }
+
   _getFilteredOptions(options, filterValue) {
+    if (this.props.filterOptions != null) {
+      return this.props.filterOptions(options, filterValue).slice(0, this.props.maxOptionCount);
+    }
+
     const lowerCaseState = filterValue.toLowerCase();
     return options.map(option => {
       const valueLowercase = option.toLowerCase();
       return {
         value: option,
-        valueLowercase,
         matchIndex: valueLowercase.indexOf(lowerCaseState)
       };
     }).filter(option => option.matchIndex !== -1).sort((a, b) => {
@@ -152,13 +241,19 @@ class Combobox extends _reactForAtom.React.Component {
       }
       // Then we prefer smaller options, thus close to the input
       return a.value.length - b.value.length;
-    }).slice(0, this.props.maxOptionCount);
+    }).map(option => option.value).slice(0, this.props.maxOptionCount);
   }
 
   _getOptionsElement() {
     if (this._optionsElement == null) {
+      const workspaceElement = atom.views.getView(atom.workspace);
+
+      if (!(workspaceElement != null)) {
+        throw new Error('Invariant violation: "workspaceElement != null"');
+      }
+
       this._optionsElement = document.createElement('div');
-      document.body.appendChild(this._optionsElement);
+      workspaceElement.appendChild(this._optionsElement);
       this._subscriptions.add(() => {
         this._optionsElement.remove();
       });
@@ -178,91 +273,22 @@ class Combobox extends _reactForAtom.React.Component {
     return this.state.selectedIndex;
   }
 
-  _handleTextInputChange() {
-    const newText = this.refs.freeformInput.getText();
-    if (newText === this.state.textInput) {
-      return;
-    }
-    this.requestUpdate(newText);
-    const filteredOptions = this._getFilteredOptions(this.state.options, newText);
-    this.setState({
-      textInput: newText,
-      optionsVisible: true,
-      filteredOptions,
-      selectedIndex: this._getNewSelectedIndex(filteredOptions)
-    });
-    this.props.onChange(newText);
-  }
-
-  _handleInputFocus() {
-    this.requestUpdate(this.state.textInput);
-    const boundingRect = _reactForAtom.ReactDOM.findDOMNode(this).getBoundingClientRect();
-    this.setState({
-      optionsVisible: true,
-      optionsRect: {
-        top: boundingRect.bottom,
-        left: boundingRect.left,
-        width: boundingRect.width
-      }
-    });
-  }
-
-  _handleInputBlur() {
-    // Delay hiding the combobox long enough for a click inside the combobox to trigger on it in
-    // case the blur was caused by a click inside the combobox. 150ms is empirically long enough to
-    // let the stack clear from this blur event and for the click event to trigger.
-    setTimeout(this._handleCancel, 150);
-    const { onBlur } = this.props;
-    if (onBlur != null) {
-      onBlur(this.getText());
-    }
-  }
-
   _handleItemClick(selectedValue, event) {
     this.selectValue(selectedValue, () => {
       // Focus the input again because the click will cause the input to blur. This mimics native
       // <select> behavior by keeping focus in the form being edited.
-      const input = _reactForAtom.ReactDOM.findDOMNode(this.refs.freeformInput);
+      const input = _reactDom.default.findDOMNode(this.refs.freeformInput);
       if (input) {
+        // $FlowFixMe
         input.focus();
+        // Focusing usually shows the options, so hide them immediately.
+        setImmediate(() => this.setState({ optionsVisible: false }));
       }
     });
   }
 
-  _handleMoveDown() {
-    this.setState({
-      selectedIndex: Math.min(this.props.maxOptionCount - 1, this.state.selectedIndex + 1, this.state.filteredOptions.length - 1)
-    }, this._scrollSelectedOptionIntoViewIfNeeded);
-  }
-
-  _handleMoveUp() {
-    this.setState({
-      selectedIndex: Math.max(0, this.state.selectedIndex - 1)
-    }, this._scrollSelectedOptionIntoViewIfNeeded);
-  }
-
-  _handleCancel() {
-    this.setState({
-      optionsVisible: false
-    });
-  }
-
-  _handleConfirm() {
-    const option = this.state.filteredOptions[this.state.selectedIndex];
-    if (option !== undefined) {
-      this.selectValue(option.value);
-    }
-  }
-
   _setSelectedIndex(selectedIndex) {
     this.setState({ selectedIndex });
-  }
-
-  _scrollSelectedOptionIntoViewIfNeeded() {
-    const selectedOption = _reactForAtom.ReactDOM.findDOMNode(this.refs.selectedOption);
-    if (selectedOption) {
-      selectedOption.scrollIntoViewIfNeeded();
-    }
   }
 
   render() {
@@ -270,10 +296,10 @@ class Combobox extends _reactForAtom.React.Component {
     const options = [];
 
     if (this.props.loadingMessage && this.state.loadingOptions) {
-      options.push(_reactForAtom.React.createElement(
+      options.push(_react.default.createElement(
         'li',
         { key: 'loading-text', className: 'loading' },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'span',
           { className: 'loading-message' },
           this.props.loadingMessage
@@ -283,7 +309,7 @@ class Combobox extends _reactForAtom.React.Component {
 
     if (this.state.error != null && this.props.formatRequestOptionsErrorMessage != null) {
       const message = this.props.formatRequestOptionsErrorMessage(this.state.error);
-      options.push(_reactForAtom.React.createElement(
+      options.push(_react.default.createElement(
         'li',
         { key: 'text-error', className: 'text-error' },
         message
@@ -291,22 +317,31 @@ class Combobox extends _reactForAtom.React.Component {
     }
 
     if (this.state.optionsVisible) {
+      const lowerCaseState = this.state.textInput.toLowerCase();
       options.push(...this.state.filteredOptions.map((option, i) => {
-        const beforeMatch = option.value.substring(0, option.matchIndex);
-        const endOfMatchIndex = option.matchIndex + this.state.textInput.length;
-        const highlightedMatch = option.value.substring(option.matchIndex, endOfMatchIndex);
-        const afterMatch = option.value.substring(endOfMatchIndex, option.value.length);
+        const matchIndex = option.toLowerCase().indexOf(lowerCaseState);
+        let beforeMatch;
+        let highlightedMatch;
+        let afterMatch;
+        if (matchIndex >= 0) {
+          beforeMatch = option.substring(0, matchIndex);
+          const endOfMatchIndex = matchIndex + this.state.textInput.length;
+          highlightedMatch = option.substring(matchIndex, endOfMatchIndex);
+          afterMatch = option.substring(endOfMatchIndex, option.length);
+        } else {
+          beforeMatch = option;
+        }
         const isSelected = i === this.state.selectedIndex;
-        return _reactForAtom.React.createElement(
+        return _react.default.createElement(
           'li',
           {
             className: isSelected ? 'selected' : null,
-            key: 'option-' + option.value,
-            onClick: this._handleItemClick.bind(this, option.value),
+            key: 'option-' + option,
+            onClick: this._handleItemClick.bind(this, option),
             onMouseOver: this._setSelectedIndex.bind(this, i),
             ref: isSelected ? 'selectedOption' : null },
           beforeMatch,
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             'strong',
             { className: 'text-highlight' },
             highlightedMatch
@@ -316,7 +351,7 @@ class Combobox extends _reactForAtom.React.Component {
       }));
 
       if (!options.length) {
-        options.push(_reactForAtom.React.createElement(
+        options.push(_react.default.createElement(
           'li',
           { className: 'text-subtle', key: 'no-results-found' },
           'No results found'
@@ -325,16 +360,16 @@ class Combobox extends _reactForAtom.React.Component {
 
       const rect = this.state.optionsRect || { left: 0, top: 0, width: 300 };
 
-      optionsContainer = _reactForAtom.React.createElement(
+      optionsContainer = _react.default.createElement(
         (_Portal || _load_Portal()).Portal,
         { container: this._getOptionsElement() },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'div',
           { className: 'nuclide-combobox-options', style: rect },
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             'div',
             { className: 'select-list' },
-            _reactForAtom.React.createElement(
+            _react.default.createElement(
               'ol',
               { className: 'nuclide-combobox-list-group list-group' },
               options
@@ -344,22 +379,19 @@ class Combobox extends _reactForAtom.React.Component {
       );
     }
 
-    const {
-      initialTextInput,
-      placeholderText,
-      size,
-      width
-    } = this.props;
+    const { initialTextInput, placeholderText, size, width } = this.props;
     const wrapperStyle = {
-      width: width == null ? undefined : `${ width }px`
+      width: width == null ? undefined : `${width}px`
     };
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
-      { className: 'select-list popover-list popover-list-subtle ' + this.props.className,
+      {
+        className: 'select-list popover-list popover-list-subtle ' + this.props.className,
         style: wrapperStyle },
-      _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+      _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
         initialValue: initialTextInput,
         onBlur: this._handleInputBlur,
+        onClick: this._handleInputClick,
         onFocus: this._handleInputFocus,
         placeholderText: placeholderText,
         ref: 'freeformInput',
@@ -370,9 +402,18 @@ class Combobox extends _reactForAtom.React.Component {
       optionsContainer
     );
   }
-
 }
-exports.Combobox = Combobox;
+exports.Combobox = Combobox; /**
+                              * Copyright (c) 2015-present, Facebook, Inc.
+                              * All rights reserved.
+                              *
+                              * This source code is licensed under the license found in the LICENSE file in
+                              * the root directory of this source tree.
+                              *
+                              * 
+                              * @format
+                              */
+
 Combobox.defaultProps = {
   className: '',
   maxOptionCount: 10,

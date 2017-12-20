@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,20 +10,31 @@ exports.activate = activate;
 exports.createAutocompleteProvider = createAutocompleteProvider;
 exports.createTypeHintProvider = createTypeHintProvider;
 exports.provideDefinitions = provideDefinitions;
-exports.provideBusySignal = provideBusySignal;
+exports.consumeBusySignal = consumeBusySignal;
 exports.provideCodeFormat = provideCodeFormat;
 exports.provideLinter = provideLinter;
 exports.provideOutlineView = provideOutlineView;
 exports.provideRefactoring = provideRefactoring;
+exports.provideDeclarationInfo = provideDeclarationInfo;
+exports.provideRelatedFiles = provideRelatedFiles;
+exports.consumeClangConfigurationProvider = consumeClangConfigurationProvider;
 exports.deactivate = deactivate;
 
-var _atom = require('atom');
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
-var _nuclideBusySignal;
+var _SharedObservableCache;
 
-function _load_nuclideBusySignal() {
-  return _nuclideBusySignal = require('../../nuclide-busy-signal');
+function _load_SharedObservableCache() {
+  return _SharedObservableCache = _interopRequireDefault(require('../../commons-node/SharedObservableCache'));
 }
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _atom = require('atom');
 
 var _AutocompleteHelpers;
 
@@ -90,8 +92,17 @@ function _load_libclang() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// eslint-disable-next-line nuclide-internal/no-cross-atom-imports
-let busySignalProvider = null;
+let busySignalService = null; /**
+                               * Copyright (c) 2015-present, Facebook, Inc.
+                               * All rights reserved.
+                               *
+                               * This source code is licensed under the license found in the LICENSE file in
+                               * the root directory of this source tree.
+                               *
+                               * 
+                               * @format
+                               */
+
 let subscriptions = null;
 
 function activate() {
@@ -108,10 +119,8 @@ function activate() {
     if (path == null) {
       return;
     }
-    yield (0, (_libclang || _load_libclang()).reset)(editor);
+    yield (0, (_libclang || _load_libclang()).resetForSource)(editor);
   })));
-
-  busySignalProvider = new (_nuclideBusySignal || _load_nuclideBusySignal()).BusySignalProviderBase();
 }
 
 /** Provider for autocomplete service. */
@@ -144,30 +153,42 @@ function provideDefinitions() {
     grammarScopes: (_constants || _load_constants()).GRAMMARS,
     getDefinition(editor, position) {
       return (_DefinitionHelpers || _load_DefinitionHelpers()).default.getDefinition(editor, position);
-    },
-    getDefinitionById(filePath, id) {
-      return (_DefinitionHelpers || _load_DefinitionHelpers()).default.getDefinitionById(filePath, id);
     }
   };
 }
 
-function provideBusySignal() {
-  if (!busySignalProvider) {
-    throw new Error('Invariant violation: "busySignalProvider"');
+function consumeBusySignal(service) {
+  if (subscriptions != null) {
+    subscriptions.add(service);
   }
-
-  return busySignalProvider;
+  busySignalService = service;
+  return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
+    if (subscriptions != null) {
+      subscriptions.remove(service);
+    }
+    busySignalService = null;
+  });
 }
 
 function provideCodeFormat() {
   return {
-    selector: Array.from((_constants || _load_constants()).GRAMMAR_SET).join(', '),
-    inclusionPriority: 1,
+    grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
+    priority: 1,
     formatEntireFile(editor, range) {
       return (_CodeFormatHelpers || _load_CodeFormatHelpers()).default.formatEntireFile(editor, range);
     }
   };
 }
+
+const busySignalCache = new (_SharedObservableCache || _load_SharedObservableCache()).default(path => {
+  // Return an observable that starts the busy signal on subscription
+  // and disposes it upon unsubscription.
+  return _rxjsBundlesRxMinJs.Observable.create(() => {
+    if (busySignalService != null) {
+      return new (_UniversalDisposable || _load_UniversalDisposable()).default(busySignalService.reportBusy(`Clang: compiling \`${path}\``));
+    }
+  }).share();
+});
 
 function provideLinter() {
   return {
@@ -175,11 +196,12 @@ function provideLinter() {
     scope: 'file',
     lintOnFly: false,
     name: 'Clang',
-    invalidateOnClose: true,
     lint(editor) {
       const getResult = () => (_ClangLinter || _load_ClangLinter()).default.lint(editor);
-      if (busySignalProvider) {
-        return busySignalProvider.reportBusy(`Clang: compiling \`${ editor.getTitle() }\``, getResult);
+      if (busySignalService != null) {
+        // Use the busy signal cache to dedupe busy signal messages.
+        // The shared subscription gets released when all the lints finish.
+        return busySignalCache.get(editor.getTitle()).race(_rxjsBundlesRxMinJs.Observable.defer(getResult)).toPromise();
       }
       return getResult();
     }
@@ -209,6 +231,24 @@ function provideRefactoring() {
       return (_Refactoring || _load_Refactoring()).default.refactor(request);
     }
   };
+}
+
+function provideDeclarationInfo() {
+  return {
+    getDeclarationInfo: (_libclang || _load_libclang()).getDeclarationInfo
+  };
+}
+
+function provideRelatedFiles() {
+  return {
+    getRelatedFiles(filePath) {
+      return (0, (_libclang || _load_libclang()).getRelatedSourceOrHeader)(filePath).then(related => related == null ? [] : [related]);
+    }
+  };
+}
+
+function consumeClangConfigurationProvider(provider) {
+  return (0, (_libclang || _load_libclang()).registerClangProvider)(provider);
 }
 
 function deactivate() {

@@ -1,13 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _formatEnoentNotification;
 
@@ -100,9 +95,18 @@ class Activation {
     this._disposables.dispose();
   }
 }
-// eslint-disable-next-line nuclide-internal/no-cross-atom-imports
 
+exports.default = Activation;
+// eslint-disable-next-line nuclide-internal/no-cross-atom-imports
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const isNoEntError = err => err.code === 'ENOENT';
-
-module.exports = Activation;

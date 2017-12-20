@@ -1,19 +1,10 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _BasicStatsSectionComponent;
 
@@ -41,30 +32,44 @@ function _load_CommandsSectionComponent() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class HealthPaneItemComponent extends _reactForAtom.React.Component {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class HealthPaneItemComponent extends _react.default.Component {
 
   render() {
-
     const sections = {
-      Stats: _reactForAtom.React.createElement((_BasicStatsSectionComponent || _load_BasicStatsSectionComponent()).default, this.props),
-      Subprocesses: _reactForAtom.React.createElement((_ChildProcessTreeComponent || _load_ChildProcessTreeComponent()).default, { childProcessesTree: this.props.childProcessesTree }),
-      Handles: _reactForAtom.React.createElement((_ActiveHandlesSectionComponent || _load_ActiveHandlesSectionComponent()).default, { activeHandlesByType: this.props.activeHandlesByType }),
-      Commands: _reactForAtom.React.createElement((_CommandsSectionComponent || _load_CommandsSectionComponent()).default, null)
+      Stats: _react.default.createElement((_BasicStatsSectionComponent || _load_BasicStatsSectionComponent()).default, this.props),
+      Subprocesses: _react.default.createElement((_ChildProcessTreeComponent || _load_ChildProcessTreeComponent()).default, {
+        childProcessesTree: this.props.childProcessesTree
+      }),
+      Handles: _react.default.createElement((_ActiveHandlesSectionComponent || _load_ActiveHandlesSectionComponent()).default, {
+        activeHandlesByType: this.props.activeHandlesByType
+      }),
+      Commands: _react.default.createElement((_CommandsSectionComponent || _load_CommandsSectionComponent()).default, null)
     };
 
     // For each section, we use settings-view to get a familiar look for table cells.
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       null,
-      Object.keys(sections).map((title, s) => _reactForAtom.React.createElement(
+      Object.keys(sections).map((title, s) => _react.default.createElement(
         'div',
         { className: 'nuclide-health-pane-item-section', key: s },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'h2',
           null,
           title
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'div',
           { className: 'settings-view' },
           sections[title]
@@ -72,7 +77,5 @@ class HealthPaneItemComponent extends _reactForAtom.React.Component {
       ))
     );
   }
-
 }
 exports.default = HealthPaneItemComponent;
-module.exports = exports['default'];

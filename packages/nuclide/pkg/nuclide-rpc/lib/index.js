@@ -1,18 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.loadServicesConfig = exports.RpcProcess = exports.SocketServer = exports.SocketTransport = exports.StreamTransport = exports.LoopbackTransports = exports.RpcConnection = exports.ServiceRegistry = undefined;
+exports.loadServicesConfig = exports.RpcProcess = exports.SocketServer = exports.SocketTransport = exports.StreamTransport = exports.LoopbackTransports = exports.RpcTimeoutError = exports.RpcConnection = exports.ServiceRegistry = undefined;
 
 var _ServiceRegistry;
 
@@ -37,6 +28,12 @@ Object.defineProperty(exports, 'RpcConnection', {
   enumerable: true,
   get: function () {
     return (_RpcConnection || _load_RpcConnection()).RpcConnection;
+  }
+});
+Object.defineProperty(exports, 'RpcTimeoutError', {
+  enumerable: true,
+  get: function () {
+    return (_RpcConnection || _load_RpcConnection()).RpcTimeoutError;
   }
 });
 

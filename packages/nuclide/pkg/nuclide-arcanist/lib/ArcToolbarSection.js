@@ -1,19 +1,10 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _ArcToolbarModel;
 
@@ -24,13 +15,13 @@ function _load_ArcToolbarModel() {
 var _Button;
 
 function _load_Button() {
-  return _Button = require('../../nuclide-ui/Button');
+  return _Button = require('nuclide-commons-ui/Button');
 }
 
 var _ButtonGroup;
 
 function _load_ButtonGroup() {
-  return _ButtonGroup = require('../../nuclide-ui/ButtonGroup');
+  return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
 }
 
 var _Dropdown;
@@ -39,13 +30,30 @@ function _load_Dropdown() {
   return _Dropdown = require('../../nuclide-ui/Dropdown');
 }
 
-class ArcToolbarSection extends _reactForAtom.React.Component {
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-  constructor(props) {
-    super(props);
-    this._arcBuild = this._arcBuild.bind(this);
-    this._handleBuildTargetChange = this._handleBuildTargetChange.bind(this);
-    this._reloadBuildTargets = this._reloadBuildTargets.bind(this);
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class ArcToolbarSection extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
+
+    return _temp = super(...args), this._reloadBuildTargets = () => {
+      this.props.model.updateBuildTargets();
+    }, this._handleBuildTargetChange = value => {
+      this.props.model.setActiveBuildTarget(value);
+    }, this._arcBuild = () => {
+      this.props.model.arcBuild();
+    }, _temp;
   }
 
   componentDidMount() {
@@ -79,11 +87,15 @@ class ArcToolbarSection extends _reactForAtom.React.Component {
     if (error == null) {
       return null;
     }
-    return _reactForAtom.React.createElement((_Button || _load_Button()).Button, {
+    return _react.default.createElement((_Button || _load_Button()).Button, {
       icon: 'sync',
       size: (_Button || _load_Button()).ButtonSizes.SMALL,
       onClick: this._reloadBuildTargets,
-      tooltip: { title: 'Reload build steps', delay: 100, placement: 'bottom' }
+      tooltip: {
+        title: 'Reload build steps',
+        delay: { show: 500, hide: 0 },
+        placement: 'bottom'
+      }
     });
   }
 
@@ -92,13 +104,13 @@ class ArcToolbarSection extends _reactForAtom.React.Component {
     if (!model.isArcSupported()) {
       return null;
     }
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'inline-block' },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
         null,
-        _reactForAtom.React.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
+        _react.default.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
           className: 'nuclide-arcanist-toolbar-targets-dropdown',
           size: 'sm',
           value: model.getActiveBuildTarget(),
@@ -110,17 +122,5 @@ class ArcToolbarSection extends _reactForAtom.React.Component {
     );
   }
 
-  _reloadBuildTargets() {
-    this.props.model.updateBuildTargets();
-  }
-
-  _handleBuildTargetChange(value) {
-    this.props.model.setActiveBuildTarget(value);
-  }
-
-  _arcBuild() {
-    this.props.model.arcBuild();
-  }
 }
 exports.default = ArcToolbarSection;
-module.exports = exports['default'];

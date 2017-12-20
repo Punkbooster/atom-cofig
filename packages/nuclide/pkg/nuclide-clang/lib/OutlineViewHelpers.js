@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -26,7 +17,7 @@ function _load_nuclideAnalytics() {
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
 var _nuclideClangRpc;
@@ -38,7 +29,7 @@ function _load_nuclideClangRpc() {
 var _tokenizedText;
 
 function _load_tokenizedText() {
-  return _tokenizedText = require('../../commons-node/tokenizedText');
+  return _tokenizedText = require('nuclide-commons/tokenized-text');
 }
 
 var _libclang;
@@ -50,6 +41,17 @@ function _load_libclang() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Display friendly names for all class-like types.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const CLASS_KIND_NAMES = {
   [(_nuclideClangRpc || _load_nuclideClangRpc()).ClangCursorTypes.STRUCT_DECL]: 'struct',
   [(_nuclideClangRpc || _load_nuclideClangRpc()).ClangCursorTypes.UNION_DECL]: 'union',
@@ -128,7 +130,7 @@ function outlineFromClangOutline(outline) {
 
 class OutlineViewHelpers {
   static getOutline(editor) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('nuclide-clang-atom:outline-view', (0, _asyncToGenerator.default)(function* () {
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-clang-atom:outline-view', (0, _asyncToGenerator.default)(function* () {
       // HACK: Since outline view and diagnostics both trigger on save, favor diagnostics.
       yield (0, (_promise || _load_promise()).sleep)(0);
       const clangOutline = yield (0, (_libclang || _load_libclang()).getOutline)(editor);

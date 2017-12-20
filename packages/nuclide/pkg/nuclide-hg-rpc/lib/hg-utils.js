@@ -1,18 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getEditMergeConfigs = exports.createCommmitMessageTempFile = exports.hgAsyncExecute = undefined;
+exports.getInteractiveCommitEditorConfig = exports.hgAsyncExecute = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -24,12 +15,11 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
  */
 let hgAsyncExecute = exports.hgAsyncExecute = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (args_, options_) {
-    const { command, args, options } = getHgExecParams(args_, options_);
-    const result = yield (0, (_process || _load_process()).asyncExecute)(command, args, options);
-    if (result.exitCode === 0) {
-      return result;
-    } else {
-      logAndThrowHgError(args, options, result.stdout, result.stderr);
+    const { command, args, options } = yield getHgExecParams(args_, options_);
+    try {
+      return yield (0, (_process || _load_process()).runCommandDetailed)(command, args, options).toPromise();
+    } catch (err) {
+      logAndThrowHgError(args, options, err.stdout, err.stderr);
     }
   });
 
@@ -43,63 +33,111 @@ let hgAsyncExecute = exports.hgAsyncExecute = (() => {
  */
 
 
-let createCommmitMessageTempFile = exports.createCommmitMessageTempFile = (() => {
-  var _ref2 = (0, _asyncToGenerator.default)(function* (commitMessage) {
-    const tempFile = yield (_fsPromise || _load_fsPromise()).default.tempfile();
-    const strippedMessage = commitMessage.replace(COMMIT_MESSAGE_STRIP_LINE, '');
-    yield (_fsPromise || _load_fsPromise()).default.writeFile(tempFile, strippedMessage);
-    return tempFile;
+let getHgExecParams = (() => {
+  var _ref2 = (0, _asyncToGenerator.default)(function* (args_, options_) {
+    let args = args_;
+    let sshCommand;
+    // expandHomeDir is not supported on windows
+    if (process.platform !== 'win32') {
+      const pathToSSHConfig = (_nuclideUri || _load_nuclideUri()).default.expandHomeDir('~/.atom/scm_ssh.sh');
+      const doesSSHConfigExist = yield (_fsPromise || _load_fsPromise()).default.exists(pathToSSHConfig);
+      if (doesSSHConfigExist) {
+        sshCommand = pathToSSHConfig;
+      }
+    }
+
+    if (sshCommand == null) {
+      // Disabling ssh keyboard input so all commands that prompt for interaction
+      // fail instantly rather than just wait for an input that will never arrive
+      sshCommand = 'ssh -oBatchMode=yes -oControlMaster=no';
+    }
+    args.push('--config', `ui.ssh=${sshCommand}`, '--noninteractive');
+    const [hgCommandName] = args;
+    if (EXCLUDE_FROM_HG_BLACKBOX_COMMANDS.has(hgCommandName)) {
+      args.push('--config', 'extensions.blackbox=!');
+    }
+    let options = Object.assign({}, options_, {
+      env: Object.assign({}, (yield (0, (_process || _load_process()).getOriginalEnvironment)()), {
+        ATOM_BACKUP_EDITOR: 'false'
+      })
+    });
+    if (!options.NO_HGPLAIN) {
+      // Setting HGPLAIN=1 overrides any custom aliases a user has defined.
+      options.env.HGPLAIN = 1;
+    }
+    if (options.HGEDITOR != null) {
+      options.env.HGEDITOR = options.HGEDITOR;
+    }
+
+    let command;
+    if (options.TTY_OUTPUT) {
+      [command, args, options] = (0, (_process || _load_process()).scriptifyCommand)('hg', args, options);
+    } else {
+      command = 'hg';
+    }
+    return { command, args, options };
   });
 
-  return function createCommmitMessageTempFile(_x3) {
+  return function getHgExecParams(_x3, _x4) {
     return _ref2.apply(this, arguments);
   };
 })();
 
-let getEditMergeConfigs = exports.getEditMergeConfigs = (() => {
+let getInteractiveCommitEditorConfig = exports.getInteractiveCommitEditorConfig = (() => {
   var _ref3 = (0, _asyncToGenerator.default)(function* () {
     const connectionDetails = yield (0, (_nuclideRemoteAtomRpc || _load_nuclideRemoteAtomRpc()).getConnectionDetails)();
     if (connectionDetails == null) {
-      throw new Error('CommandServer not initialized!');
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-hg-rpc').error('CommandServer not initialized!');
+      return null;
     }
     // Atom RPC needs to agree with the Atom process / nuclide server on the address and port.
-    const hgEditor = getAtomRpcScriptPath() + ` -f ${ connectionDetails.family } -p ${ connectionDetails.port } --wait`;
+    const hgEditor = getAtomRpcScriptPath() + ` -f ${connectionDetails.family} -p ${connectionDetails.port} --wait`;
     return {
-      args: ['--config', 'merge-tools.editmerge.check=conflicts', '--config', 'ui.merge=editmerge'],
+      args: ['--config', 'ui.interface.chunkselector=editor', '--config', 'extensions.edrecord='],
       hgEditor
     };
   });
 
-  return function getEditMergeConfigs() {
+  return function getInteractiveCommitEditorConfig() {
     return _ref3.apply(this, arguments);
   };
 })();
 
 exports.hgObserveExecution = hgObserveExecution;
 exports.hgRunCommand = hgRunCommand;
+exports.formatCommitMessage = formatCommitMessage;
+exports.processExitCodeAndThrow = processExitCodeAndThrow;
+
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _nuclideRemoteAtomRpc;
 
 function _load_nuclideRemoteAtomRpc() {
   return _nuclideRemoteAtomRpc = require('../../nuclide-remote-atom-rpc');
+}
+
+var _nuclideUri;
+
+function _load_nuclideUri() {
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -111,9 +149,32 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Note: `(?m)` converts to `/m` in JavaScript-flavored RegExp to mean 'multiline'.
 //
 // [1] https://selenic.com/hg/file/3.7.2/mercurial/cmdutil.py#l2734
-const COMMIT_MESSAGE_STRIP_LINE = /^HG:.*(\n|$)/gm;function hgObserveExecution(args_, options_) {
-  const { command, args, options } = getHgExecParams(args_, options_);
-  return (0, (_process || _load_process()).observeProcess)(() => (0, (_process || _load_process()).safeSpawn)(command, args, options), true);
+const COMMIT_MESSAGE_STRIP_LINE = /^HG:.*(\n|$)/gm;
+
+// Avoid spamming the hg blackbox with read-only hg commands.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const EXCLUDE_FROM_HG_BLACKBOX_COMMANDS = new Set([
+// 'bookmarks' is technically another read-only command, but the possible
+//  --rename/--delete options make this detection unreliable.
+'cat', 'config', // Nuclide only ever *reads* the config.
+'diff', 'log', 'show', 'status']);function hgObserveExecution(args_, options_) {
+  // TODO(T17463635)
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(getHgExecParams(args_, options_)).switchMap(({ command, args, options }) => {
+    return (0, (_process || _load_process()).observeProcess)(...(0, (_process || _load_process()).scriptifyCommand)(command, args, Object.assign({}, options, {
+      killTreeWhenDone: true,
+      /* TODO(T17353599) */isExitError: () => false
+    }))).catch(error => _rxjsBundlesRxMinJs.Observable.of({ kind: 'error', error })); // TODO(T17463635)
+  });
 }
 
 /**
@@ -121,43 +182,21 @@ const COMMIT_MESSAGE_STRIP_LINE = /^HG:.*(\n|$)/gm;function hgObserveExecution(a
  * Resolves to stdout.
  */
 function hgRunCommand(args_, options_) {
-  const { command, args, options } = getHgExecParams(args_, options_);
-  return (0, (_process || _load_process()).runCommand)(command, args, options, true /* kill process tree on complete */);
+  return _rxjsBundlesRxMinJs.Observable.fromPromise(getHgExecParams(args_, options_)).switchMap(({ command, args, options }) => (0, (_process || _load_process()).runCommand)(command, args, Object.assign({}, options, { killTreeWhenDone: true })));
 }
 
 function logAndThrowHgError(args, options, stdout, stderr) {
-  (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error(`Error executing hg command: ${ JSON.stringify(args) }\n` + `stderr: ${ stderr }\nstdout: ${ stdout }\n` + `options: ${ JSON.stringify(options) }`);
+  (0, (_log4js || _load_log4js()).getLogger)('nuclide-hg-rpc').error(`Error executing hg command: ${JSON.stringify(args)}\n` + `stderr: ${stderr}\nstdout: ${stdout}\n` + `options: ${JSON.stringify(options)}`);
   if (stderr.length > 0 && stdout.length > 0) {
-    throw new Error(`hg error\nstderr: ${ stderr }\nstdout: ${ stdout }`);
+    throw new Error(`hg error\nstderr: ${stderr}\nstdout: ${stdout}`);
   } else {
     // One of `stderr` or `stdout` is empty - not both.
     throw new Error(stderr || stdout);
   }
 }
 
-function getHgExecParams(args_, options_) {
-  let args = args_;
-  const options = Object.assign({}, options_, {
-    env: Object.assign({}, (0, (_process || _load_process()).getOriginalEnvironment)(), {
-      ATOM_BACKUP_EDITOR: 'false'
-    })
-  });
-  if (!options.NO_HGPLAIN) {
-    // Setting HGPLAIN=1 overrides any custom aliases a user has defined.
-    options.env.HGPLAIN = 1;
-  }
-  if (options.HGEDITOR != null) {
-    options.env.HGEDITOR = options.HGEDITOR;
-  }
-
-  let command;
-  if (options.TTY_OUTPUT) {
-    command = 'script';
-    args = (0, (_process || _load_process()).createArgsForScriptCommand)('hg', args);
-  } else {
-    command = 'hg';
-  }
-  return { command, args, options };
+function formatCommitMessage(commitMessage) {
+  return commitMessage.replace(COMMIT_MESSAGE_STRIP_LINE, '');
 }
 
 let atomRpcEditorPath;
@@ -171,4 +210,12 @@ function getAtomRpcScriptPath() {
     }
   }
   return atomRpcEditorPath;
+}
+
+function processExitCodeAndThrow(processMessage) {
+  // TODO(T17463635)
+  if (processMessage.kind === 'exit' && processMessage.exitCode !== 0) {
+    return _rxjsBundlesRxMinJs.Observable.throw(new Error(`HG failed with exit code: ${String(processMessage.exitCode)}`));
+  }
+  return _rxjsBundlesRxMinJs.Observable.of(processMessage);
 }

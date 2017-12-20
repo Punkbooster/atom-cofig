@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -27,7 +18,7 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _CodeHighlightProvider;
@@ -90,12 +81,31 @@ function _load_DiagnosticsProvider() {
   return _DiagnosticsProvider = require('./DiagnosticsProvider');
 }
 
+var _log4js;
+
+function _load_log4js() {
+  return _log4js = require('log4js');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class AtomLanguageService {
 
-  constructor(languageServiceFactory, config) {
+  constructor(languageServiceFactory, config, onDidInsertSuggestion, logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-language-service')) {
     this._config = config;
+    this._onDidInsertSuggestion = onDidInsertSuggestion;
+    this._logger = logger;
     this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     const lazy = true;
     this._connectionToLanguageService = new (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).ConnectionCache(languageServiceFactory, lazy);
@@ -107,14 +117,34 @@ class AtomLanguageService {
   }
 
   activate() {
-    const highlightsConfig = this._config.highlights;
-    if (highlightsConfig != null) {
-      this._subscriptions.add((_CodeHighlightProvider || _load_CodeHighlightProvider()).CodeHighlightProvider.register(this._config.name, this._selector(), highlightsConfig, this._connectionToLanguageService));
+    let busySignalService = null;
+    const busySignalProvider = {
+      reportBusyWhile(message, f) {
+        if (busySignalService != null) {
+          return busySignalService.reportBusyWhile(message, f);
+        } else {
+          return f();
+        }
+      }
+    };
+
+    this._subscriptions.add(atom.packages.serviceHub.consume('atom-ide-busy-signal', '0.1.0', service => {
+      this._subscriptions.add(service);
+      busySignalService = service;
+      return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
+        this._subscriptions.remove(service);
+        busySignalService = null;
+      });
+    }));
+
+    const highlightConfig = this._config.highlight;
+    if (highlightConfig != null) {
+      this._subscriptions.add((_CodeHighlightProvider || _load_CodeHighlightProvider()).CodeHighlightProvider.register(this._config.name, this._config.grammars, highlightConfig, this._connectionToLanguageService));
     }
 
-    const outlinesConfig = this._config.outlines;
-    if (outlinesConfig != null) {
-      this._subscriptions.add((_OutlineViewProvider || _load_OutlineViewProvider()).OutlineViewProvider.register(this._config.name, this._selector(), outlinesConfig, this._connectionToLanguageService));
+    const outlineConfig = this._config.outline;
+    if (outlineConfig != null) {
+      this._subscriptions.add((_OutlineViewProvider || _load_OutlineViewProvider()).OutlineViewProvider.register(this._config.name, this._config.grammars, outlineConfig, this._connectionToLanguageService));
     }
 
     const coverageConfig = this._config.coverage;
@@ -134,7 +164,7 @@ class AtomLanguageService {
 
     const codeFormatConfig = this._config.codeFormat;
     if (codeFormatConfig != null) {
-      this._subscriptions.add((_CodeFormatProvider || _load_CodeFormatProvider()).CodeFormatProvider.register(this._config.name, this._selector(), codeFormatConfig, this._connectionToLanguageService));
+      this._subscriptions.add((_CodeFormatProvider || _load_CodeFormatProvider()).CodeFormatProvider.register(this._config.name, this._config.grammars, codeFormatConfig, this._connectionToLanguageService, busySignalProvider));
     }
 
     const findReferencesConfig = this._config.findReferences;
@@ -149,12 +179,12 @@ class AtomLanguageService {
 
     const autocompleteConfig = this._config.autocomplete;
     if (autocompleteConfig != null) {
-      this._subscriptions.add((_AutocompleteProvider || _load_AutocompleteProvider()).AutocompleteProvider.register(this._config.name, this._config.grammars, autocompleteConfig, this._connectionToLanguageService));
+      this._subscriptions.add((_AutocompleteProvider || _load_AutocompleteProvider()).AutocompleteProvider.register(this._config.name, this._config.grammars, autocompleteConfig, this._onDidInsertSuggestion, this._connectionToLanguageService));
     }
 
     const diagnosticsConfig = this._config.diagnostics;
     if (diagnosticsConfig != null) {
-      this._subscriptions.add((0, (_DiagnosticsProvider || _load_DiagnosticsProvider()).registerDiagnostics)(this._config.name, this._config.grammars, diagnosticsConfig, this._connectionToLanguageService));
+      this._subscriptions.add((0, (_DiagnosticsProvider || _load_DiagnosticsProvider()).registerDiagnostics)(this._config.name, this._config.grammars, diagnosticsConfig, this._logger, this._connectionToLanguageService, busySignalProvider));
     }
   }
 
@@ -162,8 +192,7 @@ class AtomLanguageService {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const result = _this._connectionToLanguageService.getForUri(fileUri);
-      return result == null ? null : yield result;
+      return _this._connectionToLanguageService.getForUri(fileUri);
     })();
   }
 
@@ -175,13 +204,23 @@ class AtomLanguageService {
       if (languageService == null) {
         return false;
       }
-      return yield (yield languageService).isFileInProject(fileUri);
+      return (yield languageService).isFileInProject(fileUri);
     })();
+  }
+
+  getCachedLanguageServices() {
+    return this._connectionToLanguageService.values();
   }
 
   observeLanguageServices() {
     return this._connectionToLanguageService.observeValues().switchMap(languageService => {
       return _rxjsBundlesRxMinJs.Observable.fromPromise(languageService);
+    });
+  }
+
+  observeConnectionLanguageEntries() {
+    return this._connectionToLanguageService.observeEntries().switchMap(([connection, servicePromise]) => {
+      return _rxjsBundlesRxMinJs.Observable.fromPromise(servicePromise).map(languageService => [connection, languageService]);
     });
   }
 

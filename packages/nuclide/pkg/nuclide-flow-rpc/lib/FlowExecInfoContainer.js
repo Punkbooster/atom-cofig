@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,8 +10,8 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 let getFlowVersionInformation = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (flowPath, root) {
     try {
-      const result = yield (0, (_process || _load_process()).checkOutput)(flowPath, ['version', '--json'], root != null ? { cwd: root } : undefined);
-      const json = JSON.parse(result.stdout);
+      const result = yield (0, (_process || _load_process()).runCommand)(flowPath, ['version', '--json'], root != null ? { cwd: root } : undefined).toPromise();
+      const json = JSON.parse(result);
       return {
         flowVersion: json.semver,
         pathToFlow: json.binary
@@ -37,6 +28,16 @@ let getFlowVersionInformation = (() => {
 
 let canFindFlow = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* (flowPath) {
+    if (process.platform === 'win32') {
+      // On Windows, if the flow path is configured as a full path rather than just "flow" or
+      // "flow.exe", format the path correctly to pass to `where <flow>`
+      const dirPath = (_nuclideUri || _load_nuclideUri()).default.dirname(flowPath);
+      if (dirPath != null && dirPath !== '' && dirPath !== '.') {
+        const whichPath = `${(_nuclideUri || _load_nuclideUri()).default.dirname(flowPath)}:${(_nuclideUri || _load_nuclideUri()).default.basename(flowPath)}`;
+        return (yield (0, (_which || _load_which()).default)(whichPath)) != null;
+      }
+    }
+
     return (yield (0, (_which || _load_which()).default)(flowPath)) != null;
   });
 
@@ -64,52 +65,65 @@ function _load_eventKit() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _which;
 
 function _load_which() {
-  return _which = _interopRequireDefault(require('../../commons-node/which'));
+  return _which = _interopRequireDefault(require('nuclide-commons/which'));
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
 var _ConfigCache;
 
 function _load_ConfigCache() {
-  return _ConfigCache = require('../../commons-node/ConfigCache');
+  return _ConfigCache = require('nuclide-commons/ConfigCache');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const FLOW_BIN_PATH = 'node_modules/.bin/flow';
+
 // All the information needed to execute Flow in a given root. The path to the Flow binary we want
 // to use may vary per root -- for now, only if we are using the version of Flow from `flow-bin`.
 // The options also vary, right now only because they set the cwd to the current Flow root.
-class FlowExecInfoContainer {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
-  // Map from Flow root directory (or null for "no root" e.g. files outside of a Flow root, or
-  // unsaved files. Useful for outline view) to FlowExecInfo. A null value means that the Flow
-  // binary cannot be found for that root. It is possible for Flow to be available in some roots but
-  // not others because we will support root-specific installations of flow-bin.
-  constructor() {
-    this._flowConfigDirCache = new (_ConfigCache || _load_ConfigCache()).ConfigCache('.flowconfig');
+class FlowExecInfoContainer {
+  // Map from file path to the closest ancestor directory containing a .flowconfig file (the file's
+  // Flow root)
+  constructor(versionInfo) {
+    this._flowConfigDirCache = new (_ConfigCache || _load_ConfigCache()).ConfigCache(['.flowconfig']);
 
     this._flowExecInfoCache = (0, (_lruCache || _load_lruCache()).default)({
       max: 10,
       maxAge: 1000 * 30 });
 
     this._disposables = new (_eventKit || _load_eventKit()).CompositeDisposable();
+    this._versionInfo = versionInfo;
 
     this._observeSettings();
   }
 
-  // Map from file path to the closest ancestor directory containing a .flowconfig file (the file's
-  // Flow root)
+  // Map from Flow root directory (or null for "no root" e.g. files outside of a Flow root, or
+  // unsaved files. Useful for outline view) to FlowExecInfo. A null value means that the Flow
+  // binary cannot be found for that root. It is possible for Flow to be available in some roots but
+  // not others because we will support root-specific installations of flow-bin.
 
 
   dispose() {
@@ -131,23 +145,32 @@ class FlowExecInfoContainer {
     })();
   }
 
+  reallyGetFlowExecInfo(root) {
+    this._flowExecInfoCache.del(root);
+    return this.getFlowExecInfo(root);
+  }
+
   _computeFlowExecInfo(root) {
     var _this2 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const flowPath = yield _this2._getPathToFlow(root);
-      if (flowPath == null) {
-        return null;
+      let versionInfo;
+      if (_this2._versionInfo == null) {
+        const flowPath = yield _this2._getPathToFlow(root);
+        if (flowPath == null) {
+          return null;
+        }
+        versionInfo = yield getFlowVersionInformation(flowPath, root);
+        if (versionInfo == null) {
+          return null;
+        }
+      } else {
+        versionInfo = _this2._versionInfo;
       }
-      const versionInfo = yield getFlowVersionInformation(flowPath, root);
-      if (versionInfo == null) {
-        return null;
-      }
-      return {
-        pathToFlow: versionInfo.pathToFlow,
-        flowVersion: versionInfo.flowVersion,
+
+      return Object.assign({}, versionInfo, {
         execOptions: getFlowExecOptions(root)
-      };
+      });
     })();
   }
 
@@ -165,6 +188,15 @@ class FlowExecInfoContainer {
       // Pull this into a local on the off chance that the setting changes while we are doing the
       // check.
       const systemFlowPath = _this3._pathToFlow;
+
+      // If on Windows, prefer the .cmd wrapper for flow if it's available.
+      if (process.platform === 'win32') {
+        const cmdPath = systemFlowPath + '.cmd';
+        if (yield canFindFlow(systemFlowPath)) {
+          return cmdPath;
+        }
+      }
+
       if (yield canFindFlow(systemFlowPath)) {
         return systemFlowPath;
       }
@@ -183,7 +215,11 @@ class FlowExecInfoContainer {
       if (!_this4._canUseFlowBin) {
         return null;
       }
-      return (_nuclideUri || _load_nuclideUri()).default.join(root, 'node_modules/.bin/flow');
+      // If we are running on Windows, we should use the .cmd version of flow.
+      if (process.platform === 'win32') {
+        return (_nuclideUri || _load_nuclideUri()).default.join(root, FLOW_BIN_PATH + '.cmd');
+      }
+      return (_nuclideUri || _load_nuclideUri()).default.join(root, FLOW_BIN_PATH);
     })();
   }
 

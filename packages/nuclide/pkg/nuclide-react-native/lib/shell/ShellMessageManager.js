@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,8 +13,18 @@ function _load_ws() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const EXECUTOR_PORT = 8081;
-const WS_URL = `ws://localhost:${ EXECUTOR_PORT }/message?role=interface&name=Nuclide`;
+const EXECUTOR_PORT = 8081; /**
+                             * Copyright (c) 2015-present, Facebook, Inc.
+                             * All rights reserved.
+                             *
+                             * This source code is licensed under the license found in the LICENSE file in
+                             * the root directory of this source tree.
+                             *
+                             * 
+                             * @format
+                             */
+
+const WS_URL = `ws://localhost:${EXECUTOR_PORT}/message?role=interface&name=Nuclide`;
 
 class ShellMessageManager {
 
@@ -48,6 +49,5 @@ class ShellMessageManager {
       };
     }
   }
-
 }
 exports.ShellMessageManager = ShellMessageManager;

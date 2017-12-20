@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,18 +10,18 @@ function _load_settingsUtils() {
   return _settingsUtils = require('./settings-utils');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
-class SettingsCheckbox extends _reactForAtom.React.Component {
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-  constructor(props) {
-    super(props);
-    this._handleChange = this._handleChange.bind(this);
-  }
+class SettingsCheckbox extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
 
-  _handleChange(event) {
-    const isChecked = event.target.checked;
-    this.props.onChange(isChecked);
+    return _temp = super(...args), this._handleChange = event => {
+      const isChecked = event.target.checked;
+      this.props.onChange(isChecked);
+    }, _temp;
   }
 
   render() {
@@ -40,25 +31,25 @@ class SettingsCheckbox extends _reactForAtom.React.Component {
     const description = this.props.description;
     const value = this.props.value;
 
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'checkbox' },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'label',
         { htmlFor: id },
-        _reactForAtom.React.createElement('input', {
+        _react.default.createElement('input', {
           checked: value,
           id: id,
           onChange: this._handleChange,
           type: 'checkbox'
         }),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'div',
           { className: 'setting-title' },
           title
         )
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'setting-description' },
         description
@@ -66,5 +57,13 @@ class SettingsCheckbox extends _reactForAtom.React.Component {
     );
   }
 }
-exports.default = SettingsCheckbox;
-module.exports = exports['default'];
+exports.default = SettingsCheckbox; /**
+                                     * Copyright (c) 2015-present, Facebook, Inc.
+                                     * All rights reserved.
+                                     *
+                                     * This source code is licensed under the license found in the LICENSE file in
+                                     * the root directory of this source tree.
+                                     *
+                                     * 
+                                     * @format
+                                     */

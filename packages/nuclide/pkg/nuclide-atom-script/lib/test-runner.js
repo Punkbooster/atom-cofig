@@ -1,12 +1,38 @@
 'use strict';
-'use babel';
 
-/*
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+var _nuclideUri;
+
+function _load_nuclideUri() {
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
+
+var _string;
+
+function _load_string() {
+  return _string = require('nuclide-commons/string');
+}
+
+var _console = require('console');
+
+var _electron = _interopRequireDefault(require('electron'));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * 
+ * @format
  */
 
 // PRO-TIP: To debug this file, open it in Atom, and from the console, run:
@@ -19,30 +45,6 @@
 // This will open it in the spec runner window. Keep in mind that the main
 // process will have production options set - not test options like
 // `--user-data-dir`.
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
-
-var _nuclideUri;
-
-function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
-}
-
-var _string;
-
-function _load_string() {
-  return _string = require('../../commons-node/string');
-}
-
-var _console = require('console');
-
-var _electron = _interopRequireDefault(require('electron'));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const { ipcRenderer } = _electron.default;
 
@@ -65,13 +67,15 @@ const STDERR_FILTERS = [
 const debugConsole = global.console;
 
 // https://github.com/nodejs/node/blob/v5.1.1/lib/console.js
-const outputConsole = new _console.Console({ /* stdout */
+const outputConsole = new _console.Console({
+  /* stdout */
   write(chunk) {
     if (!STDOUT_FILTERS.some(re => re.test(chunk))) {
       ipcRenderer.send('write-to-stdout', chunk);
     }
   }
-}, { /* stderr */
+}, {
+  /* stderr */
   write(chunk) {
     if (!STDERR_FILTERS.some(re => re.test(chunk))) {
       ipcRenderer.send('write-to-stderr', chunk);
@@ -118,7 +122,12 @@ exports.default = (() => {
 
       // $FlowIgnore
       const handler = require(scriptPath);
-      exitCode = yield handler(scriptArgs);
+      if (handler.__esModule && typeof handler.default === 'function') {
+        // `(0, a.b)` so that `this` is undefined, like babel does.
+        exitCode = yield (0, handler.default)(scriptArgs);
+      } else {
+        exitCode = yield handler(scriptArgs);
+      }
     } catch (e) {
       outputConsole.error(e);
       exitCode = 1;
@@ -133,5 +142,3 @@ exports.default = (() => {
 
   return runTest;
 })();
-
-module.exports = exports['default'];

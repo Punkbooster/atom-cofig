@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -25,12 +16,24 @@ function _load_parseMessageText() {
  */
 function createMessage(record) {
   const { text, level, tags } = (0, (_parseMessageText || _load_parseMessageText()).parseMessageText)(record.Message);
+  if (record.Facility) {
+    tags.push(record.Facility);
+  }
   return {
     text,
     level: level == null ? getLevel(record.Level) : level,
-    tags: tags == null ? undefined : tags
+    tags: tags.length === 0 ? undefined : tags
   };
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 function getLevel(level) {
   switch (level) {
@@ -53,6 +56,6 @@ function getLevel(level) {
       // Debug
       return 'debug';
     default:
-      throw new Error(`Invalid ASL level: ${ level }`);
+      throw new Error(`Invalid ASL level: ${level}`);
   }
 }

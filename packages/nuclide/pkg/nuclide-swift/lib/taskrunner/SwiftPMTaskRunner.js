@@ -1,41 +1,38 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.SwiftPMTaskRunner = undefined;
 
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
-var _atom = require('atom');
-
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../../commons-node/process');
+  return _process = require('nuclide-commons/process');
+}
+
+var _event;
+
+function _load_event() {
+  return _event = require('nuclide-commons/event');
 }
 
 var _tasks;
@@ -86,19 +83,27 @@ function _load_SwiftPMAutocompletionProvider() {
   return _SwiftPMAutocompletionProvider = _interopRequireDefault(require('./providers/SwiftPMAutocompletionProvider'));
 }
 
-var _SwiftIcon;
+var _Icon;
 
-function _load_SwiftIcon() {
-  return _SwiftIcon = require('../ui/SwiftIcon');
+function _load_Icon() {
+  return _Icon = require('nuclide-commons-ui/Icon');
+}
+
+var _nullthrows;
+
+function _load_nullthrows() {
+  return _nullthrows = _interopRequireDefault(require('nullthrows'));
+}
+
+var _nuclideUri;
+
+function _load_nuclideUri() {
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri.js'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * The primary controller for spawning SwiftPM tasks, such as building a
- * package, or running its tests. This class conforms to Nuclide's TaskRunner
- * interface.
- */
+// This must match URI defined in ../../../nuclide-console/lib/ui/ConsoleContainer
 
 
 /**
@@ -112,14 +117,32 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * Actions are routed to the store via a Flux.Dispatcher (instantiated by
  * SwiftPMTaskRunner).
  */
+const CONSOLE_VIEW_URI = 'atom://nuclide/console';
+
+/**
+ * The primary controller for spawning SwiftPM tasks, such as building a
+ * package, or running its tests. This class conforms to Nuclide's TaskRunner
+ * interface.
+ */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class SwiftPMTaskRunner {
 
   constructor(initialState) {
     this.id = 'swiftpm';
     this.name = 'Swift';
     this._initialState = initialState;
-    this._outputMessages = new _rxjsBundlesRxMinJs.Subject();
-    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._outputMessages);
+    this._projectRoot = new _rxjsBundlesRxMinJs.Subject();
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._projectRoot.subscribe(path => this._getFlux().actions.updateProjectRoot(path)));
   }
 
   dispose() {
@@ -132,30 +155,20 @@ class SwiftPMTaskRunner {
 
   getExtraUi() {
     const { store, actions } = this._getFlux();
-    return class ExtraUi extends _reactForAtom.React.Component {
-
+    return class ExtraUi extends _react.default.Component {
       render() {
-        return _reactForAtom.React.createElement((_SwiftPMTaskRunnerToolbar || _load_SwiftPMTaskRunnerToolbar()).default, {
-          store: store,
-          actions: actions,
-          activeTaskType: this.props.activeTaskType
-        });
+        return _react.default.createElement((_SwiftPMTaskRunnerToolbar || _load_SwiftPMTaskRunnerToolbar()).default, { store: store, actions: actions });
       }
     };
   }
 
-  observeTaskList(callback) {
-    callback((_SwiftPMTaskRunnerTaskMetadata || _load_SwiftPMTaskRunnerTaskMetadata()).SwiftPMTaskRunnerTaskMetadata);
-    return new _atom.Disposable();
-  }
-
   getIcon() {
-    return (_SwiftIcon || _load_SwiftIcon()).SwiftIcon;
+    return () => _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: 'nuclicon-swift', className: 'nuclide-swift-task-runner-icon' });
   }
 
   runTask(taskName) {
     const store = this._getFlux().store;
-    const chdir = store.getChdir();
+    const chdir = (0, (_nullthrows || _load_nullthrows()).default)(store.getProjectRoot());
     const configuration = store.getConfiguration();
     const buildPath = store.getBuildPath();
 
@@ -168,38 +181,33 @@ class SwiftPMTaskRunner {
         command = (0, (_SwiftPMTaskRunnerCommands || _load_SwiftPMTaskRunnerCommands()).testCommand)(chdir, buildPath);
         break;
       default:
-        throw new Error(`Unknown task name: ${ taskName }`);
+        throw new Error(`Unknown task name: ${taskName}`);
     }
 
-    atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-console:toggle', { visible: true });
-    this._logOutput(`${ command.command } ${ command.args.join(' ') }`, 'log');
+    // eslint-disable-next-line nuclide-internal/atom-apis
+    atom.workspace.open(CONSOLE_VIEW_URI);
 
-    const observable = (0, (_process || _load_process()).observeProcess)(() => (0, (_process || _load_process()).safeSpawn)(command.command, command.args)).do(message => {
+    const observable = (0, (_tasks || _load_tasks()).createMessage)(`${command.command} ${command.args.join(' ')}`, 'log').concat((0, (_process || _load_process()).observeProcess)(command.command, command.args, {
+      /* TODO(T17353599) */isExitError: () => false
+    }).catch(error => _rxjsBundlesRxMinJs.Observable.of({ kind: 'error', error })) // TODO(T17463635)
+    .flatMap(message => {
       switch (message.kind) {
         case 'stderr':
         case 'stdout':
-          this._logOutput(message.data, 'log');
-          break;
+          return (0, (_tasks || _load_tasks()).createMessage)(message.data, 'log');
         case 'exit':
           if (message.exitCode === 0) {
-            this._logOutput(`${ command.command } exited successfully.`, 'success');
             this._getFlux().actions.updateCompileCommands(chdir, configuration, buildPath);
+            return (0, (_tasks || _load_tasks()).createMessage)(`${command.command} exited successfully.`, 'success');
           } else {
-            this._logOutput(`${ command.command } failed with ${ (0, (_process || _load_process()).exitEventToMessage)(message) }`, 'error');
+            return (0, (_tasks || _load_tasks()).createMessage)(`${command.command} failed with ${(0, (_process || _load_process()).exitEventToMessage)(message)}`, 'error');
           }
-          break;
         default:
-          break;
+          return _rxjsBundlesRxMinJs.Observable.empty();
       }
-    }).ignoreElements();
+    }));
 
-    const task = (0, (_tasks || _load_tasks()).taskFromObservable)(observable);
-    return Object.assign({}, task, {
-      cancel: () => {
-        this._logOutput('Task cancelled.', 'warning');
-        task.cancel();
-      }
-    });
+    return (0, (_tasks || _load_tasks()).taskFromObservable)(observable);
   }
 
   getAutocompletionProvider() {
@@ -209,23 +217,31 @@ class SwiftPMTaskRunner {
     return this._autocompletionProvider;
   }
 
-  getOutputMessages() {
-    return this._outputMessages;
+  setProjectRoot(projectRoot, callback) {
+    const path = projectRoot == null ? null : projectRoot.getPath();
+
+    const storeReady = (0, (_event || _load_event()).observableFromSubscribeFunction)(this._getFlux().store.subscribe.bind(this._getFlux().store)).map(() => this._getFlux().store).startWith(this._getFlux().store).filter(store => store.getProjectRoot() === path).share();
+
+    const enabledObservable = storeReady.map(store => store.getProjectRoot()).distinctUntilChanged().switchMap(root => {
+      if (!root || (_nuclideUri || _load_nuclideUri()).default.isRemote(root)) {
+        return _rxjsBundlesRxMinJs.Observable.of(false);
+      }
+      return this._packageFileExistsAtPath(root);
+    }).distinctUntilChanged();
+
+    const tasksObservable = storeReady.map(store => (_SwiftPMTaskRunnerTaskMetadata || _load_SwiftPMTaskRunnerTaskMetadata()).SwiftPMTaskRunnerTaskMetadata);
+
+    const subscription = _rxjsBundlesRxMinJs.Observable.combineLatest(enabledObservable, tasksObservable).subscribe(([enabled, tasks]) => callback(enabled, tasks));
+
+    this._projectRoot.next(path);
+
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(subscription);
   }
 
-  setProjectRoot(projectRoot) {
-    if (projectRoot) {
-      const path = projectRoot.getPath();
-      (_fsPromise || _load_fsPromise()).default.exists(`${ path }/Package.swift`).then(fileExists => {
-        if (fileExists) {
-          this._getFlux().actions.updateChdir(path);
-        }
-      });
-    }
-  }
-
-  _logOutput(text, level) {
-    this._outputMessages.next({ text, level });
+  _packageFileExistsAtPath(path) {
+    return (0, _asyncToGenerator.default)(function* () {
+      return (_fsPromise || _load_fsPromise()).default.exists((_nuclideUri || _load_nuclideUri()).default.join(path, 'Package.swift'));
+    })();
   }
 
   _getFlux() {

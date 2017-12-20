@@ -1,22 +1,15 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
 var _addTooltip;
 
 function _load_addTooltip() {
-  return _addTooltip = _interopRequireDefault(require('../../nuclide-ui/add-tooltip'));
+  return _addTooltip = _interopRequireDefault(require('nuclide-commons-ui/addTooltip'));
 }
 
 var _classnames;
@@ -31,6 +24,12 @@ function _load_ConnectionDetailsForm() {
   return _ConnectionDetailsForm = _interopRequireDefault(require('./ConnectionDetailsForm'));
 }
 
+var _connectionProfileUtils;
+
+function _load_connectionProfileUtils() {
+  return _connectionProfileUtils = require('./connection-profile-utils');
+}
+
 var _HR;
 
 function _load_HR() {
@@ -43,7 +42,7 @@ function _load_MutableListSelector() {
   return _MutableListSelector = require('../../nuclide-ui/MutableListSelector');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -55,16 +54,78 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * 'profiles'. Clicking on a 'profile' in the NuclideListSelector auto-fills
  * the form with the information associated with that profile.
  */
-class ConnectionDetailsPrompt extends _reactForAtom.React.Component {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class ConnectionDetailsPrompt extends _react.default.Component {
 
   constructor(props) {
     super(props);
+
+    this._handleConnectionDetailsFormDidChange = () => {
+      if (this._settingFormFieldsLock) {
+        return;
+      }
+
+      this.props.onDidChange();
+    };
+
+    this._onDefaultProfileClicked = () => {
+      const existingConnectionDetailsForm = this.refs['connection-details-form'];
+      if (existingConnectionDetailsForm) {
+        existingConnectionDetailsForm.promptChanged();
+      }
+      this.props.onProfileClicked(0);
+    };
+
+    this._onDeleteProfileClicked = profileId => {
+      if (profileId == null) {
+        return;
+      }
+      const existingConnectionDetailsForm = this.refs['connection-details-form'];
+      if (existingConnectionDetailsForm) {
+        existingConnectionDetailsForm.promptChanged();
+      }
+      // The id of a profile is its index in the list of props.
+      // * This requires a `+ 1` because the default profile is sliced from the Array during render
+      //   creating an effective offset of -1 for each index passed to the `MutableListSelector`.
+      this.props.onDeleteProfileClicked(parseInt(profileId, 10) + 1);
+    };
+
+    this._onProfileClicked = profileId => {
+      const existingConnectionDetailsForm = this.refs['connection-details-form'];
+      if (existingConnectionDetailsForm) {
+        existingConnectionDetailsForm.promptChanged();
+      }
+      // The id of a profile is its index in the list of props.
+      // * This requires a `+ 1` because the default profile is sliced from the Array during render
+      //   creating an effective offset of -1 for each index passed to the `MutableListSelector`.
+      this.props.onProfileClicked(parseInt(profileId, 10) + 1);
+    };
+
     this._settingFormFieldsLock = false;
 
-    this._handleConnectionDetailsFormDidChange = this._handleConnectionDetailsFormDidChange.bind(this);
-    this._onDefaultProfileClicked = this._onDefaultProfileClicked.bind(this);
-    this._onDeleteProfileClicked = this._onDeleteProfileClicked.bind(this);
-    this._onProfileClicked = this._onProfileClicked.bind(this);
+    this.state = {
+      IPs: null,
+      shouldDisplayTooltipWarning: false
+    };
+  }
+
+  componentDidMount() {
+    if (this.props.connectionProfiles) {
+      this.setState({
+        IPs: (0, (_connectionProfileUtils || _load_connectionProfileUtils()).getIPsForHosts)((0, (_connectionProfileUtils || _load_connectionProfileUtils()).getUniqueHostsForProfiles)(this.props.connectionProfiles))
+      });
+    }
+    this._checkForHostCollisions();
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -85,6 +146,13 @@ class ConnectionDetailsPrompt extends _reactForAtom.React.Component {
         existingConnectionDetailsForm.focus();
       }
     }
+
+    if (prevProps.connectionProfiles !== this.props.connectionProfiles && this.props.connectionProfiles) {
+      this.setState({
+        IPs: (0, (_connectionProfileUtils || _load_connectionProfileUtils()).getIPsForHosts)((0, (_connectionProfileUtils || _load_connectionProfileUtils()).getUniqueHostsForProfiles)(this.props.connectionProfiles))
+      });
+    }
+    this._checkForHostCollisions();
   }
 
   focus() {
@@ -104,65 +172,54 @@ class ConnectionDetailsPrompt extends _reactForAtom.React.Component {
     }
   }
 
-  _handleConnectionDetailsFormDidChange() {
-    if (this._settingFormFieldsLock) {
-      return;
-    }
+  _checkForHostCollisions() {
+    var _this = this;
 
-    this.props.onDidChange();
-  }
-
-  _onDefaultProfileClicked() {
-    this.props.onProfileClicked(0);
-  }
-
-  _onDeleteProfileClicked(profileId) {
-    if (profileId == null) {
-      return;
-    }
-
-    // The id of a profile is its index in the list of props.
-    // * This requires a `+ 1` because the default profile is sliced from the Array during render
-    //   creating an effective offset of -1 for each index passed to the `MutableListSelector`.
-    this.props.onDeleteProfileClicked(parseInt(profileId, 10) + 1);
-  }
-
-  _onProfileClicked(profileId) {
-    // The id of a profile is its index in the list of props.
-    // * This requires a `+ 1` because the default profile is sliced from the Array during render
-    //   creating an effective offset of -1 for each index passed to the `MutableListSelector`.
-    this.props.onProfileClicked(parseInt(profileId, 10) + 1);
+    return (0, _asyncToGenerator.default)(function* () {
+      if (_this.state.IPs) {
+        const IPs = yield _this.state.IPs;
+        if (IPs.length !== new Set(IPs).size) {
+          if (!_this.state.shouldDisplayTooltipWarning) {
+            _this.setState({ shouldDisplayTooltipWarning: true });
+          }
+        } else {
+          if (_this.state.shouldDisplayTooltipWarning) {
+            _this.setState({ shouldDisplayTooltipWarning: false });
+          }
+        }
+      }
+    })();
   }
 
   render() {
-
     // If there are profiles, pre-fill the form with the information from the
     // specified selected profile.
     const prefilledConnectionParams = this.getPrefilledConnectionParams() || {};
-
+    let uniqueHosts;
     let defaultConnectionProfileList;
     let listSelectorItems;
     const connectionProfiles = this.props.connectionProfiles;
     if (connectionProfiles == null || connectionProfiles.length === 0) {
       listSelectorItems = [];
     } else {
+      uniqueHosts = (0, (_connectionProfileUtils || _load_connectionProfileUtils()).getUniqueHostsForProfiles)(connectionProfiles);
       const mostRecentClassName = (0, (_classnames || _load_classnames()).default)('list-item', {
         selected: this.props.indexOfSelectedConnectionProfile === 0
       });
 
-      defaultConnectionProfileList = _reactForAtom.React.createElement(
+      defaultConnectionProfileList = _react.default.createElement(
         'div',
         { className: 'block select-list' },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'ol',
           { className: 'list-group', style: { marginTop: 0 } },
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             'li',
             {
               className: mostRecentClassName,
               onClick: this._onDefaultProfileClicked,
               onDoubleClick: this.props.onConfirm },
-            _reactForAtom.React.createElement('span', {
+            _react.default.createElement('span', {
               className: 'icon icon-info pull-right connection-details-icon-info',
               ref: (0, (_addTooltip || _load_addTooltip()).default)({
                 // Intentionally *not* an arrow function so the jQuery Tooltip plugin can set the
@@ -179,7 +236,7 @@ class ConnectionDetailsPrompt extends _reactForAtom.React.Component {
             'Most Recent'
           )
         ),
-        _reactForAtom.React.createElement((_HR || _load_HR()).HR, null)
+        _react.default.createElement((_HR || _load_HR()).HR, null)
       );
 
       listSelectorItems = connectionProfiles.slice(1).map((profile, index) => {
@@ -203,19 +260,40 @@ class ConnectionDetailsPrompt extends _reactForAtom.React.Component {
       idOfSelectedItem = String(idOfSelectedItem);
     }
 
-    return _reactForAtom.React.createElement(
+    let toolTipWarning;
+    if (this.state.shouldDisplayTooltipWarning) {
+      toolTipWarning = _react.default.createElement('span', {
+        style: { paddingLeft: 10 },
+        className: 'icon icon-info pull-right nuclide-remote-projects-tooltip-warning',
+        ref: (0, (_addTooltip || _load_addTooltip()).default)({
+          // Intentionally *not* an arrow function so the jQuery
+          // Tooltip plugin can set the context to the Tooltip
+          // instance.
+          placement() {
+            // Atom modals have z indices of 9999. This Tooltip needs
+            // to stack on top of the modal; beat the modal's z-index.
+            this.tip.style.zIndex = 10999;
+            return 'right';
+          },
+          title: 'Two or more of your profiles use host names that resolve ' + 'to the same IP address. Consider unifying them to avoid ' + 'potential collisions.'
+        })
+      });
+    }
+
+    return _react.default.createElement(
       'div',
       { className: 'nuclide-remote-projects-connection-dialog' },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'nuclide-remote-projects-connection-profiles' },
         defaultConnectionProfileList,
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'h6',
           null,
-          'Profiles'
+          'Profiles',
+          toolTipWarning
         ),
-        _reactForAtom.React.createElement((_MutableListSelector || _load_MutableListSelector()).MutableListSelector, {
+        _react.default.createElement((_MutableListSelector || _load_MutableListSelector()).MutableListSelector, {
           items: listSelectorItems,
           idOfSelectedItem: idOfSelectedItem,
           onItemClicked: this._onProfileClicked,
@@ -224,7 +302,7 @@ class ConnectionDetailsPrompt extends _reactForAtom.React.Component {
           onDeleteButtonClicked: this._onDeleteProfileClicked
         })
       ),
-      _reactForAtom.React.createElement((_ConnectionDetailsForm || _load_ConnectionDetailsForm()).default, {
+      _react.default.createElement((_ConnectionDetailsForm || _load_ConnectionDetailsForm()).default, {
         className: 'nuclide-remote-projects-connection-details',
         initialUsername: prefilledConnectionParams.username,
         initialServer: prefilledConnectionParams.server,
@@ -234,6 +312,7 @@ class ConnectionDetailsPrompt extends _reactForAtom.React.Component {
         initialPathToPrivateKey: prefilledConnectionParams.pathToPrivateKey,
         initialAuthMethod: prefilledConnectionParams.authMethod,
         initialDisplayTitle: prefilledConnectionParams.displayTitle,
+        profileHosts: uniqueHosts,
         onConfirm: this.props.onConfirm,
         onCancel: this.props.onCancel,
         onDidChange: this._handleConnectionDetailsFormDidChange,
@@ -243,4 +322,3 @@ class ConnectionDetailsPrompt extends _reactForAtom.React.Component {
   }
 }
 exports.default = ConnectionDetailsPrompt;
-module.exports = exports['default'];

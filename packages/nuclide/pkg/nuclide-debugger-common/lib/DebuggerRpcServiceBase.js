@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -22,31 +13,42 @@ function _load_ws() {
   return _ws = _interopRequireDefault(require('ws'));
 }
 
-var _nuclideDebuggerCommon;
+var _ClientCallback;
 
-function _load_nuclideDebuggerCommon() {
-  return _nuclideDebuggerCommon = require('../../nuclide-debugger-common');
+function _load_ClientCallback() {
+  return _ClientCallback = _interopRequireDefault(require('./ClientCallback'));
 }
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class DebuggerRpcServiceBase {
 
   constructor(debuggerRpcServiceName) {
-    this._clientCallback = new (_nuclideDebuggerCommon || _load_nuclideDebuggerCommon()).ClientCallback();
-    this._logger = (0, (_nuclideLogging || _load_nuclideLogging()).getCategoryLogger)(`nuclide-debugger-${ debuggerRpcServiceName }-rpc`);
+    this._clientCallback = new (_ClientCallback || _load_ClientCallback()).default();
+    this._logger = (0, (_log4js || _load_log4js()).getLogger)(`nuclide-debugger-${debuggerRpcServiceName}-rpc`);
     this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._clientCallback);
   }
 
@@ -64,6 +66,10 @@ class DebuggerRpcServiceBase {
 
   getOutputWindowObservable() {
     return this._clientCallback.getOutputWindowObservable().publish();
+  }
+
+  getAtomNotificationObservable() {
+    return this._clientCallback.getAtomNotificationObservable().publish();
   }
 
   getServerMessageObservable() {
@@ -96,6 +102,10 @@ class DebuggerRpcWebSocketService extends DebuggerRpcServiceBase {
     })();
   }
 
+  getWebSocket() {
+    return this._webSocket;
+  }
+
   _handleWebSocketServerMessage(message) {
     this._clientCallback.sendChromeMessage(message);
   }
@@ -107,16 +117,25 @@ class DebuggerRpcWebSocketService extends DebuggerRpcServiceBase {
         // Successfully connected with WS server, fulfill the promise.
         resolve(ws);
       });
+      ws.on('error', error => {
+        reject(error);
+        this.dispose();
+      });
+      ws.on('close', (code, reason) => {
+        const message = `WebSocket closed with: ${code}, ${reason}`;
+        reject(Error(message));
+        this.dispose();
+      });
     });
   }
 
   sendCommand(message) {
     const webSocket = this._webSocket;
     if (webSocket != null) {
-      this.getLogger().logTrace(`forward client message to server: ${ message }`);
+      this.getLogger().trace(`forward client message to server: ${message}`);
       webSocket.send(message);
     } else {
-      this.getLogger().logInfo(`Nuclide sent message to server after socket closed: ${ message }`);
+      this.getLogger().info(`Nuclide sent message to server after socket closed: ${message}`);
     }
     return Promise.resolve();
   }

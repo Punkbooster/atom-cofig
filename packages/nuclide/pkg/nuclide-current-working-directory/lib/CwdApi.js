@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,19 +8,19 @@ exports.CwdApi = undefined;
 var _event;
 
 function _load_event() {
-  return _event = require('../../commons-node/event');
+  return _event = require('nuclide-commons/event');
 }
 
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _FileTreeHelpers;
@@ -57,7 +48,7 @@ class CwdApi {
 
   setCwd(path) {
     if (getDirectory(path) == null) {
-      throw new Error(`Path does not belong to a project root: ${ path }`);
+      throw new Error(`Path does not belong to a project root: ${path}`);
     }
     this._cwdPath$.next(path);
   }
@@ -86,10 +77,19 @@ class CwdApi {
   getCwd() {
     return getDirectory(this._cwdPath$.getValue()) || getDirectory(this._getDefaultCwdPath());
   }
-
 }
 
-exports.CwdApi = CwdApi;
+exports.CwdApi = CwdApi; /**
+                          * Copyright (c) 2015-present, Facebook, Inc.
+                          * All rights reserved.
+                          *
+                          * This source code is licensed under the license found in the LICENSE file in
+                          * the root directory of this source tree.
+                          *
+                          * 
+                          * @format
+                          */
+
 function getDirectory(path) {
   if (path == null) {
     return null;

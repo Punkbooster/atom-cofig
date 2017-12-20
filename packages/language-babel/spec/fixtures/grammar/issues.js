@@ -1,5 +1,229 @@
 // SYNTAX TEST "source.js.jsx"
 
+// Issue 390
+
+let a = await a()
+// <- storage.type.js
+ // <- storage.type.js
+//^                storage.type.js
+//  ^              variable.other.readwrite.js
+//    ^            keyword.operator.assignment.js
+//      ^^^^^      keyword.control.flow.js
+//            ^^^  meta.function-call.without-arguments.js
+//            ^    entity.name.function.js
+//             ^^  meta.brace.round.js
+this::a()
+// <- variable.language.this.js
+ // <- variable.language.this.js
+//^^       variable.language.this.js
+//  ^^     keyword.operator.accessor.js
+//    ^^^  meta.function-call.without-arguments.js
+//    ^    entity.name.function.js
+//     ^^  meta.brace.round.js
+
+// Issue 389
+function a(){
+  this::hid().p = false
+//^^^^^^^^^^^^^ ^ ^^^^^  meta.function.js
+//^^^^                   variable.language.this.js
+//    ^^     ^           keyword.operator.accessor.js
+//      ^^^^^            meta.function-call.without-arguments.js
+//      ^^^              entity.name.function.js
+//         ^^            meta.brace.round.js
+//            ^          meta.property.object.js
+//            ^          variable.other.property.js
+//              ^        keyword.operator.assignment.js
+//                ^^^^^  constant.language.boolean.false.js
+  this::hid().f = false
+//^^^^^^^^^^^^^ ^ ^^^^^  meta.function.js
+//^^^^                   variable.language.this.js
+//    ^^     ^           keyword.operator.accessor.js
+//      ^^^^^            meta.function-call.without-arguments.js
+//      ^^^              entity.name.function.js
+//         ^^            meta.brace.round.js
+//            ^          meta.property.object.js
+//            ^          variable.other.property.js
+//              ^        keyword.operator.assignment.js
+//                ^^^^^  constant.language.boolean.false.js
+  this::hid().c = options.config || {}
+//^^^^^^^^^^^^^ ^ ^^^^^^^^^^^^^^ ^^ ^^  meta.function.js
+//^^^^                                  variable.language.this.js
+//    ^^     ^           ^              keyword.operator.accessor.js
+//      ^^^^^                           meta.function-call.without-arguments.js
+//      ^^^                             entity.name.function.js
+//         ^^                           meta.brace.round.js
+//            ^           ^^^^^^        meta.property.object.js
+//            ^           ^^^^^^        variable.other.property.js
+//              ^                       keyword.operator.assignment.js
+//                ^^^^^^^               variable.other.object.js
+//                               ^^     keyword.operator.logical.js
+//                                  ^^  meta.brace.curly.js
+  await this::dis('')
+//^^^^^ ^^^^^^^^^^^^^  meta.function.js
+//^^^^^                keyword.control.flow.js
+//      ^^^^           variable.language.this.js
+//          ^^         keyword.operator.accessor.js
+//            ^^^^^^^  meta.function-call.with-arguments.js
+//            ^^^      entity.name.function.js
+//               ^  ^  meta.brace.round.js
+//                ^^   string.quoted.single.js
+//                ^    punctuation.definition.string.begin.js
+//                 ^   punctuation.definition.string.end.js
+  await this::dis('')
+//^^^^^ ^^^^^^^^^^^^^  meta.function.js
+//^^^^^                keyword.control.flow.js
+//      ^^^^           variable.language.this.js
+//          ^^         keyword.operator.accessor.js
+//            ^^^^^^^  meta.function-call.with-arguments.js
+//            ^^^      entity.name.function.js
+//               ^  ^  meta.brace.round.js
+//                ^^   string.quoted.single.js
+//                ^    punctuation.definition.string.begin.js
+//                 ^   punctuation.definition.string.end.js
+}
+
+// Issue 388
+let a = <T>(
+// <- storage.type.js
+ // <- storage.type.js
+//^           storage.type.js
+//  ^         variable.other.readwrite.js
+//    ^       keyword.operator.assignment.js
+//      ^^^^  meta.function.arrow.js
+//      ^ ^   punctuation.flowtype
+//       ^    support.type.class.flowtype
+//         ^  punctuation.definition.parameters.begin.js
+//         ^  meta.brace.round.js
+  somevar: T
+//^^^^^^^^ ^  meta.function.arrow.js
+//^^^^^^^^ ^  meta.function.parameters.js
+//^^^^^^^     variable.other.readwrite.js
+//       ^    punctuation.type.flowtype
+//         ^  support.type.class.flowtype
+) => {}
+// <- meta.function.arrow.js punctuation.definition.parameters.end.js meta.brace.round.js
+//^^ ^^  meta.function.arrow.js
+//^^     storage.type.function.arrow.js
+//   ^^  meta.brace.curly.js
+
+// Issue 376
+f(arg, arg1 => a >= b)
+// <- meta.function-call.with-arguments.js entity.name.function.js
+ // <- meta.function-call.with-arguments.js meta.brace.round.js
+//^^^^ ^^^^ ^^ ^ ^^ ^^  meta.function-call.with-arguments.js
+//                   ^  meta.brace.round.js
+//^^^  ^^^^    ^    ^   variable.other.readwrite.js
+//   ^                  meta.delimiter.comma.js
+//     ^^^^ ^^          meta.function.arrow.js
+//     ^^^^             meta.function.parameters.js
+//          ^^          storage.type.function.arrow.js
+//               ^^     keyword.operator.relational.js
+
+// Issue 360
+class Foo implements Serializable {}
+// <- meta.class.js storage.type.class.js
+ // <- meta.class.js storage.type.class.js
+//^^^                                 meta.class.js
+//^^^                                 storage.type.class.js
+//    ^^^            ^^^^^^^^^^^^     entity.name.class.js
+//        ^^^^^^^^^^                  meta.class.extends.js
+//        ^^^^^^^^^^                  storage.type.implements.js
+//                                ^   punctuation.section.class.begin.js
+//                                 ^  punctuation.section.class.end.js
+
+// Issue 349
+let obj= {
+  [a[1+2]]: { x: 'a' }
+//^ ^   ^^              meta.brace.square.js
+// ^                    variable.other.object.js
+//   ^ ^                constant.numeric.js
+//    ^                 keyword.operator.arithmetic.js
+//        ^    ^        punctuation.separator.key-value.js
+//          ^        ^  meta.brace.curly.litobj.js
+//            ^         constant.other.object.key.js
+//            ^         string.unquoted.js
+//               ^^^    string.quoted.single.js
+//               ^      punctuation.definition.string.begin.js
+//                 ^    punctuation.definition.string.end.js
+}
+
+// ISSUE 342
+const setShapeState = (
+// <- storage.type.js
+ // <- storage.type.js
+//^^^                    storage.type.js
+//    ^^^^^^^^^^^^^      variable.other.readwrite.js
+//                  ^    keyword.operator.assignment.js
+//                    ^  meta.brace.round.js
+  state : ShapeDataState,
+//^^^^^                    variable.other.readwrite.js
+//        ^^^^^^^^^^^^^^   support.type.class.flowtype
+//                      ^  meta.delimiter.comma.js
+  newShapeData : ShapeData,
+//^^^^^^^^^^^^               variable.other.readwrite.js
+//               ^^^^^^^^^   support.type.class.flowtype
+//                        ^  meta.delimiter.comma.js
+) => ({
+// <- meta.brace.round.js
+//   ^   meta.brace.round.js
+//^^     storage.type.function.arrow.js
+//    ^  meta.brace.curly.litobj.js
+  ...state,
+//^^^        keyword.operator.spread.js
+//   ^^^^^   meta.property.object.js
+//   ^^^^^   variable.other.property.js
+//        ^  meta.delimiter.comma.js
+  [cId]: {
+//^   ^     meta.brace.square.js
+// ^^^      variable.other.readwrite.js
+//     ^    punctuation.separator.key-value.js
+//       ^  meta.brace.curly.litobj.js
+    ...state[cId],
+//  ^^^             keyword.operator.spread.js
+//     ^^^^^        meta.property.object.js
+//     ^^^^^        variable.other.property.js
+//          ^   ^   meta.brace.square.js
+//           ^^^    variable.other.readwrite.js
+//               ^  meta.delimiter.comma.js
+    [shapeId]: newShapeData,
+//  ^       ^                 meta.brace.square.js
+//   ^^^^^^^   ^^^^^^^^^^^^   variable.other.readwrite.js
+//           ^                punctuation.separator.key-value.js
+//                         ^  meta.delimiter.comma.js
+  }
+//^  meta.brace.curly.litobj.js
+})
+// <- meta.brace.curly.litobj.js
+ // <- meta.brace.round.js
+
+// ISSUE 332
+const a={
+// <- storage.type.js
+ // <- storage.type.js
+//^^^      storage.type.js
+//    ^    variable.other.readwrite.js
+//     ^   keyword.operator.assignment.js
+//      ^  meta.brace.curly.litobj.js
+  ABC: ABC,
+//^^^        constant.other.object.key.js
+//^^^        string.unquoted.js
+//   ^       punctuation.separator.key-value.js
+//     ^^^   variable.other.constant.js
+//        ^  meta.delimiter.comma.js
+  ABC,
+//^^^   constant.other.object.key.js
+//^^^   variable.other.constant.shorthandpropertyname.js
+//   ^  meta.delimiter.comma.js
+  abc: abc
+//^^^       constant.other.object.key.js
+//^^^       string.unquoted.js
+//   ^      punctuation.separator.key-value.js
+//     ^^^  variable.other.readwrite.js
+  abc,
+//^^^   variable.other.readwrite.shorthandpropertyname.js
+//   ^  meta.delimiter.comma.js
+}
+
 // ISSUE 297
 
 for (var prop:interator in obj) {}
@@ -116,7 +340,7 @@ let a= {
 //^       storage.type.js
 //  ^     variable.other.readwrite.js
 //   ^    keyword.operator.assignment.js
-//     ^  meta.brace.curly.js
+//     ^  meta.brace.curly.litobj.js
   if(a) {}
 //^^^^^ ^^  meta.function.method.js
 //^^        entity.name.function.method.js
@@ -127,7 +351,7 @@ let a= {
 //    ^     punctuation.definition.parameters.end.js
 //      ^^  meta.brace.curly.js
 }
-// <- meta.brace.curly.js
+// <- meta.brace.curly.litobj.js
 
 // ISSUE 275
 // <- comment.line.double-slash.js punctuation.definition.comment.js
@@ -282,11 +506,11 @@ let obj = [
 //      ^    keyword.operator.assignment.js
 //        ^  meta.brace.square.js
   {
-//^  meta.brace.curly.js
+//^  meta.brace.curly.litobj.js
     [
 //  ^  meta.brace.square.js
       {
-//    ^  meta.brace.curly.js
+//    ^  meta.brace.curly.litobj.js
         async bar() {}
 //      ^^^^^ ^^^^^ ^^  meta.function.method.js
 //      ^^^^^           storage.type.js
@@ -296,11 +520,11 @@ let obj = [
 //                ^     punctuation.definition.parameters.end.js
 //                  ^^  meta.brace.curly.js
       }
-//    ^  meta.brace.curly.js
+//    ^  meta.brace.curly.litobj.js
     ]
 //  ^  meta.brace.square.js
   }
-//^  meta.brace.curly.js
+//^  meta.brace.curly.litobj.js
 ]
 // <- meta.brace.square.js
 
@@ -314,12 +538,12 @@ let obj = {
 //^          storage.type.js
 //  ^^^      variable.other.readwrite.js
 //      ^    keyword.operator.assignment.js
-//        ^  meta.brace.curly.js
+//        ^  meta.brace.curly.litobj.js
   nested: {
-//^^^^^^^    constant.other.object.key.js
+//^^^^^^     constant.other.object.key.js
 //^^^^^^     string.unquoted.js
 //      ^    punctuation.separator.key-value.js
-//        ^  meta.brace.curly.js
+//        ^  meta.brace.curly.litobj.js
     async bar() {
 //  ^^^^^ ^^^^^ ^  meta.function.method.js
 //  ^^^^^          storage.type.js
@@ -337,9 +561,9 @@ let obj = {
 //  ^  meta.function.method.js
 //  ^  meta.brace.curly.js
   }
-//^  meta.brace.curly.js
+//^  meta.brace.curly.litobj.js
 }
-// <- meta.brace.curly.js
+// <- meta.brace.curly.litobj.js
 
 // ISSUE #255
 // <- comment.line.double-slash.js punctuation.definition.comment.js
@@ -395,7 +619,7 @@ meth({
 //^^^^  meta.function-call.with-arguments.js
 //^^    entity.name.function.js
 //  ^   meta.brace.round.js
-//   ^  meta.brace.curly.js
+//   ^  meta.brace.curly.litobj.js
   'first-prop'({arg1, arg2}) {
 //^^^^^^^^^^^^^^^^^^^ ^^^^^^ ^  meta.function-call.with-arguments.js
 //^^^^^^^^^^^^^^^^^^^ ^^^^^^ ^  meta.function.method.js
@@ -403,10 +627,11 @@ meth({
 //            ^                 punctuation.definition.parameters.begin.js
 //            ^            ^    meta.brace.round.js
 //             ^^^^^^ ^^^^^     meta.function.parameters.js
-//             ^          ^  ^  meta.brace.curly.js
+//             ^          ^     meta.brace.curly.litobj.js
 //              ^^^^  ^^^^      variable.other.readwrite.shorthandpropertyname.js
 //                  ^           meta.delimiter.comma.js
 //                         ^    punctuation.definition.parameters.end.js
+//                           ^  meta.brace.curly.js
   },
 //^^  meta.function-call.with-arguments.js
 //^   meta.function.method.js
@@ -419,14 +644,15 @@ meth({
 //             ^                 punctuation.definition.parameters.begin.js
 //             ^            ^    meta.brace.round.js
 //              ^^^^^^ ^^^^^     meta.function.parameters.js
-//              ^          ^  ^  meta.brace.curly.js
+//              ^          ^     meta.brace.curly.litobj.js
 //               ^^^^  ^^^^      variable.other.readwrite.shorthandpropertyname.js
 //                   ^           meta.delimiter.comma.js
 //                          ^    punctuation.definition.parameters.end.js
+//                            ^  meta.brace.curly.js
  }
  // <- meta.function-call.with-arguments.js meta.function.method.js meta.brace.curly.js
 })
-// <- meta.function-call.with-arguments.js meta.brace.curly.js
+// <- meta.function-call.with-arguments.js meta.brace.curly.litobj.js
  // <- meta.function-call.with-arguments.js meta.brace.round.js
 
 // ISSUE #181
@@ -553,7 +779,7 @@ function a(state ) {
 //                            ^^^^^^^               ^^^^^^^^^^^^^^^^                 entity.name.function.js
 //                                   ^                              ^           ^ ^  meta.brace.round.js
 //                                                ^                                  meta.delimiter.comma.js
-//                                                                   ^         ^     meta.brace.curly.js
+//                                                                   ^         ^     meta.brace.curly.litobj.js
 //                                                                     ^^^           keyword.operator.spread.js
             return state
 //          ^^^^^^ ^^^^^  meta.function.js
@@ -711,7 +937,7 @@ function getObject() {
   return {
 //^^^^^^ ^  meta.function.js
 //^^^^^^    keyword.control.flow.js
-//       ^  meta.brace.curly.js
+//       ^  meta.brace.curly.litobj.js
     async doStuff() {},
 //  ^^^^^ ^^^^^^^^^ ^^^  meta.function.js
 //  ^^^^^ ^^^^^^^^^ ^^   meta.function.method.js
@@ -746,7 +972,7 @@ function getObject() {
 //                      ^^  meta.brace.curly.js
   }
 //^  meta.function.js
-//^  meta.brace.curly.js
+//^  meta.brace.curly.litobj.js
 }
 // <- meta.function.js meta.brace.curly.js
 
@@ -761,7 +987,7 @@ foo({ //
 //^^^ ^^  meta.function-call.with-arguments.js
 //^       entity.name.function.js
 // ^      meta.brace.round.js
-//  ^     meta.brace.curly.js
+//  ^     meta.brace.curly.litobj.js
 //    ^^  comment.line.double-slash.js
 //    ^^  punctuation.definition.comment.js
   bar() {} //
@@ -775,7 +1001,7 @@ foo({ //
 //         ^^  comment.line.double-slash.js
 //         ^^  punctuation.definition.comment.js
 })
-// <- meta.function-call.with-arguments.js meta.brace.curly.js
+// <- meta.function-call.with-arguments.js meta.brace.curly.litobj.js
  // <- meta.function-call.with-arguments.js meta.brace.round.js
 
 // ISSUE: 169
@@ -813,9 +1039,9 @@ let a = {
 //^        storage.type.js
 //  ^      variable.other.readwrite.js
 //    ^    keyword.operator.assignment.js
-//      ^  meta.brace.curly.js
+//      ^  meta.brace.curly.litobj.js
   a: td.function()
-//^^                constant.other.object.key.js
+//^                 constant.other.object.key.js
 //^                 string.unquoted.js
 // ^                punctuation.separator.key-value.js
 //   ^^             variable.other.object.js
@@ -824,7 +1050,7 @@ let a = {
 //      ^^^^^^^^    entity.name.function.js
 //              ^^  meta.brace.round.js
   b: td.function()
-//^^                constant.other.object.key.js
+//^                 constant.other.object.key.js
 //^                 string.unquoted.js
 // ^                punctuation.separator.key-value.js
 //   ^^             variable.other.object.js
@@ -833,7 +1059,7 @@ let a = {
 //      ^^^^^^^^    entity.name.function.js
 //              ^^  meta.brace.round.js
 }
-// <- meta.brace.curly.js
+// <- meta.brace.curly.litobj.js
 let a: number = td.function();
 // <- storage.type.js
  // <- storage.type.js
@@ -866,9 +1092,9 @@ let a = {
 //^        storage.type.js
 //  ^      variable.other.readwrite.js
 //    ^    keyword.operator.assignment.js
-//      ^  meta.brace.curly.js
+//      ^  meta.brace.curly.litobj.js
   a: td.function();
-//^^                 constant.other.object.key.js
+//^                  constant.other.object.key.js
 //^                  string.unquoted.js
 // ^                 punctuation.separator.key-value.js
 //   ^^              variable.other.object.js
@@ -878,7 +1104,7 @@ let a = {
 //              ^^   meta.brace.round.js
 //                ^  punctuation.terminator.statement.js
   b: td.function();
-//^^                 constant.other.object.key.js
+//^                  constant.other.object.key.js
 //^                  string.unquoted.js
 // ^                 punctuation.separator.key-value.js
 //   ^^              variable.other.object.js
@@ -888,7 +1114,7 @@ let a = {
 //              ^^   meta.brace.round.js
 //                ^  punctuation.terminator.statement.js
 }// <- meta.brace.curly.js
-// <- meta.brace.curly.js
+// <- meta.brace.curly.litobj.js
  // <- comment.line.double-slash.js punctuation.definition.comment.js
 //^ ^^ ^^^^^^^^^^^^^^^^^^^  comment.line.double-slash.js
 //^                         punctuation.definition.comment.js
@@ -904,7 +1130,7 @@ let obj = { a: () => async () => 1 }
 //^                  ^^^^^            storage.type.js
 //  ^^^                               variable.other.readwrite.js
 //      ^                             keyword.operator.assignment.js
-//        ^                        ^  meta.brace.curly.js
+//        ^                        ^  meta.brace.curly.litobj.js
 //          ^^ ^^ ^^                  meta.function.json.arrow.js
 //          ^                         entity.name.function.js
 //           ^                        punctuation.separator.key-value.js
@@ -924,7 +1150,7 @@ export default {
 // <- keyword.control.module.js
  // <- keyword.control.module.js
 //^^^^ ^^^^^^^    keyword.control.module.js
-//             ^  meta.brace.curly.js
+//             ^  meta.brace.curly.litobj.js
   async get() { return 1 },
 //^^^^^ ^^^^^ ^ ^^^^^^ ^ ^   meta.function.method.js
 //^^^^^                      storage.type.js
@@ -967,7 +1193,7 @@ export default {
 //                   ^       keyword.operator.assignment.js
 //                        ^  meta.delimiter.comma.js
 }// <- meta.brace.curly.js
-// <- meta.brace.curly.js
+// <- meta.brace.curly.litobj.js
  // <- comment.line.double-slash.js punctuation.definition.comment.js
 //^ ^^ ^^^^^^^^^^^^^^^^^^^  comment.line.double-slash.js
 //^                         punctuation.definition.comment.js

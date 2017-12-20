@@ -4,15 +4,15 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Wire Atom notifications up to the Nuclide console",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
     "testRunner": "apm"
   },
   "consumedServices": {
-    "nuclide-output": {
+    "nuclide-console": {
       "versions": {
-        "0.0.0": "consumeOutputService"
+        "0.0.0": "consumeConsoleService"
       }
     }
   }

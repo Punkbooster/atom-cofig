@@ -1,13 +1,10 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _electron = require('electron');
 
 var _constants;
 
@@ -18,7 +15,7 @@ function _load_constants() {
 var _AtomInput;
 
 function _load_AtomInput() {
-  return _AtomInput = require('../../nuclide-ui/AtomInput');
+  return _AtomInput = require('nuclide-commons-ui/AtomInput');
 }
 
 var _Dropdown;
@@ -27,7 +24,26 @@ function _load_Dropdown() {
   return _Dropdown = require('../../nuclide-ui/Dropdown');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _Button;
+
+function _load_Button() {
+  return _Button = require('nuclide-commons-ui/Button');
+}
+
+var _react = _interopRequireDefault(require('react'));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const WEB_SERVER_OPTION = { label: 'Attach to WebServer', value: 'webserver' };
 const SCRIPT_OPTION = { label: 'Launch Script', value: 'script' };
@@ -36,22 +52,29 @@ const DEBUG_OPTIONS = [WEB_SERVER_OPTION, SCRIPT_OPTION];
 
 const NO_LAUNCH_DEBUG_OPTIONS = [WEB_SERVER_OPTION];
 
-class HhvmToolbar extends _reactForAtom.React.Component {
+class HhvmToolbar extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
 
-  constructor(props) {
-    super(props);
-    this._handleDropdownChange = this._handleDropdownChange.bind(this);
-    this._updateLastScriptCommand = this._updateLastScriptCommand.bind(this);
-  }
-
-  _updateLastScriptCommand(command) {
-    if (this.props.projectStore.getDebugMode() === 'script') {
-      this.props.projectStore.updateLastScriptCommand(command);
-    }
+    return _temp = super(...args), this._updateLastScriptCommand = command => {
+      if (this.props.projectStore.getDebugMode() !== 'webserver') {
+        this.props.projectStore.updateLastScriptCommand(command);
+      }
+    }, this._handleDropdownChange = value => {
+      this.props.projectStore.setDebugMode(value);
+      this._suggestTargetIfCustomDebugMode(value);
+    }, _temp;
   }
 
   _getMenuItems() {
-    return this._isTargetLaunchable(this.props.projectStore.getCurrentFilePath()) ? DEBUG_OPTIONS : NO_LAUNCH_DEBUG_OPTIONS;
+    const additionalOptions = [];
+    try {
+      // $FlowFB: This is suppressed elsewhere, so vary the filename.
+      const helpers = require('./fb-hhvm.js');
+      additionalOptions.push(...helpers.getAdditionalLaunchOptions());
+    } catch (e) {}
+
+    return (this._isTargetLaunchable(this.props.projectStore.getCurrentFilePath()) ? DEBUG_OPTIONS : NO_LAUNCH_DEBUG_OPTIONS).concat(additionalOptions);
   }
 
   _isTargetLaunchable(targetFilePath) {
@@ -75,16 +98,20 @@ class HhvmToolbar extends _reactForAtom.React.Component {
     if (store.getDebugMode() === 'script' && !this._isTargetLaunchable(store.getCurrentFilePath())) {
       store.setDebugMode('webserver');
     }
+    this._suggestTargetIfCustomDebugMode(store.getDebugMode());
     this.refs.debugTarget.setText(store.getDebugTarget());
   }
 
   render() {
     const store = this.props.projectStore;
-    const isDebugScript = store.getDebugMode() === 'script';
-    return _reactForAtom.React.createElement(
+    const isDebugScript = store.getDebugMode() !== 'webserver';
+    const isDisabled = !isDebugScript;
+    const value = store.getDebugTarget();
+
+    return _react.default.createElement(
       'div',
-      { className: 'hhvm-toolbar block' },
-      _reactForAtom.React.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
+      { className: 'hhvm-toolbar' },
+      _react.default.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
         className: 'inline-block',
         options: this._getMenuItems(),
         value: store.getDebugMode(),
@@ -92,23 +119,48 @@ class HhvmToolbar extends _reactForAtom.React.Component {
         ref: 'dropdown',
         size: 'sm'
       }),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
-        { className: 'inline-block', style: { width: '500px' } },
-        _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+        { className: 'inline-block', style: { width: '300px' } },
+        _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
           ref: 'debugTarget',
-          initialValue: store.getDebugTarget(),
-          disabled: !isDebugScript,
-          onDidChange: this._updateLastScriptCommand,
+          initialValue: value
+          // Ugly hack: prevent people changing the value without disabling so
+          // that they can copy and paste.
+          , onDidChange: isDisabled ? () => {
+            if (this.refs.debugTarget.getText() !== value) {
+              this.refs.debugTarget.setText(value);
+            }
+          } : this._updateLastScriptCommand,
           size: 'sm'
         })
-      )
+      ),
+      !isDebugScript ? _react.default.createElement(
+        (_Button || _load_Button()).Button,
+        {
+          size: 'SMALL',
+          onClick: () => {
+            _electron.shell.openExternal('https://' + store.getDebugTarget());
+          } },
+        'Open'
+      ) : null
     );
   }
 
-  _handleDropdownChange(value) {
-    this.props.projectStore.setDebugMode(value);
+  _suggestTargetIfCustomDebugMode(debugMode) {
+    // If a custom debug mode is selected, suggest a debug target for the user.
+    if (DEBUG_OPTIONS.find(option => option.value === debugMode) == null) {
+      try {
+        // $FlowFB
+        const helpers = require('./fb-hhvm');
+        const store = this.props.projectStore;
+        const suggestedTarget = helpers.suggestDebugTargetName(debugMode, store.getCurrentFilePath());
+        if (suggestedTarget != null) {
+          store.updateLastScriptCommand(suggestedTarget);
+        }
+      } catch (e) {}
+    }
   }
-}
 
-module.exports = HhvmToolbar;
+}
+exports.default = HhvmToolbar;

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -26,6 +17,17 @@ function _load_TypeHintManager() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const PACKAGE_NAME = 'nuclide-type-hint';
 
@@ -58,14 +60,11 @@ class Activation {
 
     const datatip = this.typeHintManager.datatip.bind(this.typeHintManager);
     const datatipProvider = {
-      validForScope: () => true,
       providerName: PACKAGE_NAME,
-      inclusionPriority: 1,
+      priority: 1,
       datatip
     };
-    this.datatipService = service;
-    service.addProvider(datatipProvider);
-    const disposable = new _atom.Disposable(() => service.removeProvider(datatipProvider));
+    const disposable = service.addProvider(datatipProvider);
     this._disposables.add(disposable);
     return disposable;
   }

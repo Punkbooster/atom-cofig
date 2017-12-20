@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,6 +8,17 @@ exports.debug = undefined;
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 // eslint-disable-next-line nuclide-internal/no-cross-atom-imports
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 let debug = exports.debug = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (debugMode, activeProjectRoot, target) {
     let processInfo = null;
@@ -25,10 +27,21 @@ let debug = exports.debug = (() => {
       throw new Error('Active project is null');
     }
 
-    if (debugMode === 'script') {
-      processInfo = new (_LaunchProcessInfo || _load_LaunchProcessInfo()).LaunchProcessInfo(activeProjectRoot, target);
-    } else {
-      processInfo = new (_AttachProcessInfo || _load_AttachProcessInfo()).AttachProcessInfo(activeProjectRoot);
+    // See if this is a custom debug mode type.
+
+
+    try {
+      // $FlowFB
+      const helper = require('./fb-hhvm');
+      processInfo = helper.getCustomLaunchInfo(debugMode, activeProjectRoot, target);
+    } catch (e) {}
+
+    if (processInfo == null) {
+      if (debugMode === 'script') {
+        processInfo = new (_LaunchProcessInfo || _load_LaunchProcessInfo()).LaunchProcessInfo(activeProjectRoot, target);
+      } else {
+        processInfo = new (_AttachProcessInfo || _load_AttachProcessInfo()).AttachProcessInfo(activeProjectRoot);
+      }
     }
 
     // Use commands here to trigger package activation.

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -48,13 +39,13 @@ var _os = _interopRequireDefault(require('os'));
 var _promise;
 
 function _load_promise() {
-  return _promise = require('../../commons-node/promise');
+  return _promise = require('nuclide-commons/promise');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _ClangFlagsManager;
@@ -81,6 +72,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const SERVER_LIMIT = 20;
 
 // Limit the total memory usage of all Clang servers.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const MEMORY_LIMIT = Math.round(_os.default.totalmem() * 15 / 100);
 
 let _getDefaultFlags;
@@ -98,6 +100,10 @@ class ClangServerManager {
     this._checkMemoryUsage = (0, (_promise || _load_promise()).serializeAsyncCall)(this._checkMemoryUsageImpl.bind(this));
   }
 
+  getClangFlagsManager() {
+    return this._flagsManager;
+  }
+
   /**
    * Spawn one Clang server per translation unit (i.e. source file).
    * This allows working on multiple files at once, and simplifies per-file state handling.
@@ -107,45 +113,34 @@ class ClangServerManager {
    * Currently, there's no "status" observable, so we can only provide a busy signal to the user
    * on diagnostic requests - and hence we only restart on 'compile' requests.
    */
-  getClangServer(src, contents, defaultFlags, restartIfChanged) {
-    var _this = this;
-
-    return (0, _asyncToGenerator.default)(function* () {
-      let server = _this._servers.get(src);
-      if (server != null) {
-        if (restartIfChanged && server.getFlagsChanged()) {
-          _this.reset(src);
-        } else {
-          return server;
-        }
-      }
-      const [serverArgs, flagsResult] = yield Promise.all([(0, (_findClangServerArgs || _load_findClangServerArgs()).default)(), _this._getFlags(src, defaultFlags)]);
-      if (flagsResult == null) {
-        return null;
-      }
-      // Another server could have been created while we were waiting.
-      server = _this._servers.get(src);
-      if (server != null) {
+  getClangServer(src, contents, _requestSettings, defaultFlags, restartIfChanged) {
+    const requestSettings = _requestSettings || {
+      compilationDatabase: null,
+      projectRoot: null
+    };
+    let server = this._servers.get(src);
+    if (server != null) {
+      if (restartIfChanged && server.getFlagsChanged()) {
+        this.reset(src);
+      } else {
         return server;
       }
-      server = new (_ClangServer || _load_ClangServer()).default(src, serverArgs, flagsResult);
-      // Seed with a compile request to ensure fast responses.
-      server.compile(contents).then(function () {
-        return _this._checkMemoryUsage();
-      });
-      _this._servers.set(src, server);
-      return server;
-    })();
+    }
+    const compilationDB = requestSettings.compilationDatabase;
+    server = new (_ClangServer || _load_ClangServer()).default(src, contents, (0, (_findClangServerArgs || _load_findClangServerArgs()).default)(src, compilationDB == null ? null : compilationDB.libclangPath), this._getFlags(src, requestSettings, defaultFlags));
+    server.waitForReady().then(() => this._checkMemoryUsage());
+    this._servers.set(src, server);
+    return server;
   }
 
   // 1. Attempt to get flags from ClangFlagsManager.
   // 2. Otherwise, fall back to default flags.
-  _getFlags(src, defaultFlags) {
-    var _this2 = this;
+  _getFlags(src, requestSettings, defaultFlags) {
+    var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const flagsData = yield _this2._flagsManager.getFlagsForSrc(src).catch(function (e) {
-        (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error(`Error getting flags for ${ src }:`, e);
+      const flagsData = yield _this._flagsManager.getFlagsForSrc(src, requestSettings).catch(function (e) {
+        (0, (_log4js || _load_log4js()).getLogger)('nuclide-clang-rpc').error(`Error getting flags for ${src}:`, e);
         return null;
       });
       if (flagsData != null && flagsData.flags != null) {
@@ -181,11 +176,11 @@ class ClangServerManager {
   }
 
   _checkMemoryUsageImpl() {
-    var _this3 = this;
+    var _this2 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
       const usage = new Map();
-      yield Promise.all(_this3._servers.values().map((() => {
+      yield Promise.all(_this2._servers.values().map((() => {
         var _ref2 = (0, _asyncToGenerator.default)(function* (server) {
           const mem = yield server.getMemoryUsage();
           usage.set(server, mem);
@@ -199,7 +194,7 @@ class ClangServerManager {
       // Servers may have been deleted in the meantime, so calculate the total now.
       let total = 0;
       let count = 0;
-      _this3._servers.forEach(function (server) {
+      _this2._servers.forEach(function (server) {
         const mem = usage.get(server);
         if (mem) {
           total += mem;
@@ -211,7 +206,7 @@ class ClangServerManager {
       // Make sure we allow at least one server to stay alive.
       if (count > 1 && total > MEMORY_LIMIT) {
         const toDispose = [];
-        _this3._servers.rforEach(function (server, key) {
+        _this2._servers.rforEach(function (server, key) {
           const mem = usage.get(server);
           if (mem && count > 1 && total > MEMORY_LIMIT) {
             total -= mem;
@@ -220,12 +215,10 @@ class ClangServerManager {
           }
         });
         toDispose.forEach(function (key) {
-          return _this3._servers.del(key);
+          return _this2._servers.del(key);
         });
       }
     })();
   }
-
 }
 exports.default = ClangServerManager;
-module.exports = exports['default'];

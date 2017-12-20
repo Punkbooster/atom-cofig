@@ -1,23 +1,24 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.parseMessageText = parseMessageText;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const TAG_RE = /\[([^[\]]*)]/g;
 const TAG_PATTERN = '\\[[^\\[\\]]*\\]'; // The same as TAG_RE but without capturing, for embedding.
 const DATETIME_PATTERN = '\\d{4}-\\d{2}-\\d{2} \\d+:\\d+:\\d+\\.\\d+';
-const PARTS_PATTERN = `${ DATETIME_PATTERN }( (?:${ TAG_PATTERN })+ ?)?([\\s\\S]*)`;
+const PARTS_PATTERN = `${DATETIME_PATTERN}( (?:${TAG_PATTERN})+ ?)?([\\s\\S]*)`;
 const PARTS_RE = new RegExp(PARTS_PATTERN);
 
 function parseMessageText(raw) {
@@ -27,7 +28,7 @@ function parseMessageText(raw) {
     return {
       text: raw,
       level: null,
-      tags: null
+      tags: []
     };
   }
 

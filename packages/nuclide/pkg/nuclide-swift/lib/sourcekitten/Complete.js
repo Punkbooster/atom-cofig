@@ -1,17 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/**
- * `sourcekitten complete` returns an array of these structs as JSON.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -51,6 +38,20 @@ function sourceKittenCompletionToAtomSuggestion(completion) {
  *
  *   foobar(${1:x: Int}, y: ${2:String}, baz: ${3:[String]})
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+/**
+ * `sourcekitten complete` returns an array of these structs as JSON.
+ */
 function sourceKittenSourcetextToAtomSnippet(sourcetext) {
   // Atom expects numbered snippet location, beginning with 1.
   let index = 1;
@@ -59,13 +60,13 @@ function sourceKittenSourcetextToAtomSnippet(sourcetext) {
   const replacedParameters = sourcetext.replace(/<#T##(.+?)#>/g, (_, groupOne) => {
     // The index is incremented after each match. We split the match group
     // on ##, to handle the strange case mentioned in this function's docblock.
-    return `\${${ index++ }:${ groupOne.split('##')[0] }}`;
+    return `\${${index++}:${groupOne.split('##')[0]}}`;
   });
 
   // When overriding instance methods, SourceKitten uses the string <#code#>
   // as a marker for the body of the method. Replace this with an empty Atom
   // snippet location.
-  return replacedParameters.replace('<#code#>', `\${${ index++ }}`);
+  return replacedParameters.replace('<#code#>', `\${${index++}}`);
 }
 
 function sourceKittenKindToAtomType(kind) {

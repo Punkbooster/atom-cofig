@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,7 +7,7 @@ Object.defineProperty(exports, "__esModule", {
 var _debounce;
 
 function _load_debounce() {
-  return _debounce = _interopRequireDefault(require('../../commons-node/debounce'));
+  return _debounce = _interopRequireDefault(require('nuclide-commons/debounce'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -25,6 +16,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 // TODO use maps
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const MAX_CACHED_QUERIES = 100;
 const CACHE_CLEAN_DEBOUNCE_DELAY = 5000;
 
@@ -86,6 +88,10 @@ class ResultCache {
     return this._lastCachedQuery.get(providerName);
   }
 
+  setLastCachedQuery(providerName, query) {
+    this._lastCachedQuery.set(providerName, query);
+  }
+
   _ensureCacheEntry(providerName, directory) {
     if (!this._cachedResults[providerName]) {
       this._cachedResults[providerName] = {};
@@ -130,4 +136,3 @@ class ResultCache {
   }
 }
 exports.default = ResultCache;
-module.exports = exports['default'];

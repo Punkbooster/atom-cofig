@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,13 +7,13 @@ Object.defineProperty(exports, "__esModule", {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
 var _nuclideRpc;
@@ -39,14 +30,25 @@ function _load_nuclideMarshalersCommon() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const PYTHON_EXECUTABLE = 'python';
+const PYTHON_EXECUTABLE = 'python'; /**
+                                     * Copyright (c) 2015-present, Facebook, Inc.
+                                     * All rights reserved.
+                                     *
+                                     * This source code is licensed under the license found in the LICENSE file in
+                                     * the root directory of this source tree.
+                                     *
+                                     * 
+                                     * @format
+                                     */
+
 const LIB_PATH = (_nuclideUri || _load_nuclideUri()).default.join(__dirname, '../VendorLib');
 const PROCESS_PATH = (_nuclideUri || _load_nuclideUri()).default.join(__dirname, '../python/jediserver.py');
 const OPTS = {
   cwd: (_nuclideUri || _load_nuclideUri()).default.dirname(PROCESS_PATH),
   stdio: 'pipe',
   detached: false, // When Atom is killed, server process should be killed.
-  env: { PYTHONPATH: LIB_PATH }
+  env: { PYTHONPATH: LIB_PATH },
+  /* TODO(T17353599) */isExitError: () => false
 };
 
 let serviceRegistry = null;
@@ -62,14 +64,14 @@ class JediServer {
 
   constructor(src, pythonPath = PYTHON_EXECUTABLE, paths = []) {
     // Generate a name for this server using the src file name, used to namespace logs
-    const name = `JediServer-${ (_nuclideUri || _load_nuclideUri()).default.basename(src) }`;
+    const name = `JediServer-${(_nuclideUri || _load_nuclideUri()).default.basename(src)}`;
     let args = [PROCESS_PATH, '-s', src];
     if (paths.length > 0) {
       args.push('-p');
       args = args.concat(paths);
     }
-    const createProcess = () => (0, (_process || _load_process()).safeSpawn)(pythonPath, args, OPTS);
-    this._process = new (_nuclideRpc || _load_nuclideRpc()).RpcProcess(name, getServiceRegistry(), createProcess);
+    const processStream = (0, (_process || _load_process()).spawn)(pythonPath, args, OPTS);
+    this._process = new (_nuclideRpc || _load_nuclideRpc()).RpcProcess(name, getServiceRegistry(), processStream);
     this._isDisposed = false;
   }
 
@@ -91,4 +93,3 @@ class JediServer {
   }
 }
 exports.default = JediServer;
-module.exports = exports['default'];

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -47,6 +38,17 @@ function _load_DbgpSocket() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const EVAL_IDENTIFIER = '$__unique_xdebug_variable_name__';
 
@@ -117,8 +119,8 @@ class DataCache {
     return (0, _asyncToGenerator.default)(function* () {
       // Every evaluation we perform with xdebug's eval command is saved in a unique variable
       // for later lookup.
-      const newIdentifier = `${ EVAL_IDENTIFIER }${ ++_this2._evalIdentifierId }`;
-      const evaluatedResult = yield _this2._socket.runtimeEvaluate(`${ newIdentifier } = ${ expression }`);
+      const newIdentifier = `${EVAL_IDENTIFIER}${++_this2._evalIdentifierId}`;
+      const evaluatedResult = yield _this2._socket.runtimeEvaluate(`${newIdentifier} = ${expression}`);
       if (evaluatedResult.wasThrown) {
         return evaluatedResult;
       }
@@ -154,7 +156,7 @@ class DataCache {
       // it only supports the current stack frame.  To work around this, we special-case evaluation
       // at the current stack depth.
       if (frameIndex === 0) {
-        return yield _this3.runtimeEvaluate(frameIndex, expression);
+        return _this3.runtimeEvaluate(frameIndex, expression);
       }
 
       const evaluatedResult = yield _this3._socket.evaluateOnCallFrame(frameIndex, expression);
@@ -191,22 +193,24 @@ class DataCache {
     var _this4 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      (_utils || _load_utils()).default.log(`DataCache.getProperties call on ID: ${ remoteId }`);
+      (_utils || _load_utils()).default.debug(`DataCache.getProperties call on ID: ${remoteId}`);
       const id = JSON.parse(remoteId);
       if (id.enableCount !== _this4._enableCount) {
-        (_utils || _load_utils()).default.logErrorAndThrow(`Got request for stale RemoteObjectId ${ remoteId }`);
+        const message = `Got request for stale RemoteObjectId ${remoteId}`;
+        (_utils || _load_utils()).default.error(message);
+        throw new Error(message);
       }
 
       // context and single paged ids require getting children from the debuggee and converting
       // them from dbgp to chrome format.
       if ((0, (_ObjectId || _load_ObjectId()).isContextObjectId)(id)) {
-        return yield _this4._getContextProperties(id);
+        return _this4._getContextProperties(id);
       } else if ((0, (_ObjectId || _load_ObjectId()).isPagedObjectId)(id)) {
         // Paged id's children are constructed directly in chrome format from the contents of the
         // object id. Does not require going to the debuggee.
         return (0, (_properties || _load_properties()).getPagedProperties)(id);
       } else {
-        return yield _this4._getSinglePageOfProperties(id);
+        return _this4._getSinglePageOfProperties(id);
       }
     })();
   }
@@ -264,7 +268,7 @@ function contextNameToScopeType(name) {
       return 'global';
     // TODO: Verify this ...
     default:
-      (_utils || _load_utils()).default.log(`Unexpected context name: ${ name }`);
+      (_utils || _load_utils()).default.debug(`Unexpected context name: ${name}`);
       return 'closure';
   }
 }

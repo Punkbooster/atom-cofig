@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,10 +9,16 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _atom = require('atom');
 
+var _textEditor;
+
+function _load_textEditor() {
+  return _textEditor = require('nuclide-commons-atom/text-editor');
+}
+
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _passesGK;
@@ -33,13 +30,13 @@ function _load_passesGK() {
 var _string;
 
 function _load_string() {
-  return _string = require('../../commons-node/string');
+  return _string = require('nuclide-commons/string');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _nuclideAnalytics;
@@ -69,11 +66,22 @@ function _load_NuxView() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Limits the number of NUXes displayed every session
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const NUX_PER_SESSION_LIMIT = 3;
 const NEW_TOUR_EVENT = 'nuxTourNew';
 const READY_TOUR_EVENT = 'nuxTourReady';
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-nux');
 
 class NuxManager {
   // Maps a NUX's unique ID to its corresponding NuxTour
@@ -134,9 +142,9 @@ class NuxManager {
       try {
         return new (_NuxView || _load_NuxView()).NuxView(nuxTourModel.id, model.selector, model.selectorFunction, model.position, model.content, model.completionPredicate, index, arr.length);
       } catch (err) {
-        const error = `NuxView #${ index } for "${ nuxTourModel.id }" failed to instantiate.`;
-        logger.error(`ERROR: ${ error }`);
-        this._track(nuxTourModel.id, nuxTourModel.name, `NuxView #${ index + 1 } failed to instantiate.`, err.toString());
+        const error = `NuxView #${index} for "${nuxTourModel.id}" failed to instantiate.`;
+        logger.error(`ERROR: ${error}`);
+        this._track(nuxTourModel.id, nuxTourModel.name, `NuxView #${index + 1} failed to instantiate.`, err.toString());
         return null;
       }
     }));
@@ -162,10 +170,7 @@ class NuxManager {
 
   // Handles NUX registry
   _handleNewTour(value) {
-    const {
-      nuxTour,
-      nuxTourModel
-    } = value;
+    const { nuxTour, nuxTourModel } = value;
 
     nuxTour.setNuxCompleteCallback(this._handleNuxCompleted.bind(this, nuxTourModel));
 
@@ -196,7 +201,7 @@ class NuxManager {
       // The `paneItem` is not guaranteed to be an instance of `TextEditor` from
       // Atom's API, but usually is.  We return if the type is not `TextEditor`
       // since `NuxTour.isReady` expects a `TextEditor` as its argument.
-      if (!atom.workspace.isTextEditor(paneItem)) {
+      if (!(0, (_textEditor || _load_textEditor()).isValidTextEditor)(paneItem)) {
         return;
       }
       // Flow doesn't understand the refinement done above.
@@ -214,7 +219,7 @@ class NuxManager {
         try {
           // Disable the linter suggestion to use `Promise.all` as we want to trigger NUXes
           // as soon as each promise resolves rather than waiting for them all to.
-          // eslint-disable-next-line babel/no-await-in-loop
+          // eslint-disable-next-line no-await-in-loop
           if (yield _this._canTriggerNux(gkID)) {
             _this._emitter.emit(READY_TOUR_EVENT, nux);
           }
@@ -293,7 +298,7 @@ class NuxManager {
     (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nux-manager-action', {
       tourId,
       tourName,
-      message: `${ message }`,
+      message: `${message}`,
       error: (0, (_string || _load_string()).maybeToString)(error)
     });
   }

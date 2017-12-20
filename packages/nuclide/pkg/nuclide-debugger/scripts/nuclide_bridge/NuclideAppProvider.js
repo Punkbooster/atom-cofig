@@ -1,19 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-var _NuclideBridge;
-
-function _load_NuclideBridge() {
-  return _NuclideBridge = _interopRequireDefault(require('./NuclideBridge'));
-}
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _UnresolvedBreakpointsSidebarPane;
 
@@ -45,8 +34,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 class NuclideApp extends (_WebInspector || _load_WebInspector()).default.App {
 
   presentUI() {
-    (_NuclideBridge || _load_NuclideBridge()).default.onDebuggerSettingsChanged(this._handleSettingsUpdated.bind(this));
-
     const rootView = new (_WebInspector || _load_WebInspector()).default.RootView();
     (_WebInspector || _load_WebInspector()).default.inspectorView.show(rootView.element);
     (_WebInspector || _load_WebInspector()).default.inspectorView.panel('sources').then(panel => {
@@ -59,27 +46,20 @@ class NuclideApp extends (_WebInspector || _load_WebInspector()).default.App {
       sourcesPanel.sidebarPanes.unresolvedBreakpoints = new (_UnresolvedBreakpointsSidebarPane || _load_UnresolvedBreakpointsSidebarPane()).default();
       this._threadsWindow = new (_ThreadsWindowPane || _load_ThreadsWindowPane()).default();
       sourcesPanel.sidebarPanes.threads = this._threadsWindow;
-      this._handleSettingsUpdated();
       // Force redraw
       sourcesPanel.sidebarPaneView.detach();
       sourcesPanel.sidebarPaneView = null;
       sourcesPanel._dockSideChanged();
 
-      window.WebInspector.inspectorView.showInitialPanel();
+      (_WebInspector || _load_WebInspector()).default.inspectorView.showInitialPanel();
       sourcesPanel._splitView.hideMain();
       rootView.attachToDocument(document);
-      // eslint-disable-next-line no-console
-    }).catch(e => console.error(e));
+    })
+    // eslint-disable-next-line no-console
+    .catch(e => console.error(e));
 
     // Clear breakpoints whenever they are saved to localStorage.
     (_WebInspector || _load_WebInspector()).default.settings.breakpoints.addChangeListener(this._onBreakpointSettingsChanged, this);
-  }
-
-  _handleSettingsUpdated() {
-    const settings = (_NuclideBridge || _load_NuclideBridge()).default.getSettings();
-    if (this._threadsWindow != null && !settings.SupportThreadsWindow) {
-      this._threadsWindow.setVisible(false);
-    }
   }
 
   _forceOnlySidebar(event) {
@@ -93,12 +73,20 @@ class NuclideApp extends (_WebInspector || _load_WebInspector()).default.App {
       (_WebInspector || _load_WebInspector()).default.settings.breakpoints.set([]);
     }
   }
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 class NuclideAppProvider extends (_WebInspector || _load_WebInspector()).default.AppProvider {
   createApp() {
     return new NuclideApp();
   }
 }
-
-module.exports = NuclideAppProvider;
+exports.default = NuclideAppProvider;

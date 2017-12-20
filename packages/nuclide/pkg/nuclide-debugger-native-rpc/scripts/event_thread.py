@@ -39,8 +39,6 @@ class LLDBListenerThread(Thread):
             lldb.eBreakpointEventTypeThreadChanged: 'Thread Changed',
         }
 
-
-
         process = debugger_store.debugger.GetSelectedTarget().process
         self._add_listener_to_process(process)
 
@@ -142,12 +140,20 @@ class LLDBListenerThread(Thread):
 
     def _send_paused_notification(self, process):
         self._update_stop_thread(process)
-        self._debugger_store.thread_manager.update(process)
+        self._debugger_store.thread_manager.update_thread_switch_message(process)
         thread = process.GetSelectedThread()
         output = 'Debugger paused at thread(%d) because of: %s' % (
             thread.GetThreadID(),
             self._debugger_store.thread_manager.get_thread_stop_description(thread))
         self._send_user_output('log', output)
+        break_num = thread.GetStopReasonDataAtIndex(0)
+        selected_target = self._debugger_store.debugger.GetSelectedTarget()
+        breakpoint = selected_target.FindBreakpointByID(break_num)
+        params = {
+            'breakpointId': str(break_num),
+            'hitCount': str(breakpoint.GetHitCount()),
+        }
+        self._send_notification('Debugger.breakpointHitCountChanged', params)
         threadSwitchMessage = self._debugger_store.thread_manager.get_thread_switch_message()
         if threadSwitchMessage:
             self._send_user_output('info', threadSwitchMessage)
@@ -164,6 +170,7 @@ class LLDBListenerThread(Thread):
               "data": {},
               }
         self._send_notification('Debugger.paused', params)
+        self._debugger_store.thread_manager.send_threads_updated(process)
 
     def _update_stop_thread(self, process):
         '''lldb on Linux has a bug of not setting stop thread correctly.

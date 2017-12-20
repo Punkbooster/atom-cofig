@@ -1,27 +1,33 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.View = undefined;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * A React component used for rendering an item associated with a view via Atom's view registry.
  * Because we're going through Atom's ViewRegistry (which returns DOM nodes), we need to render an
  * empty element and manually attach the view (DOM element) we get from Atom.
  */
-class View extends _reactForAtom.React.Component {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class View extends _react.default.Component {
 
   shouldComponentUpdate(nextProps) {
     return this.props.item !== nextProps.item;
@@ -41,8 +47,10 @@ class View extends _reactForAtom.React.Component {
     }
 
     // Remove the current children.
-    const container = _reactForAtom.ReactDOM.findDOMNode(this);
+    const container = _reactDom.default.findDOMNode(this);
+    // $FlowFixMe
     while (container.lastChild != null) {
+      // $FlowFixMe
       container.removeChild(container.lastChild);
     }
 
@@ -51,11 +59,12 @@ class View extends _reactForAtom.React.Component {
       return;
     }
     const el = atom.views.getView(item);
+    // $FlowFixMe
     container.appendChild(el);
   }
 
   render() {
-    return _reactForAtom.React.createElement('nuclide-react-mount-root', null);
+    return _react.default.createElement('nuclide-react-mount-root', null);
   }
 }
 exports.View = View;

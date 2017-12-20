@@ -9,29 +9,14 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "directoryPath",
       type: {
-        location: {
-          type: "source",
-          fileName: "SourceControlService.js",
-          line: 24
-        },
         kind: "string"
       }
     }]).then(args => {
       return _client.callRemoteFunction("SourceControlService/getHgRepository", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "SourceControlService.js",
-          line: 24
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "SourceControlService.js",
-            line: 24
-          },
           kind: "named",
           name: "HgRepositoryDescription"
         }
@@ -48,178 +33,129 @@ Object.defineProperty(module.exports, "inject", {
   }
 });
 Object.defineProperty(module.exports, "defs", {
-  value: new Map([["Object", {
-    kind: "alias",
-    name: "Object",
-    location: {
-      type: "builtin"
-    }
-  }], ["Date", {
-    kind: "alias",
-    name: "Date",
-    location: {
-      type: "builtin"
-    }
-  }], ["RegExp", {
-    kind: "alias",
-    name: "RegExp",
-    location: {
-      type: "builtin"
-    }
-  }], ["Buffer", {
-    kind: "alias",
-    name: "Buffer",
-    location: {
-      type: "builtin"
-    }
-  }], ["fs.Stats", {
-    kind: "alias",
-    name: "fs.Stats",
-    location: {
-      type: "builtin"
-    }
-  }], ["NuclideUri", {
-    kind: "alias",
-    name: "NuclideUri",
-    location: {
-      type: "builtin"
-    }
-  }], ["atom$Point", {
-    kind: "alias",
-    name: "atom$Point",
-    location: {
-      type: "builtin"
-    }
-  }], ["atom$Range", {
-    kind: "alias",
-    name: "atom$Range",
-    location: {
-      type: "builtin"
-    }
-  }], ["HgRepositoryDescription", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "SourceControlService.js",
-      line: 18
+  value: {
+    Object: {
+      kind: "alias",
+      name: "Object",
+      location: {
+        type: "builtin"
+      }
     },
-    name: "HgRepositoryDescription",
-    definition: {
+    Date: {
+      kind: "alias",
+      name: "Date",
+      location: {
+        type: "builtin"
+      }
+    },
+    RegExp: {
+      kind: "alias",
+      name: "RegExp",
+      location: {
+        type: "builtin"
+      }
+    },
+    Buffer: {
+      kind: "alias",
+      name: "Buffer",
+      location: {
+        type: "builtin"
+      }
+    },
+    "fs.Stats": {
+      kind: "alias",
+      name: "fs.Stats",
+      location: {
+        type: "builtin"
+      }
+    },
+    NuclideUri: {
+      kind: "alias",
+      name: "NuclideUri",
+      location: {
+        type: "builtin"
+      }
+    },
+    atom$Point: {
+      kind: "alias",
+      name: "atom$Point",
+      location: {
+        type: "builtin"
+      }
+    },
+    atom$Range: {
+      kind: "alias",
+      name: "atom$Range",
+      location: {
+        type: "builtin"
+      }
+    },
+    HgRepositoryDescription: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "SourceControlService.js",
         line: 18
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "SourceControlService.js",
-          line: 19
-        },
-        name: "repoPath",
-        type: {
-          location: {
-            type: "source",
-            fileName: "SourceControlService.js",
-            line: 19
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "SourceControlService.js",
-          line: 20
-        },
-        name: "originURL",
-        type: {
-          location: {
-            type: "source",
-            fileName: "SourceControlService.js",
-            line: 20
-          },
-          kind: "nullable",
+      name: "HgRepositoryDescription",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "repoPath",
           type: {
-            location: {
-              type: "source",
-              fileName: "SourceControlService.js",
-              line: 20
-            },
             kind: "string"
-          }
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "SourceControlService.js",
-          line: 21
-        },
-        name: "workingDirectoryPath",
-        type: {
-          location: {
-            type: "source",
-            fileName: "SourceControlService.js",
-            line: 21
           },
-          kind: "string"
-        },
-        optional: false
-      }]
-    }
-  }], ["getHgRepository", {
-    kind: "function",
-    name: "getHgRepository",
-    location: {
-      type: "source",
-      fileName: "SourceControlService.js",
-      line: 24
+          optional: false
+        }, {
+          name: "originURL",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "string"
+            }
+          },
+          optional: false
+        }, {
+          name: "workingDirectoryPath",
+          type: {
+            kind: "string"
+          },
+          optional: false
+        }]
+      }
     },
-    type: {
+    getHgRepository: {
+      kind: "function",
+      name: "getHgRepository",
       location: {
         type: "source",
         fileName: "SourceControlService.js",
         line: 24
       },
-      kind: "function",
-      argumentTypes: [{
-        name: "directoryPath",
-        type: {
-          location: {
-            type: "source",
-            fileName: "SourceControlService.js",
-            line: 24
-          },
-          kind: "string"
-        }
-      }],
-      returnType: {
+      type: {
         location: {
           type: "source",
           fileName: "SourceControlService.js",
           line: 24
         },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "SourceControlService.js",
-            line: 24
-          },
-          kind: "nullable",
+        kind: "function",
+        argumentTypes: [{
+          name: "directoryPath",
           type: {
-            location: {
-              type: "source",
-              fileName: "SourceControlService.js",
-              line: 24
-            },
-            kind: "named",
-            name: "HgRepositoryDescription"
+            kind: "string"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "named",
+              name: "HgRepositoryDescription"
+            }
           }
         }
       }
     }
-  }]])
+  }
 });

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -18,10 +9,10 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _eventKit;
@@ -32,7 +23,18 @@ function _load_eventKit() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-server');
 
 
 // Adapter to make an UnreliableTransport a reliable Transport
@@ -65,6 +67,7 @@ class QueuedTransport {
     this._messageQueue = [];
     this._messages = new _rxjsBundlesRxMinJs.Subject();
     this._emitter = new (_eventKit || _load_eventKit()).Emitter();
+    this._lastStateChangeTime = Date.now();
 
     if (transport != null) {
       this._connect(transport);
@@ -73,6 +76,10 @@ class QueuedTransport {
 
   getState() {
     return this._isClosed ? 'closed' : this._transport == null ? 'disconnected' : 'open';
+  }
+
+  getLastStateChangeTime() {
+    return this._lastStateChangeTime;
   }
 
   _connect(transport) {
@@ -87,21 +94,9 @@ class QueuedTransport {
     }
 
     this._transport = transport;
+    this._lastStateChangeTime = Date.now();
     transport.onMessage().subscribe(message => this._messages.next(message));
     transport.onClose(() => this._onClose(transport));
-  }
-
-  _onMessage(transport, message) {
-    if (this._isClosed) {
-      logger.error('Received socket message after connection closed', new Error());
-      return;
-    }
-    if (this._transport !== transport) {
-      // This shouldn't happen, but ...
-      logger.error('Received message after transport closed', new Error());
-    }
-
-    this._emitter.emit('message', message);
   }
 
   _onClose(transport) {
@@ -115,11 +110,12 @@ class QueuedTransport {
     }
     if (transport !== this._transport) {
       // This should not happen...
-      logger.error('Orphaned transport closed', new Error());
+      logger.error('Orphaned transport closed');
       return;
     }
 
     this._transport = null;
+    this._lastStateChangeTime = Date.now();
     this._emitter.emit('disconnect', transport);
   }
 
@@ -182,7 +178,7 @@ class QueuedTransport {
 
     return (0, _asyncToGenerator.default)(function* () {
       if (!!_this._isClosed) {
-        throw new Error('Attempt to send socket message after connection closed');
+        throw new Error(`Attempt to send socket message after connection closed: ${message}`);
       }
 
       _this._messageQueue.push(message);
@@ -208,6 +204,7 @@ class QueuedTransport {
     this._disconnect();
     if (!this._isClosed) {
       this._isClosed = true;
+      this._lastStateChangeTime = Date.now();
     }
   }
 

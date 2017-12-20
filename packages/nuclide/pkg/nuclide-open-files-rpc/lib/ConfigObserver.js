@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -21,13 +12,13 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _constants;
@@ -44,6 +35,17 @@ function _load_FileCache() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class ConfigObserver {
 
   constructor(cache, fileExtensions, findConfigDir) {
@@ -54,7 +56,6 @@ class ConfigObserver {
     // TODO: Consider incrementally updating, rather than recomputing on each event.
     this._subscription = cache.observeFileEvents().filter(fileEvent => fileEvent.kind !== (_constants || _load_constants()).FileEventKind.EDIT).mapTo(undefined).merge(cache.observeDirectoryEvents().mapTo(undefined)).switchMap(() => _rxjsBundlesRxMinJs.Observable.fromPromise(this._computeOpenConfigs())).distinctUntilChanged((_collection || _load_collection()).areSetsEqual)
     // Filter out initial empty set, which duplicates the initial value of the BehaviorSubject
-    // $FlowFixMe: add skipWhile to flow-typed rx definitions
     .skipWhile(dirs => dirs.size === 0).subscribe(this._currentConfigs);
   }
 
@@ -66,11 +67,13 @@ class ConfigObserver {
         return _this._fileExtensions.indexOf((_nuclideUri || _load_nuclideUri()).default.extname(filePath)) !== -1;
       }));
 
-      return new Set((yield Promise.all(paths.map(function (path) {
+      const result = new Set((yield Promise.all(paths.map(function (path) {
         return _this._findConfigDir(path);
       }))).filter(function (path) {
         return path != null;
       }));
+      // $FlowIssue Flow doesn't understand filter
+      return result;
     })();
   }
 

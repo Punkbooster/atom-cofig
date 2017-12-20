@@ -1,22 +1,46 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getlocalService = exports.getServiceByNuclideUri = exports.getServiceByConnection = exports.getService = exports.decorateSshConnectionDelegateWithTracking = exports.NuclideTextBuffer = exports.SshHandshake = exports.ConnectionCache = exports.ServerConnection = exports.RemoteFile = exports.RemoteDirectory = exports.RemoteConnection = undefined;
+exports.saveBuffer = exports.loadBufferForUri = exports.existingBufferForUri = exports.bufferForUri = exports.getlocalService = exports.getServiceByNuclideUri = exports.getServiceByConnection = exports.getService = exports.decorateSshConnectionDelegateWithTracking = exports.NuclideTextBuffer = exports.SshHandshake = exports.ConnectionCache = exports.ServerConnection = exports.RemoteFile = exports.RemoteDirectory = exports.RemoteConnection = undefined;
+
+var _remoteTextBuffer;
+
+function _load_remoteTextBuffer() {
+  return _remoteTextBuffer = require('./remote-text-buffer');
+}
+
+Object.defineProperty(exports, 'bufferForUri', {
+  enumerable: true,
+  get: function () {
+    return (_remoteTextBuffer || _load_remoteTextBuffer()).bufferForUri;
+  }
+});
+Object.defineProperty(exports, 'existingBufferForUri', {
+  enumerable: true,
+  get: function () {
+    return (_remoteTextBuffer || _load_remoteTextBuffer()).existingBufferForUri;
+  }
+});
+Object.defineProperty(exports, 'loadBufferForUri', {
+  enumerable: true,
+  get: function () {
+    return (_remoteTextBuffer || _load_remoteTextBuffer()).loadBufferForUri;
+  }
+});
+Object.defineProperty(exports, 'saveBuffer', {
+  enumerable: true,
+  get: function () {
+    return (_remoteTextBuffer || _load_remoteTextBuffer()).saveBuffer;
+  }
+});
+exports.getAdbServiceByNuclideUri = getAdbServiceByNuclideUri;
 exports.getArcanistServiceByNuclideUri = getArcanistServiceByNuclideUri;
 exports.getBuckServiceByNuclideUri = getBuckServiceByNuclideUri;
 exports.getClangServiceByNuclideUri = getClangServiceByNuclideUri;
 exports.getCtagsServiceByNuclideUri = getCtagsServiceByNuclideUri;
+exports.getDefinitionPreviewServiceByNuclideUri = getDefinitionPreviewServiceByNuclideUri;
 exports.getFileSystemServiceByNuclideUri = getFileSystemServiceByNuclideUri;
 exports.getFileWatcherServiceByNuclideUri = getFileWatcherServiceByNuclideUri;
 exports.getFlowServiceByNuclideUri = getFlowServiceByNuclideUri;
@@ -26,15 +50,17 @@ exports.getHackLanguageForUri = getHackLanguageForUri;
 exports.getHgServiceByNuclideUri = getHgServiceByNuclideUri;
 exports.getInfoServiceByNuclideUri = getInfoServiceByNuclideUri;
 exports.getMerlinServiceByNuclideUri = getMerlinServiceByNuclideUri;
-exports.getReasonServiceByNuclideUri = getReasonServiceByNuclideUri;
 exports.getNativeDebuggerServiceByNuclideUri = getNativeDebuggerServiceByNuclideUri;
-exports.getNodeDebuggerServiceByNuclideUri = getNodeDebuggerServiceByNuclideUri;
 exports.getOpenFilesServiceByNuclideUri = getOpenFilesServiceByNuclideUri;
 exports.getPhpDebuggerServiceByNuclideUri = getPhpDebuggerServiceByNuclideUri;
 exports.getPythonServiceByNuclideUri = getPythonServiceByNuclideUri;
+exports.getReasonServiceByNuclideUri = getReasonServiceByNuclideUri;
 exports.getRemoteCommandServiceByNuclideUri = getRemoteCommandServiceByNuclideUri;
+exports.getSdbServiceByNuclideUri = getSdbServiceByNuclideUri;
+exports.getSocketServiceByNuclideUri = getSocketServiceByNuclideUri;
 exports.getSourceControlServiceByNuclideUri = getSourceControlServiceByNuclideUri;
-exports.getAdbServiceByNuclideUri = getAdbServiceByNuclideUri;
+exports.getVSCodeLanguageServiceByConnection = getVSCodeLanguageServiceByConnection;
+exports.getVSCodeLanguageServiceByNuclideUri = getVSCodeLanguageServiceByNuclideUri;
 
 var _nullthrows;
 
@@ -103,7 +129,21 @@ exports.decorateSshConnectionDelegateWithTracking = (_SshHandshake || _load_SshH
 exports.getService = (_serviceManager || _load_serviceManager()).getService;
 exports.getServiceByConnection = (_serviceManager || _load_serviceManager()).getServiceByConnection;
 exports.getServiceByNuclideUri = (_serviceManager || _load_serviceManager()).getServiceByNuclideUri;
-exports.getlocalService = (_serviceManager || _load_serviceManager()).getlocalService;
+exports.getlocalService = (_serviceManager || _load_serviceManager()).getlocalService; /**
+                                                                                        * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                        * All rights reserved.
+                                                                                        *
+                                                                                        * This source code is licensed under the license found in the LICENSE file in
+                                                                                        * the root directory of this source tree.
+                                                                                        *
+                                                                                        * 
+                                                                                        * @format
+                                                                                        */
+
+function getAdbServiceByNuclideUri(uri) {
+  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('AdbService', uri));
+}
+
 function getArcanistServiceByNuclideUri(uri) {
   return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('ArcanistService', uri));
 }
@@ -118,6 +158,10 @@ function getClangServiceByNuclideUri(uri) {
 
 function getCtagsServiceByNuclideUri(uri) {
   return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('CtagsService', uri));
+}
+
+function getDefinitionPreviewServiceByNuclideUri(uri) {
+  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('DefinitionPreviewService', uri));
 }
 
 function getFileSystemServiceByNuclideUri(uri) {
@@ -156,16 +200,8 @@ function getMerlinServiceByNuclideUri(uri) {
   return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('MerlinService', uri));
 }
 
-function getReasonServiceByNuclideUri(uri) {
-  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('ReasonService', uri));
-}
-
 function getNativeDebuggerServiceByNuclideUri(uri) {
   return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('NativeDebuggerService', uri));
-}
-
-function getNodeDebuggerServiceByNuclideUri(uri) {
-  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('NodeDebuggerService', uri));
 }
 
 function getOpenFilesServiceByNuclideUri(uri) {
@@ -180,14 +216,30 @@ function getPythonServiceByNuclideUri(uri) {
   return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('PythonService', uri));
 }
 
+function getReasonServiceByNuclideUri(uri) {
+  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('ReasonService', uri));
+}
+
 function getRemoteCommandServiceByNuclideUri(uri) {
   return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('RemoteCommandService', uri));
+}
+
+function getSdbServiceByNuclideUri(uri) {
+  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('SdbService', uri));
+}
+
+function getSocketServiceByNuclideUri(uri) {
+  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('SocketService', uri));
 }
 
 function getSourceControlServiceByNuclideUri(uri) {
   return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('SourceControlService', uri));
 }
 
-function getAdbServiceByNuclideUri(uri) {
-  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('AdbService', uri));
+function getVSCodeLanguageServiceByConnection(connection) {
+  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByConnection)('VSCodeLanguageService', connection));
+}
+
+function getVSCodeLanguageServiceByNuclideUri(uri) {
+  return (0, (_nullthrows || _load_nullthrows()).default)((0, (_serviceManager || _load_serviceManager()).getServiceByNuclideUri)('VSCodeLanguageService', uri));
 }

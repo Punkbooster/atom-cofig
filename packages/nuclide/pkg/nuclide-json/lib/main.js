@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -49,7 +40,16 @@ class Activation {
   dispose() {
     this._disposables.dispose();
   }
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 let activation = null;
 
@@ -83,8 +83,8 @@ function getHyperclickProvider() {
 
 function provideCodeFormat() {
   return {
-    selector: 'source.json',
-    inclusionPriority: 1,
+    grammarScopes: ['source.json'],
+    priority: 1,
     formatEntireFile(editor, range) {
       return (_CodeFormatHelpers || _load_CodeFormatHelpers()).default.formatEntireFile(editor, range);
     }

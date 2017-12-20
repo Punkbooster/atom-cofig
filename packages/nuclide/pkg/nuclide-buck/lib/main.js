@@ -1,25 +1,10 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+var _createPackage;
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.activate = activate;
-exports.deactivate = deactivate;
-exports.consumeTaskRunnerServiceApi = consumeTaskRunnerServiceApi;
-exports.consumeOutputService = consumeOutputService;
-exports.provideObservableDiagnosticUpdates = provideObservableDiagnosticUpdates;
-exports.serialize = serialize;
-exports.getHyperclickProvider = getHyperclickProvider;
-exports.provideBuckBuilder = provideBuckBuilder;
+function _load_createPackage() {
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
+}
 
 var _registerGrammar;
 
@@ -29,102 +14,111 @@ function _load_registerGrammar() {
 
 var _atom = require('atom');
 
+var _buildFiles;
+
+function _load_buildFiles() {
+  return _buildFiles = require('./buildFiles');
+}
+
 var _HyperclickProvider;
 
 function _load_HyperclickProvider() {
   return _HyperclickProvider = require('./HyperclickProvider');
 }
 
-var _BuckBuildSystem;
+var _nuclideAnalytics;
 
-function _load_BuckBuildSystem() {
-  return _BuckBuildSystem = require('./BuckBuildSystem');
+function _load_nuclideAnalytics() {
+  return _nuclideAnalytics = require('../../nuclide-analytics');
+}
+
+var _BuckTaskRunner;
+
+function _load_BuckTaskRunner() {
+  return _BuckTaskRunner = require('./BuckTaskRunner');
+}
+
+var _PlatformService;
+
+function _load_PlatformService() {
+  return _PlatformService = require('./PlatformService');
+}
+
+var _BuckClangProvider;
+
+function _load_BuckClangProvider() {
+  return _BuckClangProvider = require('./BuckClangProvider');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-let disposables = null;
-let buildSystem = null;
-let initialState = null;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
-function activate(rawState) {
-  if (!(disposables == null)) {
-    throw new Error('Invariant violation: "disposables == null"');
+const OPEN_NEAREST_BUILD_FILE_COMMAND = 'nuclide-buck:open-nearest-build-file';
+
+class Activation {
+
+  constructor(rawState) {
+    this._initialState = null;
+
+    this._taskRunner = new (_BuckTaskRunner || _load_BuckTaskRunner()).BuckTaskRunner(rawState);
+    this._disposables = new _atom.CompositeDisposable(atom.commands.add('atom-workspace', OPEN_NEAREST_BUILD_FILE_COMMAND, event => {
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)(OPEN_NEAREST_BUILD_FILE_COMMAND);
+      // Add feature logging.
+      const target = event.target;
+      (0, (_buildFiles || _load_buildFiles()).openNearestBuildFile)(target); // Note this returns a Promise.
+    }), this._taskRunner);
+    (0, (_registerGrammar || _load_registerGrammar()).default)('source.python', ['BUCK']);
+    (0, (_registerGrammar || _load_registerGrammar()).default)('source.json', ['BUCK.autodeps']);
+    (0, (_registerGrammar || _load_registerGrammar()).default)('source.ini', ['.buckconfig']);
   }
 
-  initialState = rawState;
-  disposables = new _atom.CompositeDisposable(new _atom.Disposable(() => {
-    buildSystem = null;
-  }), new _atom.Disposable(() => {
-    initialState = null;
-  }));
-  (0, (_registerGrammar || _load_registerGrammar()).default)('source.python', 'BUCK');
-  (0, (_registerGrammar || _load_registerGrammar()).default)('source.json', 'BUCK.autodeps');
-  (0, (_registerGrammar || _load_registerGrammar()).default)('source.ini', '.buckconfig');
-}
-
-function deactivate() {
-  if (!(disposables != null)) {
-    throw new Error('Invariant violation: "disposables != null"');
+  dispose() {
+    this._disposables.dispose();
   }
 
-  disposables.dispose();
-  disposables = null;
-}
-
-function consumeTaskRunnerServiceApi(api) {
-  if (!(disposables != null)) {
-    throw new Error('Invariant violation: "disposables != null"');
+  consumeTaskRunnerServiceApi(api) {
+    this._disposables.add(api.register(this._taskRunner));
   }
 
-  disposables.add(api.register(getBuildSystem()));
-}
-
-function getBuildSystem() {
-  if (buildSystem == null) {
-    if (!(disposables != null)) {
-      throw new Error('Invariant violation: "disposables != null"');
-    }
-
-    buildSystem = new (_BuckBuildSystem || _load_BuckBuildSystem()).BuckBuildSystem(initialState);
-    disposables.add(buildSystem);
-  }
-  return buildSystem;
-}
-
-function consumeOutputService(service) {
-  if (!(disposables != null)) {
-    throw new Error('Invariant violation: "disposables != null"');
+  provideObservableDiagnosticUpdates() {
+    return this._taskRunner.getBuildSystem().getDiagnosticProvider();
   }
 
-  disposables.add(service.registerOutputProvider({
-    messages: getBuildSystem().getOutputMessages(),
-    id: 'Buck'
-  }));
-}
+  serialize() {
+    return this._taskRunner.serialize();
+  }
 
-function provideObservableDiagnosticUpdates() {
-  return getBuildSystem().getDiagnosticProvider();
-}
+  getHyperclickProvider() {
+    return {
+      priority: 200,
+      providerName: 'nuclide-buck',
+      getSuggestion(editor, position) {
+        return (0, (_HyperclickProvider || _load_HyperclickProvider()).getSuggestion)(editor, position);
+      }
+    };
+  }
 
-function serialize() {
-  if (buildSystem != null) {
-    return buildSystem.serialize();
+  provideBuckBuilder() {
+    return this._taskRunner.getBuildSystem();
+  }
+
+  providePlatformService() {
+    return this._taskRunner.getPlatformService();
+  }
+
+  provideClangConfiguration() {
+    return (0, (_BuckClangProvider || _load_BuckClangProvider()).getClangProvider)(this._taskRunner);
   }
 }
 
-function getHyperclickProvider() {
-  return {
-    priority: 200,
-    providerName: 'nuclide-buck',
-    getSuggestion(editor, position) {
-      return (0, (_HyperclickProvider || _load_HyperclickProvider()).getSuggestion)(editor, position);
-    }
-  };
-}
-
-function provideBuckBuilder() {
-  return {
-    build: options => getBuildSystem().buildArtifact(options)
-  };
-}
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

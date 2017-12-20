@@ -1,37 +1,28 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.RequestEditDialog = undefined;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _AtomInput;
 
 function _load_AtomInput() {
-  return _AtomInput = require('../../nuclide-ui/AtomInput');
+  return _AtomInput = require('nuclide-commons-ui/AtomInput');
 }
 
 var _Button;
 
 function _load_Button() {
-  return _Button = require('../../nuclide-ui/Button');
+  return _Button = require('nuclide-commons-ui/Button');
 }
 
 var _ButtonGroup;
 
 function _load_ButtonGroup() {
-  return _ButtonGroup = require('../../nuclide-ui/ButtonGroup');
+  return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
 }
 
 var _Dropdown;
@@ -43,7 +34,7 @@ function _load_Dropdown() {
 var _AtomTextEditor;
 
 function _load_AtomTextEditor() {
-  return _AtomTextEditor = require('../../nuclide-ui/AtomTextEditor');
+  return _AtomTextEditor = require('nuclide-commons-ui/AtomTextEditor');
 }
 
 var _shallowequal;
@@ -54,15 +45,34 @@ function _load_shallowequal() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 const METHOD_DROPDOWN_OPTIONS = [{ label: 'GET', value: 'GET' }, { label: 'POST', value: 'POST' }];
 
-class RequestEditDialog extends _reactForAtom.React.Component {
+class RequestEditDialog extends _react.default.Component {
 
   constructor(props) {
     super(props);
+
+    this._onSendHttpRequest = () => {
+      this.props.actionCreators.sendHttpRequest();
+      this._toggleDialog();
+    };
+
+    this._onCancel = () => {
+      this._toggleDialog();
+    };
+
     this._editorComponent = null;
-    this._onCancel = this._onCancel.bind(this);
-    this._onSendHttpRequest = this._onSendHttpRequest.bind(this);
   }
 
   shouldComponentUpdate(nextProps) {
@@ -104,15 +114,6 @@ class RequestEditDialog extends _reactForAtom.React.Component {
     editor.setText(JSON.stringify(this.props.headers, null, 2));
   }
 
-  _onSendHttpRequest() {
-    this.props.actionCreators.sendHttpRequest();
-    this._toggleDialog();
-  }
-
-  _onCancel() {
-    this._toggleDialog();
-  }
-
   _toggleDialog() {
     atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-http-request-sender:toggle-http-request-edit-dialog');
   }
@@ -129,55 +130,55 @@ class RequestEditDialog extends _reactForAtom.React.Component {
   }
 
   render() {
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'block' },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'nuclide-edit-request-dialog' },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'label',
           null,
           'URI: '
         ),
-        _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+        _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
           tabIndex: '1',
           placeholderText: 'https://www.facebook.com',
           value: this.props.uri,
           onDidChange: uri => this.props.actionCreators.updateState({ uri })
         }),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'label',
           null,
           'Method: '
         ),
-        _reactForAtom.React.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
+        _react.default.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
           value: this.props.method,
           options: METHOD_DROPDOWN_OPTIONS,
           onChange: method => this.props.actionCreators.updateState({ method })
         }),
-        this.props.method !== 'POST' ? null : _reactForAtom.React.createElement(
+        this.props.method !== 'POST' ? null : _react.default.createElement(
           'div',
           null,
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             'label',
             null,
             'Body'
           ),
-          _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+          _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
             tabIndex: '2',
             onDidChange: body => this.props.actionCreators.updateState({ body })
           })
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'label',
           null,
           'Headers: '
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'div',
           { className: 'nuclide-http-request-sender-headers' },
-          _reactForAtom.React.createElement((_AtomTextEditor || _load_AtomTextEditor()).AtomTextEditor, {
+          _react.default.createElement((_AtomTextEditor || _load_AtomTextEditor()).AtomTextEditor, {
             ref: editorComponent => {
               this._editorComponent = editorComponent;
             },
@@ -187,10 +188,10 @@ class RequestEditDialog extends _reactForAtom.React.Component {
             onDidTextBufferChange: this._handleTextBufferChange.bind(this)
           })
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
           { className: 'nuclide-http-request-sender-button-group' },
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             (_Button || _load_Button()).Button,
             {
               buttonType: (_Button || _load_Button()).ButtonTypes.PRIMARY,
@@ -198,11 +199,9 @@ class RequestEditDialog extends _reactForAtom.React.Component {
               onClick: this._onSendHttpRequest },
             'Send HTTP Request'
           ),
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             (_Button || _load_Button()).Button,
-            {
-              tabIndex: '4',
-              onClick: this._onCancel },
+            { tabIndex: '4', onClick: this._onCancel },
             'Cancel'
           )
         )

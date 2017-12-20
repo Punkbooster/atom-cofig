@@ -1,13 +1,12 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.fetchFileContentAtRevision = fetchFileContentAtRevision;
+exports.fetchFilesChangedAtRevision = fetchFilesChangedAtRevision;
+exports.fetchFilesChangedSinceRevision = fetchFilesChangedSinceRevision;
+exports.parseRevisionFileChangeOutput = parseRevisionFileChangeOutput;
 
 var _hgUtils;
 
@@ -18,21 +17,31 @@ function _load_hgUtils() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const ALL_FILES_LABEL = 'files:';
+const ALL_FILES_LABEL = 'files:'; /**
+                                   * Copyright (c) 2015-present, Facebook, Inc.
+                                   * All rights reserved.
+                                   *
+                                   * This source code is licensed under the license found in the LICENSE file in
+                                   * the root directory of this source tree.
+                                   *
+                                   * 
+                                   * @format
+                                   */
+
 const FILE_ADDS_LABEL = 'file-adds:';
 const FILE_DELETES_LABEL = 'file-dels:';
 const FILE_COPIES_LABEL = 'file-copies:';
 const FILE_MODS_LABEL = 'file-mods:';
-const REVISION_FILE_CHANGES_TEMPLATE = `${ ALL_FILES_LABEL } {files}
-${ FILE_ADDS_LABEL } {file_adds}
-${ FILE_DELETES_LABEL } {file_dels}
-${ FILE_COPIES_LABEL } {file_copies}
-${ FILE_MODS_LABEL } {file_mods}`;
+const REVISION_FILE_CHANGES_TEMPLATE = `${ALL_FILES_LABEL} {files}
+${FILE_ADDS_LABEL} {file_adds}
+${FILE_DELETES_LABEL} {file_dels}
+${FILE_COPIES_LABEL} {file_copies}
+${FILE_MODS_LABEL} {file_mods}`;
 // Regex for: "new_file (previous_file", with two capture groups, one for each file.
 const COPIED_FILE_PAIR_REGEX = /(.+) \((.+)/;
 
@@ -69,6 +78,26 @@ function fetchFilesChangedAtRevision(revision, workingDirectory) {
 }
 
 /**
+ * @param revision A string representation of the revision desired. See
+ * Mercurial documentation for ways to specify a revision.
+ * @return The content of the filePath at the given revision. Returns null
+ * if the operation fails for whatever reason, including invalid input (e.g. if
+ * you pass an invalid revision).
+ */
+function fetchFilesChangedSinceRevision(revision, workingDirectory) {
+  const args = ['status', '--rev', revision, '-Tjson'];
+  const execOptions = {
+    cwd: workingDirectory
+  };
+  return (0, (_hgUtils || _load_hgUtils()).hgRunCommand)(args, execOptions).map(stdout => {
+    const statuses = JSON.parse(stdout);
+    return absolutizeAll(statuses.map(status => status.path), workingDirectory);
+  }).publish();
+}
+
+/**
+ * Exported for testing.
+ *
  * @param output Raw output string from 'hg log' call in `fetchFilesChangedAtRevision`.
  * @param workingDirectory The absolute path to the working directory of the hg repository.
  * @return A RevisionFileChanges object where the paths are all absolute paths.
@@ -128,8 +157,3 @@ function absolutize(filePath, workingDirectory) {
 function absolutizeAll(filePaths, workingDirectory) {
   return filePaths.map(filePath => absolutize(filePath, workingDirectory));
 }
-
-module.exports = {
-  fetchFileContentAtRevision,
-  fetchFilesChangedAtRevision,
-  parseRevisionFileChangeOutput };

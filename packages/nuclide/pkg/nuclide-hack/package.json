@@ -4,7 +4,7 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Provides hack language support in Nuclide",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "configMetadata": {
       "pathComponents": [
@@ -19,16 +19,10 @@
         "default": "",
         "description": "Primarily for testing new versions of hh_client."
       },
-      "useIdeConnection": {
-        "title": "Use persistent IDE connection to hh_client",
-        "type": "boolean",
-        "default": false,
-        "description": "In Development: For use by Hack/Nuclide team only."
-      },
       "logLevel": {
         "title": "Log Level",
         "type": "string",
-        "default": "INFO",
+        "default": "DEBUG",
         "description": "Specify that level of logging, supported values: ALL | TRACE | DEBUG | INFO | WARN | ERROR | FATAL | OFF.",
         "enum": [
           "ALL",

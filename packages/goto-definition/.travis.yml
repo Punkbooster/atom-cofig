@@ -1,5 +1,5 @@
 ### Project specific config ###
-language: coffee
+language: generic
 
 env:
   global:
@@ -13,6 +13,15 @@ env:
 os:
   - linux
   - osx
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ripgrep                           ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl https://sh.rustup.rs -sSf | sh -s -- -y ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export PATH=$PATH:$HOME/.cargo/bin           ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then rustc -V                                     ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo -V                                     ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo install ripgrep                        ; fi
+  - rg -V
 
 ### Generic setup follows ###
 script:
@@ -34,10 +43,12 @@ git:
 
 sudo: false
 
+dist: trusty
+
 addons:
   apt:
     packages:
     - build-essential
-    - git
-    - libgnome-keyring-dev
     - fakeroot
+    - git
+    - libsecret-1-dev

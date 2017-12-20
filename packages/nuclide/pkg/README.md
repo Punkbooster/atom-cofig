@@ -78,23 +78,12 @@ but it seems like it will ultimately have to, as it is the favored pattern in At
 ## Development
 
 The Nuclide repository is organized to facilitate iterative development of Nuclide itself.
-After running `./scripts/dev/setup`, not only will Nuclide be installed, but it will be
-set up so you can iterate on packages using the standard edit/refresh loop. That is,
-you can edit any Nuclide package source (whether it is a Node or Atom package) and then
-hit `ctrl-alt-cmd-l` to reload Atom and pick up your changes. This works because
-`./scripts/dev/setup` creates a system of symlinks that eliminates the need for subsequent
-calls to `npm install` between changes. The only time `./scripts/dev/setup` needs to be run
-again is when the `"dependencies"` of a `package.json` file is modified.
-
-To run the full suite of tests across all Nuclide packages, run `./scripts/dev/test`.
-Where possible, tests will be run in parallel to improve throughput. Therefore, it is
-important to design tests such that they do not depend on any global, shared state.
 
 To run the tests for an individual package, invoke the test runner that corresponds to
 the `"nuclide/testRunner"` section of the `package.json` file (i.e., `npm test` or `apm test`).
 Note that the [nuclide-node-transpiler](./nuclide-node-transpiler) package creates some
 bootstrapping code for `npm test` so that it behaves more like `apm test`. In particular,
-files with the `'use babel'` pragma are automatically transpiled, and helper functions such as
+files with the `/** @flow */` pragma are automatically transpiled, and helper functions such as
 `fit()`, `fdescribe()`, and `waitsForPromise()` will be globally available. Here are the
 relevant parts of the `package.json` file that set this up:
 
@@ -118,3 +107,7 @@ Note that for packages whose test runner is `apm`, this is not necessary.
 ## Sample packages
 
 `sample-*` packages aren't loaded as part of Nuclide. They exist to illustrate archetypal architecture and structure for a given feature.
+
+## Flow errors
+
+In case flow complaints about missing modules, i.e `Required module not found`, try uncommenting the `$FlowFB` option in Nuclide's  [.flowconfig](https://github.com/facebook/nuclide/blob/master/.flowconfig) file. See https://github.com/facebook/nuclide/pull/906#issuecomment-263567813 for more information.

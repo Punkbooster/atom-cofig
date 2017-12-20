@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,22 +10,14 @@ function _load_NuclideBridge() {
   return _NuclideBridge = _interopRequireDefault(require('./NuclideBridge'));
 }
 
-var _react;
+var _react = _interopRequireDefault(require('react'));
 
-function _load_react() {
-  return _react = _interopRequireDefault(require('react'));
-}
-
-var _reactDom;
-
-function _load_reactDom() {
-  return _reactDom = _interopRequireDefault(require('react-dom'));
-}
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _url = _interopRequireDefault(require('url'));
@@ -47,16 +30,34 @@ function _load_WebInspector() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class UnresolvedBreakpointsComponent extends (_react || _load_react()).default.Component {
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class UnresolvedBreakpointsComponent extends _react.default.Component {
 
   constructor(props) {
     super(props);
 
+    this._updateState = () => {
+      this.setState(this._getState());
+    };
+
+    this._getState = () => {
+      return {
+        breakpoints: (_NuclideBridge || _load_NuclideBridge()).default.getUnresolvedBreakpointsList()
+      };
+    };
+
     this._changeHandler = null;
     this.state = this._getState();
-
-    this._updateState = this._updateState.bind(this);
-    this._getState = this._getState.bind(this);
   }
 
   componentWillMount() {
@@ -79,9 +80,9 @@ class UnresolvedBreakpointsComponent extends (_react || _load_react()).default.C
         throw new Error('Invariant violation: "pathname"');
       }
 
-      const longRep = `${ pathname }:${ breakpoint.line + 1 }`;
-      const shortRep = `${ (_nuclideUri || _load_nuclideUri()).default.basename(pathname) }:${ breakpoint.line + 1 }`;
-      return (_react || _load_react()).default.createElement(
+      const longRep = `${pathname}:${breakpoint.line + 1}`;
+      const shortRep = `${(_nuclideUri || _load_nuclideUri()).default.basename(pathname)}:${breakpoint.line + 1}`;
+      return _react.default.createElement(
         'li',
         {
           key: longRep,
@@ -91,10 +92,10 @@ class UnresolvedBreakpointsComponent extends (_react || _load_react()).default.C
         shortRep
       );
     });
-    return (_react || _load_react()).default.createElement(
+    return _react.default.createElement(
       'ol',
       { className: 'breakpoint-list' },
-      this.state.breakpoints.length > 0 ? children : (_react || _load_react()).default.createElement(
+      this.state.breakpoints.length > 0 ? children : _react.default.createElement(
         'div',
         { className: 'info' },
         'None'
@@ -106,15 +107,6 @@ class UnresolvedBreakpointsComponent extends (_react || _load_react()).default.C
     (_NuclideBridge || _load_NuclideBridge()).default.sendOpenSourceLocation(breakpoint.url, breakpoint.line);
   }
 
-  _updateState() {
-    this.setState(this._getState());
-  }
-
-  _getState() {
-    return {
-      breakpoints: (_NuclideBridge || _load_NuclideBridge()).default.getUnresolvedBreakpointsList()
-    };
-  }
 }
 
 class UnresolvedBreakpointsSidebarPane extends (_WebInspector || _load_WebInspector()).default.SidebarPane {
@@ -126,7 +118,7 @@ class UnresolvedBreakpointsSidebarPane extends (_WebInspector || _load_WebInspec
 
     this.registerRequiredCSS('components/breakpointsList.css');
 
-    (_reactDom || _load_reactDom()).default.render((_react || _load_react()).default.createElement(UnresolvedBreakpointsComponent, null), this.bodyElement);
+    _reactDom.default.render(_react.default.createElement(UnresolvedBreakpointsComponent, null), this.bodyElement);
 
     this.expand();
   }
@@ -137,4 +129,3 @@ class UnresolvedBreakpointsSidebarPane extends (_WebInspector || _load_WebInspec
   reset() {}
 }
 exports.default = UnresolvedBreakpointsSidebarPane;
-module.exports = exports['default'];

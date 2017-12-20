@@ -1,25 +1,16 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.TabExamples = undefined;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _Block;
 
 function _load_Block() {
-  return _Block = require('./Block');
+  return _Block = require('nuclide-commons-ui/Block');
 }
 
 var _Tabs;
@@ -32,69 +23,78 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const tabs = [{
   name: 'one',
-  tabContent: _reactForAtom.React.createElement(
+  tabContent: _react.default.createElement(
     'div',
     null,
     'One'
   )
 }, {
   name: 'two',
-  tabContent: _reactForAtom.React.createElement(
+  tabContent: _react.default.createElement(
     'div',
     null,
     'Two'
   )
 }, {
   name: 'three',
-  tabContent: _reactForAtom.React.createElement(
+  tabContent: _react.default.createElement(
     'div',
     null,
     'Three'
   )
 }, {
   name: 'four',
-  tabContent: _reactForAtom.React.createElement(
+  tabContent: _react.default.createElement(
     'div',
     null,
     'Four'
   )
 }, {
   name: 'five',
-  tabContent: _reactForAtom.React.createElement(
+  tabContent: _react.default.createElement(
     'div',
     null,
     'Five'
   )
-}];
+}]; /**
+     * Copyright (c) 2015-present, Facebook, Inc.
+     * All rights reserved.
+     *
+     * This source code is licensed under the license found in the LICENSE file in
+     * the root directory of this source tree.
+     *
+     * 
+     * @format
+     */
 
-class TabExample extends _reactForAtom.React.Component {
+class TabExample extends _react.default.Component {
 
   constructor(props) {
     super(props);
-    this.handleTabChange = this.handleTabChange.bind(this);
+
+    this.handleTabChange = newTabName => {
+      this.setState({
+        activeTabName: newTabName.name
+      });
+    };
+
     this.state = {
       activeTabName: 'one'
     };
   }
 
-  handleTabChange(newTabName) {
-    this.setState({
-      activeTabName: newTabName.name
-    });
-  }
-
   render() {
     const { activeTabName } = this.state;
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       (_Block || _load_Block()).Block,
       null,
-      _reactForAtom.React.createElement((_Tabs || _load_Tabs()).default, {
+      _react.default.createElement((_Tabs || _load_Tabs()).default, {
         tabs: tabs,
         activeTabName: activeTabName,
         triggeringEvent: 'onClick',
         onActiveTabChange: this.handleTabChange
       }),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { style: { padding: '2em 0 2em 0' } },
         'Showing content for tab "',

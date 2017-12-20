@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -24,7 +15,7 @@ function _load_semver() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _electron = require('electron');
@@ -37,7 +28,18 @@ function _load_parsing() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const DEPENDENCY_PROPERTIES = new Set(['dependencies', 'devDependencies', 'optionalDependencies']);function getNPMHyperclickProvider() {
+const DEPENDENCY_PROPERTIES = new Set(['dependencies', 'devDependencies', 'optionalDependencies']); /**
+                                                                                                     * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                                     * All rights reserved.
+                                                                                                     *
+                                                                                                     * This source code is licensed under the license found in the LICENSE file in
+                                                                                                     * the root directory of this source tree.
+                                                                                                     *
+                                                                                                     * 
+                                                                                                     * @format
+                                                                                                     */
+
+function getNPMHyperclickProvider() {
   return npmHyperclickProvider;
 }
 
@@ -50,7 +52,6 @@ const npmHyperclickProvider = {
 };
 
 function getSuggestionForWord(textEditor, text, range) {
-
   if (text === '' || !isPackageJson(textEditor)) {
     return Promise.resolve(null);
   }
@@ -92,7 +93,7 @@ function isPackageJson(textEditor) {
 
 function getPackageUrl(packageName, version) {
   if ((_semver || _load_semver()).default.valid(version)) {
-    return `https://www.npmjs.com/package/${ packageName }/`;
+    return `https://www.npmjs.com/package/${packageName}/`;
   }
 
   // - optionally prefixed with 'github:' (but don't capture that)
@@ -107,8 +108,8 @@ function getPackageUrl(packageName, version) {
   const githubMatch = version.match(githubRegex);
   if (githubMatch != null) {
     const commit = githubMatch[2];
-    const commitSuffix = commit == null ? '' : `/tree/${ commit }`;
-    return `https://github.com/${ githubMatch[1] }${ commitSuffix }`;
+    const commitSuffix = commit == null ? '' : `/tree/${commit}`;
+    return `https://github.com/${githubMatch[1]}${commitSuffix}`;
   }
 
   return null;

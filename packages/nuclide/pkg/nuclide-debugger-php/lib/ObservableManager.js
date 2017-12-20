@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -31,13 +22,10 @@ var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const { log, logError } = (_utils || _load_utils()).default;
-
 
 /**
  * The ObservableManager keeps track of the streams we use to talk to the server-side nuclide
@@ -51,6 +39,17 @@ const { log, logError } = (_utils || _load_utils()).default;
  * The ObservableManager takes ownership of its observables, and disposes them when its dispose
  * method is called.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class ObservableManager {
 
   constructor(notifications, outputWindowMessages) {
@@ -66,14 +65,8 @@ class ObservableManager {
     this._registerConsoleLogging(this._outputWindowMessages.share());
   }
 
-  _registerConsoleLogging(sharedOutputWindowMessages) {
-    const filteredMesages = sharedOutputWindowMessages.filter(messageObj => messageObj.method === 'Console.messageAdded').map(messageObj => {
-      return JSON.stringify({
-        level: messageObj.params.message.level,
-        text: messageObj.params.message.text
-      });
-    });
-    const outputDisposable = (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).registerConsoleLogging)('PHP Debugger', filteredMesages);
+  _registerConsoleLogging(outputMessages) {
+    const outputDisposable = (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).registerConsoleLogging)('PHP Debugger', outputMessages);
     if (outputDisposable != null) {
       this._disposables.add(outputDisposable);
     }
@@ -82,37 +75,37 @@ class ObservableManager {
   _handleNotificationMessage(message) {
     switch (message.type) {
       case 'info':
-        log('Notification observerable info: ' + message.message);
+        (_utils || _load_utils()).default.debug('Notification observerable info: ' + message.message);
         atom.notifications.addInfo(message.message);
         break;
 
       case 'warning':
-        log('Notification observerable warning: ' + message.message);
+        (_utils || _load_utils()).default.debug('Notification observerable warning: ' + message.message);
         atom.notifications.addWarning(message.message);
         break;
 
       case 'error':
-        logError('Notification observerable error: ' + message.message);
+        (_utils || _load_utils()).default.error('Notification observerable error: ' + message.message);
         atom.notifications.addError(message.message);
         break;
 
       case 'fatalError':
-        logError('Notification observerable fatal error: ' + message.message);
+        (_utils || _load_utils()).default.error('Notification observerable fatal error: ' + message.message);
         atom.notifications.addFatalError(message.message);
         break;
 
       default:
-        logError('Unknown message: ' + JSON.stringify(message));
+        (_utils || _load_utils()).default.error('Unknown message: ' + JSON.stringify(message));
         break;
     }
   }
 
   _handleNotificationError(error) {
-    logError('Notification observerable error: ' + error);
+    (_utils || _load_utils()).default.error('Notification observerable error: ' + error);
   }
 
   _handleNotificationEnd() {
-    log('Notification observerable ends.');
+    (_utils || _load_utils()).default.debug('Notification observerable ends.');
   }
 
   dispose() {

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -15,35 +6,57 @@ Object.defineProperty(exports, "__esModule", {
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+exports.matchUrl = matchUrl;
+
 var _atom = require('atom');
 
 var _electron = require('electron');
 
-var _urlregexp;
+var _string;
 
-function _load_urlregexp() {
-  return _urlregexp = _interopRequireDefault(require('urlregexp'));
+function _load_string() {
+  return _string = require('nuclide-commons/string');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// urlregexp will match trailing: ' | " | '. | ', | ". | ",
-// These are most likely not part of the url, but just junk that got caught.
-const trailingJunkRe = /['"][.,]?$/;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const TRAILING_JUNK_REGEX = /[.,]?$/;
+
+// Exported for testing.
+function matchUrl(text) {
+  const match = (_string || _load_string()).URL_REGEX.exec(text);
+  if (match == null) {
+    return null;
+  }
+  (_string || _load_string()).URL_REGEX.lastIndex = 0;
+  return {
+    index: match.index,
+    url: match[0].replace(TRAILING_JUNK_REGEX, '')
+  };
+}
 
 class HyperclickProviderHelpers {
   static getSuggestionForWord(textEditor, text, range) {
     return (0, _asyncToGenerator.default)(function* () {
       // The match is an array that also has an index property, something that
-      const match = (_urlregexp || _load_urlregexp()).default.exec(text);
+      // Flow does not appear to understand.
+      const match = matchUrl(text);
       if (match == null) {
         return null;
       }
 
-      (_urlregexp || _load_urlregexp()).default.lastIndex = 0;
-
-      const url = match[0].replace(trailingJunkRe, '');
-      const index = match.index;
+      const { index, url } = match;
       const matchLength = url.length;
 
       // Update the range to include only what was matched
@@ -52,19 +65,10 @@ class HyperclickProviderHelpers {
       return {
         range: urlRange,
         callback() {
-          let validUrl;
-          if (url.startsWith('http://') || url.startsWith('https://')) {
-            validUrl = url;
-          } else {
-            // Now that we match urls like 'facebook.com', we have to prepend
-            // http:// to them for them to open properly.
-            validUrl = 'http://' + url;
-          }
-          _electron.shell.openExternal(validUrl);
+          _electron.shell.openExternal(url);
         }
       };
     })();
   }
 }
 exports.default = HyperclickProviderHelpers;
-module.exports = exports['default'];

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -51,7 +42,7 @@ let startCommands = exports.startCommands = (() => {
     } catch (e) {
       // This is usually ECONNREFUSED ...
       // ... indicating that there was a nuclide-server but it is now shutdown.
-      (0, (_errors || _load_errors()).reportConnectionErrorAndExit)('Could not find a nuclide-server with a connected Atom');
+      (0, (_errors || _load_errors()).reportConnectionErrorAndExit)('Could not find a nuclide-server with a connected Atom ("Nuclide/Kill Nuclide Server and Restart" will likely help)');
     }
     const connection = (_nuclideRpc || _load_nuclideRpc()).RpcConnection.createLocal(transport, [(_nuclideMarshalersCommon || _load_nuclideMarshalersCommon()).localNuclideUriMarshalers], services, (_ConfigDirectory || _load_ConfigDirectory()).RPC_PROTOCOL);
 
@@ -91,7 +82,7 @@ function _load_nuclideRpc() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _nuclideMarshalersCommon;
@@ -108,6 +99,17 @@ function _load_errors() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 function convertStringFamilyToNumberFamily(family) {
   switch (family) {
     case 'IPv4':
@@ -115,6 +117,6 @@ function convertStringFamilyToNumberFamily(family) {
     case 'IPv6':
       return 6;
     default:
-      throw new Error(`Unrecognized network address family ${ family }`);
+      throw new Error(`Unrecognized network address family ${family}`);
   }
 }

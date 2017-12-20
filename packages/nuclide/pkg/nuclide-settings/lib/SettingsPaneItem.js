@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,10 +10,10 @@ var _atom = require('atom');
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _SettingsCategory;
 
@@ -33,7 +24,7 @@ function _load_SettingsCategory() {
 var _AtomInput;
 
 function _load_AtomInput() {
-  return _AtomInput = require('../../nuclide-ui/AtomInput');
+  return _AtomInput = require('nuclide-commons-ui/AtomInput');
 }
 
 var _Section;
@@ -50,15 +41,40 @@ function _load_settingsUtils() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings';class NuclideSettingsPaneItem extends _reactForAtom.React.Component {
+const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings'; /**
+                                                                                    * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                    * All rights reserved.
+                                                                                    *
+                                                                                    * This source code is licensed under the license found in the LICENSE file in
+                                                                                    * the root directory of this source tree.
+                                                                                    *
+                                                                                    * 
+                                                                                    * @format
+                                                                                    */
+
+class NuclideSettingsPaneItem extends _react.default.Component {
 
   constructor(props) {
     super(props);
 
-    // Bind callbacks first since we use these during config data generation.
-    this._handleConfigChange = this._handleConfigChange.bind(this);
-    this._handleComponentChange = this._handleComponentChange.bind(this);
-    this._onFilterTextChanged = this._onFilterTextChanged.bind(this);
+    this._handleConfigChange = event => {
+      // Workaround: Defer this._getConfigData() as it registers new config.onDidChange() callbacks
+      // The issue is that Atom invokes these new callbacks for the current onDidChange event,
+      // instead of only for *future* events.
+      setTimeout(() => this.setState(this._getConfigData()));
+    };
+
+    this._handleComponentChange = (keyPath, value) => {
+      (_featureConfig || _load_featureConfig()).default.set(keyPath, value);
+    };
+
+    this._onFilterTextChanged = filterText => {
+      const filter = filterText != null ? filterText.trim() : '';
+      this.setState({
+        filter
+      });
+    };
+
     this.state = {
       filter: ''
     };
@@ -100,8 +116,9 @@ const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings
     nuclidePackages.forEach(pkg => {
       const pkgName = pkg.name;
       const { nuclide } = pkg.metadata;
+      const config = pkg.metadata.atomConfig || nuclide.config;
 
-      if (nuclide.config && nuclide.configMetadata) {
+      if (config && nuclide.configMetadata) {
         const { pathComponents } = nuclide.configMetadata;
         const categoryName = pathComponents[0];
         const packageTitle = pathComponents[1] || pkgName;
@@ -117,7 +134,7 @@ const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings
 
         // Create settingData for each setting.
         const settings = {};
-        Object.keys(nuclide.config).forEach(settingName => {
+        Object.keys(config).forEach(settingName => {
           const keyPath = pkgName + '.' + settingName;
           const schema = (_featureConfig || _load_featureConfig()).default.getSchema(keyPath);
           const title = getTitle(schema, settingName);
@@ -154,17 +171,6 @@ const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings
     return configData;
   }
 
-  _handleConfigChange(event) {
-    // Workaround: Defer this._getConfigData() as it registers new config.onDidChange() callbacks
-    // The issue is that Atom invokes these new callbacks for the current onDidChange event,
-    // instead of only for *future* events.
-    setTimeout(() => this.setState(this._getConfigData()));
-  }
-
-  _handleComponentChange(keyPath, value) {
-    (_featureConfig || _load_featureConfig()).default.set(keyPath, value);
-  }
-
   render() {
     const elements = [];
 
@@ -172,7 +178,7 @@ const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings
     Object.keys(configData).sort().forEach(categoryName => {
       const packages = configData[categoryName];
       if (Object.keys(packages).length > 0) {
-        elements.push(_reactForAtom.React.createElement((_SettingsCategory || _load_SettingsCategory()).default, {
+        elements.push(_react.default.createElement((_SettingsCategory || _load_SettingsCategory()).default, {
           key: categoryName,
           name: categoryName,
           packages: packages
@@ -180,27 +186,25 @@ const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings
       }
     });
     const settings = elements.length === 0 ? null : elements;
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'pane-item padded settings-gadgets-pane' },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'div',
         { className: 'settings-view panels panels-item' },
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'div',
           { className: 'panels' },
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             'div',
             { className: 'panels-item' },
-            _reactForAtom.React.createElement(
+            _react.default.createElement(
               'section',
               { className: 'section' },
-              _reactForAtom.React.createElement(
+              _react.default.createElement(
                 (_Section || _load_Section()).Section,
-                {
-                  headline: 'Filter',
-                  collapsable: true },
-                _reactForAtom.React.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+                { headline: 'Filter', collapsable: true },
+                _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
                   size: 'lg',
                   placeholderText: 'Filter by setting title or description',
                   onDidChange: this._onFilterTextChanged
@@ -214,13 +218,6 @@ const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings
     );
   }
 
-  _onFilterTextChanged(filterText) {
-    const filter = filterText != null ? filterText.trim() : '';
-    this.setState({
-      filter
-    });
-  }
-
   getTitle() {
     return 'Nuclide Settings';
   }
@@ -230,7 +227,7 @@ const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/settings
   }
 
   getDefaultLocation() {
-    return 'pane';
+    return 'center';
   }
 
   getURI() {

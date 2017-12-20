@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -31,27 +22,20 @@ class SwiftPMTaskRunnerActions {
     this._dispatcher = dispatcher;
   }
 
-  updateChdir(chdir) {
+  updateProjectRoot(projectRoot) {
     this._dispatcher.dispatch({
-      actionType: (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_CHDIR,
-      chdir
+      actionType: (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_PROJECT_ROOT,
+      projectRoot
     });
   }
 
-  updateBuildSettings(configuration, Xcc, Xlinker, Xswiftc, buildPath) {
+  updateSettings(configuration, Xcc, Xlinker, Xswiftc, buildPath) {
     this._dispatcher.dispatch({
-      actionType: (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_BUILD_SETTINGS,
+      actionType: (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_SETTINGS,
       configuration,
       Xcc,
       Xlinker,
       Xswiftc,
-      buildPath
-    });
-  }
-
-  updateTestSettings(buildPath) {
-    this._dispatcher.dispatch({
-      actionType: (_SwiftPMTaskRunnerDispatcher || _load_SwiftPMTaskRunnerDispatcher()).ActionTypes.UPDATE_TEST_SETTINGS,
       buildPath
     });
   }
@@ -63,7 +47,7 @@ class SwiftPMTaskRunnerActions {
       compileCommandsPromise = (0, (_LlbuildYamlParser || _load_LlbuildYamlParser()).readCompileCommands)(yamlPath);
     } catch (e) {
       atom.notifications.addError('The YAML produced by the Swift package manager is malformed', {
-        description: `Nuclide could not parse the YAML file at \`${ yamlPath }\`. ` + 'Please file a bug, and include the contents of the file in ' + 'your report.'
+        description: `Nuclide could not parse the YAML file at \`${yamlPath}\`. ` + 'Please file a bug, and include the contents of the file in ' + 'your report.'
       });
       return;
     }
@@ -75,5 +59,13 @@ class SwiftPMTaskRunnerActions {
     });
   }
 }
-exports.default = SwiftPMTaskRunnerActions;
-module.exports = exports['default'];
+exports.default = SwiftPMTaskRunnerActions; /**
+                                             * Copyright (c) 2015-present, Facebook, Inc.
+                                             * All rights reserved.
+                                             *
+                                             * This source code is licensed under the license found in the LICENSE file in
+                                             * the root directory of this source tree.
+                                             *
+                                             * 
+                                             * @format
+                                             */

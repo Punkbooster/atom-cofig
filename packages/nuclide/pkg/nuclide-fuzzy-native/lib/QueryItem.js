@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -17,21 +8,35 @@ exports.__test__ = undefined;
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const NON_UPPERCASE_CHARS_REGEXP = /[^a-z0-9]/g;
+const NON_UPPERCASE_CHARS_REGEXP = /[^a-z0-9]/g; /**
+                                                  * Copyright (c) 2015-present, Facebook, Inc.
+                                                  * All rights reserved.
+                                                  *
+                                                  * This source code is licensed under the license found in the LICENSE file in
+                                                  * the root directory of this source tree.
+                                                  *
+                                                  * 
+                                                  * @format
+                                                  */
+
+function sanitize(str) {
+  return str.toLowerCase().replace(NON_UPPERCASE_CHARS_REGEXP, '');
+}
+
 /**
  * Returns the score of the common subsequence between `needle` and `haystack` or -1 if there is
  * no common subsequence.
  * A lower number means `needle` is more relevant to `haystack`.
  */
-function scoreCommonSubsequence(needle, haystack_) {
-  let haystack = haystack_;
-  haystack = haystack.toLowerCase();
-  haystack = haystack.replace(NON_UPPERCASE_CHARS_REGEXP, '');
+function scoreCommonSubsequence(needle_, haystack_) {
+  // Sanitize the needle and haystack.
+  const needle = sanitize(needle_);
+  const haystack = sanitize(haystack_);
   if (needle.length === haystack.length) {
     return needle === haystack ? 0 : -1;
   }
@@ -145,9 +150,9 @@ class QueryItem {
   }
 
   _getScoreFor(query) {
-    // Purely defensive, as query is guaranteed to be non-empty.
+    // Everything's an equally decent match for the empty string.
     if (query.length === 0) {
-      return null;
+      return 0;
     }
     // Check if this a "possible result".
     // TODO consider building a directory-level index from important_character -> QueryItem,
@@ -184,6 +189,5 @@ class QueryItem {
     }
     return null;
   }
-
 }
 exports.default = QueryItem;

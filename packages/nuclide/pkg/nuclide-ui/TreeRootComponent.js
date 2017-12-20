@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -34,7 +25,11 @@ function _load_treeNodeTraversals() {
   return _treeNodeTraversals = require('./tree-node-traversals');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Toggles the existence of a value in a set. If the value exists, deletes it.
@@ -60,17 +55,66 @@ function toggleSetHas(set, value, forceHas) {
   }
 
   return added;
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 const FIRST_SELECTED_DESCENDANT_REF = 'firstSelectedDescendant';
 
 /**
  * Generic tree component that operates on LazyTreeNodes.
  */
-class TreeRootComponent extends _reactForAtom.React.Component {
+class TreeRootComponent extends _react.default.Component {
 
   constructor(props) {
     super(props);
+
+    this._onClickNode = (event, node) => {
+      if (event.metaKey) {
+        this._toggleNodeSelected(node);
+        return;
+      }
+
+      this.setState({
+        selectedKeys: new Set([node.getKey()])
+      });
+
+      if (!this._isNodeSelected(node) && node.isContainer()) {
+        // User clicked on a new directory or the user isn't using the "Preview Tabs" feature of the
+        // `tabs` package, so don't toggle the node's state any further yet.
+        return;
+      }
+
+      this._confirmNode(node);
+    };
+
+    this._onClickNodeArrow = (event, node) => {
+      this._toggleNodeExpanded(node);
+    };
+
+    this._onDoubleClickNode = (event, node) => {
+      // Double clicking a non-directory will keep the created tab open.
+      if (!node.isContainer()) {
+        this.props.onKeepSelection();
+      }
+    };
+
+    this._onMouseDown = (event, node) => {
+      // Select the node on right-click.
+      if (event.button === 2 || event.button === 0 && event.ctrlKey === true) {
+        if (!this._isNodeSelected(node)) {
+          this.setState({ selectedKeys: new Set([node.getKey()]) });
+        }
+      }
+    };
+
     this._allKeys = null;
     this._emitter = null;
     this._isMounted = false;
@@ -87,11 +131,6 @@ class TreeRootComponent extends _reactForAtom.React.Component {
       expandedKeys: new Set(this.props.initialExpandedNodeKeys || rootKeys),
       selectedKeys: this.props.initialSelectedNodeKeys ? new Set(this.props.initialSelectedNodeKeys) : new Set(rootKeys.length === 0 ? [] : [rootKeys[0]])
     };
-
-    this._onClickNodeArrow = this._onClickNodeArrow.bind(this);
-    this._onClickNode = this._onClickNode.bind(this);
-    this._onDoubleClickNode = this._onDoubleClickNode.bind(this);
-    this._onMouseDown = this._onMouseDown.bind(this);
   }
 
   componentDidMount() {
@@ -109,7 +148,8 @@ class TreeRootComponent extends _reactForAtom.React.Component {
     if (!prevState || this.state.selectedKeys !== prevState.selectedKeys) {
       const firstSelectedDescendant = this.refs[FIRST_SELECTED_DESCENDANT_REF];
       if (firstSelectedDescendant !== undefined) {
-        _reactForAtom.ReactDOM.findDOMNode(firstSelectedDescendant).scrollIntoViewIfNeeded(false);
+        // $FlowFixMe
+        _reactDom.default.findDOMNode(firstSelectedDescendant).scrollIntoViewIfNeeded(false);
       }
     }
 
@@ -161,45 +201,6 @@ class TreeRootComponent extends _reactForAtom.React.Component {
     const selectedKeys = this.state.selectedKeys;
     toggleSetHas(selectedKeys, node.getKey(), forceSelected);
     this.setState({ selectedKeys });
-  }
-
-  _onClickNode(event, node) {
-    if (event.metaKey) {
-      this._toggleNodeSelected(node);
-      return;
-    }
-
-    this.setState({
-      selectedKeys: new Set([node.getKey()])
-    });
-
-    if (!this._isNodeSelected(node) && node.isContainer()) {
-      // User clicked on a new directory or the user isn't using the "Preview Tabs" feature of the
-      // `tabs` package, so don't toggle the node's state any further yet.
-      return;
-    }
-
-    this._confirmNode(node);
-  }
-
-  _onClickNodeArrow(event, node) {
-    this._toggleNodeExpanded(node);
-  }
-
-  _onDoubleClickNode(event, node) {
-    // Double clicking a non-directory will keep the created tab open.
-    if (!node.isContainer()) {
-      this.props.onKeepSelection();
-    }
-  }
-
-  _onMouseDown(event, node) {
-    // Select the node on right-click.
-    if (event.button === 2 || event.button === 0 && event.ctrlKey === true) {
-      if (!this._isNodeSelected(node)) {
-        this.setState({ selectedKeys: new Set([node.getKey()]) });
-      }
-    }
   }
 
   addContextMenuItemGroup(menuItemDefinitions) {
@@ -258,7 +259,7 @@ class TreeRootComponent extends _reactForAtom.React.Component {
           ref = FIRST_SELECTED_DESCENDANT_REF;
         }
 
-        const child = _reactForAtom.React.createElement((_TreeNodeComponent || _load_TreeNodeComponent()).TreeNodeComponent, Object.assign({}, item, {
+        const child = _react.default.createElement((_TreeNodeComponent || _load_TreeNodeComponent()).TreeNodeComponent, Object.assign({}, item, {
           isContainer: node.isContainer(),
           isExpanded: this._isNodeExpanded(node),
           isLoading: !node.isCacheValid(),
@@ -314,7 +315,7 @@ class TreeRootComponent extends _reactForAtom.React.Component {
 
     this._allKeys = allKeys;
     this._keyToNode = keyToNode;
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: 'nuclide-tree-root' },
       children
@@ -388,7 +389,8 @@ class TreeRootComponent extends _reactForAtom.React.Component {
 
     // We have to create the listener before setting the state so it can pick
     // up the changes from `setState`.
-    const promise = this._createDidUpdateListener( /* shouldResolve */() => {
+    const promise = this._createDidUpdateListener(
+    /* shouldResolve */() => {
       const rootsReady = this.state.roots === roots;
       const childrenReady = this.state.roots.every(root => root.isCacheValid());
       return rootsReady && childrenReady;
@@ -424,7 +426,7 @@ class TreeRootComponent extends _reactForAtom.React.Component {
         this._rejectDidUpdateListenerPromise = null;
       }
       this._rejectDidUpdateListenerPromise = () => {
-        reject(undefined);
+        reject(new Error());
         didUpdateDisposable.dispose();
       };
     });
@@ -504,12 +506,13 @@ class TreeRootComponent extends _reactForAtom.React.Component {
    */
   selectNodeKey(nodeKey) {
     if (!this.getNodeForKey(nodeKey)) {
-      return Promise.reject();
+      return Promise.reject(new Error());
     }
 
     // We have to create the listener before setting the state so it can pick
     // up the changes from `setState`.
-    const promise = this._createDidUpdateListener( /* shouldResolve */() => this.state.selectedKeys.has(nodeKey));
+    const promise = this._createDidUpdateListener(
+    /* shouldResolve */() => this.state.selectedKeys.has(nodeKey));
     this.setState({ selectedKeys: new Set([nodeKey]) });
     return promise;
   }
@@ -533,7 +536,8 @@ class TreeRootComponent extends _reactForAtom.React.Component {
     const node = this.getNodeForKey(nodeKey);
 
     if (node && node.isContainer()) {
-      const promise = this._createDidUpdateListener( /* shouldResolve */() => {
+      const promise = this._createDidUpdateListener(
+      /* shouldResolve */() => {
         const isExpanded = this.state.expandedKeys.has(nodeKey);
         const nodeNow = this.getNodeForKey(nodeKey);
         const isDoneFetching = nodeNow && nodeNow.isContainer() && nodeNow.isCacheValid();

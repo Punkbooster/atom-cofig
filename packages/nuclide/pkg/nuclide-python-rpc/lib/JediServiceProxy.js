@@ -9,67 +9,32 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "src",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 77
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "contents",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 78
-        },
         kind: "string"
       }
     }, {
       name: "line",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 79
-        },
         kind: "number"
       }
     }, {
       name: "column",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 80
-        },
         kind: "number"
       }
     }]).then(args => {
       return _client.callRemoteFunction("get_completions", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 81
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 81
-          },
           kind: "array",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 81
-            },
             kind: "named",
             name: "JediCompletion"
           }
@@ -82,67 +47,32 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "src",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 86
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "contents",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 87
-        },
         kind: "string"
       }
     }, {
       name: "line",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 88
-        },
         kind: "number"
       }
     }, {
       name: "column",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 89
-        },
         kind: "number"
       }
     }]).then(args => {
       return _client.callRemoteFunction("get_definitions", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 90
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 90
-          },
           kind: "array",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 90
-            },
             kind: "named",
             name: "JediDefinition"
           }
@@ -155,67 +85,32 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "src",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 95
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "contents",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 96
-        },
         kind: "string"
       }
     }, {
       name: "line",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 97
-        },
         kind: "number"
       }
     }, {
       name: "column",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 98
-        },
         kind: "number"
       }
     }]).then(args => {
       return _client.callRemoteFunction("get_references", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 99
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 99
-          },
           kind: "array",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 99
-            },
             kind: "named",
             name: "JediReference"
           }
@@ -228,47 +123,22 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "src",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 104
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "contents",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 105
-        },
         kind: "string"
       }
     }]).then(args => {
       return _client.callRemoteFunction("get_outline", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 106
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 106
-          },
           kind: "array",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 106
-            },
             kind: "named",
             name: "JediOutlineItem"
           }
@@ -281,18 +151,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "paths",
       type: {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 111
-        },
         kind: "array",
         type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 111
-          },
           kind: "string"
         }
       }
@@ -300,25 +160,10 @@ module.exports = _client => {
       return _client.callRemoteFunction("add_paths", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 112
-        },
         kind: "nullable",
         type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 112
-          },
           kind: "array",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 112
-            },
             kind: "string"
           }
         }
@@ -335,1601 +180,793 @@ Object.defineProperty(module.exports, "inject", {
   }
 });
 Object.defineProperty(module.exports, "defs", {
-  value: new Map([["Object", {
-    kind: "alias",
-    name: "Object",
-    location: {
-      type: "builtin"
-    }
-  }], ["Date", {
-    kind: "alias",
-    name: "Date",
-    location: {
-      type: "builtin"
-    }
-  }], ["RegExp", {
-    kind: "alias",
-    name: "RegExp",
-    location: {
-      type: "builtin"
-    }
-  }], ["Buffer", {
-    kind: "alias",
-    name: "Buffer",
-    location: {
-      type: "builtin"
-    }
-  }], ["fs.Stats", {
-    kind: "alias",
-    name: "fs.Stats",
-    location: {
-      type: "builtin"
-    }
-  }], ["NuclideUri", {
-    kind: "alias",
-    name: "NuclideUri",
-    location: {
-      type: "builtin"
-    }
-  }], ["atom$Point", {
-    kind: "alias",
-    name: "atom$Point",
-    location: {
-      type: "builtin"
-    }
-  }], ["atom$Range", {
-    kind: "alias",
-    name: "atom$Range",
-    location: {
-      type: "builtin"
-    }
-  }], ["JediCompletion", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 16
+  value: {
+    Object: {
+      kind: "alias",
+      name: "Object",
+      location: {
+        type: "builtin"
+      }
     },
-    name: "JediCompletion",
-    definition: {
+    Date: {
+      kind: "alias",
+      name: "Date",
+      location: {
+        type: "builtin"
+      }
+    },
+    RegExp: {
+      kind: "alias",
+      name: "RegExp",
+      location: {
+        type: "builtin"
+      }
+    },
+    Buffer: {
+      kind: "alias",
+      name: "Buffer",
+      location: {
+        type: "builtin"
+      }
+    },
+    "fs.Stats": {
+      kind: "alias",
+      name: "fs.Stats",
+      location: {
+        type: "builtin"
+      }
+    },
+    NuclideUri: {
+      kind: "alias",
+      name: "NuclideUri",
+      location: {
+        type: "builtin"
+      }
+    },
+    atom$Point: {
+      kind: "alias",
+      name: "atom$Point",
+      location: {
+        type: "builtin"
+      }
+    },
+    atom$Range: {
+      kind: "alias",
+      name: "atom$Range",
+      location: {
+        type: "builtin"
+      }
+    },
+    JediCompletion: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "JediService.js",
         line: 16
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 17
-        },
-        name: "type",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 17
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 18
-        },
-        name: "text",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 18
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 19
-        },
-        name: "description",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 19
-          },
-          kind: "string"
-        },
-        optional: true
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 20
-        },
-        name: "params",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 20
-          },
-          kind: "array",
+      name: "JediCompletion",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "type",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 20
-            },
             kind: "string"
-          }
-        },
-        optional: true
-      }]
-    }
-  }], ["JediDefinition", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 23
+          },
+          optional: false
+        }, {
+          name: "text",
+          type: {
+            kind: "string"
+          },
+          optional: false
+        }, {
+          name: "description",
+          type: {
+            kind: "string"
+          },
+          optional: true
+        }, {
+          name: "params",
+          type: {
+            kind: "array",
+            type: {
+              kind: "string"
+            }
+          },
+          optional: true
+        }]
+      }
     },
-    name: "JediDefinition",
-    definition: {
+    JediDefinition: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "JediService.js",
         line: 23
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 24
-        },
-        name: "type",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 24
+      name: "JediDefinition",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "type",
+          type: {
+            kind: "string"
           },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 25
-        },
-        name: "text",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 25
+          optional: false
+        }, {
+          name: "text",
+          type: {
+            kind: "string"
           },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 26
-        },
-        name: "file",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 26
+          optional: false
+        }, {
+          name: "file",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
           },
-          kind: "named",
-          name: "NuclideUri"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 27
-        },
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 27
+          optional: false
+        }, {
+          name: "line",
+          type: {
+            kind: "number"
           },
-          kind: "number"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 28
-        },
-        name: "column",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 28
+          optional: false
+        }, {
+          name: "column",
+          type: {
+            kind: "number"
           },
-          kind: "number"
-        },
-        optional: false
-      }]
-    }
-  }], ["JediReference", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 31
+          optional: false
+        }]
+      }
     },
-    name: "JediReference",
-    definition: {
+    JediReference: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "JediService.js",
         line: 31
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 32
-        },
-        name: "type",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 32
+      name: "JediReference",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "type",
+          type: {
+            kind: "string"
           },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 33
-        },
-        name: "text",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 33
+          optional: false
+        }, {
+          name: "text",
+          type: {
+            kind: "string"
           },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 34
-        },
-        name: "file",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 34
+          optional: false
+        }, {
+          name: "file",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
           },
-          kind: "named",
-          name: "NuclideUri"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 35
-        },
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 35
+          optional: false
+        }, {
+          name: "line",
+          type: {
+            kind: "number"
           },
-          kind: "number"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 36
-        },
-        name: "column",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 36
+          optional: false
+        }, {
+          name: "column",
+          type: {
+            kind: "number"
           },
-          kind: "number"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 37
-        },
-        name: "parentName",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 37
+          optional: false
+        }, {
+          name: "parentName",
+          type: {
+            kind: "string"
           },
-          kind: "string"
-        },
-        optional: true
-      }]
-    }
-  }], ["Position", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 40
+          optional: true
+        }]
+      }
     },
-    name: "Position",
-    definition: {
+    Position: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "JediService.js",
         line: 40
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 41
-        },
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 41
-          },
-          kind: "number"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 42
-        },
-        name: "column",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 42
-          },
-          kind: "number"
-        },
-        optional: false
-      }]
-    }
-  }], ["JediFunctionItem", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 45
-    },
-    name: "JediFunctionItem",
-    definition: {
-      location: {
-        type: "source",
-        fileName: "JediService.js",
-        line: 45
-      },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 46
-        },
-        name: "kind",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 46
-          },
-          kind: "string-literal",
-          value: "function"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 47
-        },
-        name: "name",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 47
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 48
-        },
-        name: "start",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 48
-          },
-          kind: "named",
-          name: "Position"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 49
-        },
-        name: "end",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 49
-          },
-          kind: "named",
-          name: "Position"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 50
-        },
-        name: "children",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 50
-          },
-          kind: "array",
+      name: "Position",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "line",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 50
-            },
-            kind: "named",
-            name: "JediOutlineItem"
-          }
-        },
-        optional: true
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 51
-        },
-        name: "docblock",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 51
+            kind: "number"
           },
-          kind: "string"
-        },
-        optional: true
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 52
-        },
-        name: "params",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 52
-          },
-          kind: "array",
+          optional: false
+        }, {
+          name: "column",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 52
-            },
-            kind: "string"
-          }
-        },
-        optional: true
-      }]
-    }
-  }], ["JediClassItem", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 55
+            kind: "number"
+          },
+          optional: false
+        }]
+      }
     },
-    name: "JediClassItem",
-    definition: {
+    JediClassItem: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "JediService.js",
         line: 55
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 56
-        },
-        name: "kind",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 56
-          },
-          kind: "string-literal",
-          value: "class"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 57
-        },
-        name: "name",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 57
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 58
-        },
-        name: "start",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 58
-          },
-          kind: "named",
-          name: "Position"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 59
-        },
-        name: "end",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 59
-          },
-          kind: "named",
-          name: "Position"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 60
-        },
-        name: "children",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 60
-          },
-          kind: "array",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 60
-            },
-            kind: "named",
-            name: "JediOutlineItem"
-          }
-        },
-        optional: true
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 61
-        },
-        name: "docblock",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 61
-          },
-          kind: "string"
-        },
-        optional: true
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 63
-        },
-        name: "params",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 63
-          },
-          kind: "array",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 63
-            },
-            kind: "string"
-          }
-        },
-        optional: true
-      }]
-    }
-  }], ["JediStatementItem", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 66
-    },
-    name: "JediStatementItem",
-    definition: {
-      location: {
-        type: "source",
-        fileName: "JediService.js",
-        line: 66
-      },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 67
-        },
-        name: "kind",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 67
-          },
-          kind: "string-literal",
-          value: "statement"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 68
-        },
-        name: "name",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 68
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 69
-        },
-        name: "start",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 69
-          },
-          kind: "named",
-          name: "Position"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 70
-        },
-        name: "end",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 70
-          },
-          kind: "named",
-          name: "Position"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 71
-        },
-        name: "docblock",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 71
-          },
-          kind: "string"
-        },
-        optional: true
-      }]
-    }
-  }], ["JediOutlineItem", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 74
-    },
-    name: "JediOutlineItem",
-    definition: {
-      location: {
-        type: "source",
-        fileName: "JediService.js",
-        line: 74
-      },
-      kind: "union",
-      types: [{
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 45
-        },
+      name: "JediClassItem",
+      definition: {
         kind: "object",
         fields: [{
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 46
-          },
           name: "kind",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 46
-            },
-            kind: "string-literal",
-            value: "function"
-          },
-          optional: false
-        }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 47
-          },
-          name: "name",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 47
-            },
-            kind: "string"
-          },
-          optional: false
-        }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 48
-          },
-          name: "start",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 48
-            },
-            kind: "named",
-            name: "Position"
-          },
-          optional: false
-        }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 49
-          },
-          name: "end",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 49
-            },
-            kind: "named",
-            name: "Position"
-          },
-          optional: false
-        }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 50
-          },
-          name: "children",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 50
-            },
-            kind: "array",
-            type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 50
-              },
-              kind: "named",
-              name: "JediOutlineItem"
-            }
-          },
-          optional: true
-        }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 51
-          },
-          name: "docblock",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 51
-            },
-            kind: "string"
-          },
-          optional: true
-        }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 52
-          },
-          name: "params",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 52
-            },
-            kind: "array",
-            type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 52
-              },
-              kind: "string"
-            }
-          },
-          optional: true
-        }]
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 55
-        },
-        kind: "object",
-        fields: [{
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 56
-          },
-          name: "kind",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 56
-            },
             kind: "string-literal",
             value: "class"
           },
           optional: false
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 57
-          },
           name: "name",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 57
-            },
             kind: "string"
           },
           optional: false
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 58
-          },
           name: "start",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 58
-            },
             kind: "named",
             name: "Position"
           },
           optional: false
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 59
-          },
           name: "end",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 59
-            },
             kind: "named",
             name: "Position"
           },
           optional: false
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 60
-          },
           name: "children",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 60
-            },
             kind: "array",
             type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 60
-              },
               kind: "named",
               name: "JediOutlineItem"
             }
           },
           optional: true
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 61
-          },
           name: "docblock",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 61
-            },
             kind: "string"
           },
           optional: true
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 63
-          },
           name: "params",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 63
-            },
             kind: "array",
             type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 63
-              },
               kind: "string"
             }
           },
           optional: true
         }]
-      }, {
-        location: {
-          type: "source",
-          fileName: "JediService.js",
-          line: 66
-        },
+      }
+    },
+    JediStatementItem: {
+      kind: "alias",
+      location: {
+        type: "source",
+        fileName: "JediService.js",
+        line: 66
+      },
+      name: "JediStatementItem",
+      definition: {
         kind: "object",
         fields: [{
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 67
-          },
           name: "kind",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 67
-            },
             kind: "string-literal",
             value: "statement"
           },
           optional: false
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 68
-          },
           name: "name",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 68
-            },
             kind: "string"
           },
           optional: false
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 69
-          },
           name: "start",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 69
-            },
             kind: "named",
             name: "Position"
           },
           optional: false
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 70
-          },
           name: "end",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 70
-            },
             kind: "named",
             name: "Position"
           },
           optional: false
         }, {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 71
-          },
           name: "docblock",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 71
-            },
             kind: "string"
           },
           optional: true
         }]
-      }],
-      discriminantField: "kind"
-    }
-  }], ["get_completions", {
-    kind: "function",
-    name: "get_completions",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 76
+      }
     },
-    type: {
+    JediOutlineItem: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "JediService.js",
-        line: 76
+        line: 74
       },
+      name: "JediOutlineItem",
+      definition: {
+        kind: "union",
+        types: [{
+          kind: "object",
+          fields: [{
+            name: "kind",
+            type: {
+              kind: "string-literal",
+              value: "function"
+            },
+            optional: false
+          }, {
+            name: "name",
+            type: {
+              kind: "string"
+            },
+            optional: false
+          }, {
+            name: "start",
+            type: {
+              kind: "named",
+              name: "Position"
+            },
+            optional: false
+          }, {
+            name: "end",
+            type: {
+              kind: "named",
+              name: "Position"
+            },
+            optional: false
+          }, {
+            name: "children",
+            type: {
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "JediOutlineItem"
+              }
+            },
+            optional: true
+          }, {
+            name: "docblock",
+            type: {
+              kind: "string"
+            },
+            optional: true
+          }, {
+            name: "params",
+            type: {
+              kind: "array",
+              type: {
+                kind: "string"
+              }
+            },
+            optional: true
+          }]
+        }, {
+          kind: "object",
+          fields: [{
+            name: "kind",
+            type: {
+              kind: "string-literal",
+              value: "class"
+            },
+            optional: false
+          }, {
+            name: "name",
+            type: {
+              kind: "string"
+            },
+            optional: false
+          }, {
+            name: "start",
+            type: {
+              kind: "named",
+              name: "Position"
+            },
+            optional: false
+          }, {
+            name: "end",
+            type: {
+              kind: "named",
+              name: "Position"
+            },
+            optional: false
+          }, {
+            name: "children",
+            type: {
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "JediOutlineItem"
+              }
+            },
+            optional: true
+          }, {
+            name: "docblock",
+            type: {
+              kind: "string"
+            },
+            optional: true
+          }, {
+            name: "params",
+            type: {
+              kind: "array",
+              type: {
+                kind: "string"
+              }
+            },
+            optional: true
+          }]
+        }, {
+          kind: "object",
+          fields: [{
+            name: "kind",
+            type: {
+              kind: "string-literal",
+              value: "statement"
+            },
+            optional: false
+          }, {
+            name: "name",
+            type: {
+              kind: "string"
+            },
+            optional: false
+          }, {
+            name: "start",
+            type: {
+              kind: "named",
+              name: "Position"
+            },
+            optional: false
+          }, {
+            name: "end",
+            type: {
+              kind: "named",
+              name: "Position"
+            },
+            optional: false
+          }, {
+            name: "docblock",
+            type: {
+              kind: "string"
+            },
+            optional: true
+          }]
+        }],
+        discriminantField: "kind"
+      }
+    },
+    JediFunctionItem: {
+      kind: "alias",
+      location: {
+        type: "source",
+        fileName: "JediService.js",
+        line: 45
+      },
+      name: "JediFunctionItem",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "kind",
+          type: {
+            kind: "string-literal",
+            value: "function"
+          },
+          optional: false
+        }, {
+          name: "name",
+          type: {
+            kind: "string"
+          },
+          optional: false
+        }, {
+          name: "start",
+          type: {
+            kind: "named",
+            name: "Position"
+          },
+          optional: false
+        }, {
+          name: "end",
+          type: {
+            kind: "named",
+            name: "Position"
+          },
+          optional: false
+        }, {
+          name: "children",
+          type: {
+            kind: "array",
+            type: {
+              kind: "named",
+              name: "JediOutlineItem"
+            }
+          },
+          optional: true
+        }, {
+          name: "docblock",
+          type: {
+            kind: "string"
+          },
+          optional: true
+        }, {
+          name: "params",
+          type: {
+            kind: "array",
+            type: {
+              kind: "string"
+            }
+          },
+          optional: true
+        }]
+      }
+    },
+    get_completions: {
       kind: "function",
-      argumentTypes: [{
-        name: "src",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 77
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "contents",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 78
-          },
-          kind: "string"
-        }
-      }, {
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 79
-          },
-          kind: "number"
-        }
-      }, {
-        name: "column",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 80
-          },
-          kind: "number"
-        }
-      }],
-      returnType: {
+      name: "get_completions",
+      location: {
+        type: "source",
+        fileName: "JediService.js",
+        line: 79
+      },
+      type: {
         location: {
           type: "source",
           fileName: "JediService.js",
-          line: 81
+          line: 79
         },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 81
-          },
-          kind: "nullable",
+        kind: "function",
+        argumentTypes: [{
+          name: "src",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 81
-            },
-            kind: "array",
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "contents",
+          type: {
+            kind: "string"
+          }
+        }, {
+          name: "line",
+          type: {
+            kind: "number"
+          }
+        }, {
+          name: "column",
+          type: {
+            kind: "number"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
             type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 81
-              },
-              kind: "named",
-              name: "JediCompletion"
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "JediCompletion"
+              }
             }
           }
         }
       }
-    }
-  }], ["get_definitions", {
-    kind: "function",
-    name: "get_definitions",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 85
     },
-    type: {
+    get_definitions: {
+      kind: "function",
+      name: "get_definitions",
       location: {
         type: "source",
         fileName: "JediService.js",
-        line: 85
+        line: 88
       },
-      kind: "function",
-      argumentTypes: [{
-        name: "src",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 86
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "contents",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 87
-          },
-          kind: "string"
-        }
-      }, {
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 88
-          },
-          kind: "number"
-        }
-      }, {
-        name: "column",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 89
-          },
-          kind: "number"
-        }
-      }],
-      returnType: {
+      type: {
         location: {
           type: "source",
           fileName: "JediService.js",
-          line: 90
+          line: 88
         },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 90
-          },
-          kind: "nullable",
+        kind: "function",
+        argumentTypes: [{
+          name: "src",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 90
-            },
-            kind: "array",
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "contents",
+          type: {
+            kind: "string"
+          }
+        }, {
+          name: "line",
+          type: {
+            kind: "number"
+          }
+        }, {
+          name: "column",
+          type: {
+            kind: "number"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
             type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 90
-              },
-              kind: "named",
-              name: "JediDefinition"
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "JediDefinition"
+              }
             }
           }
         }
       }
-    }
-  }], ["get_references", {
-    kind: "function",
-    name: "get_references",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 94
     },
-    type: {
+    get_references: {
+      kind: "function",
+      name: "get_references",
       location: {
         type: "source",
         fileName: "JediService.js",
-        line: 94
+        line: 97
       },
-      kind: "function",
-      argumentTypes: [{
-        name: "src",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 95
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "contents",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 96
-          },
-          kind: "string"
-        }
-      }, {
-        name: "line",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 97
-          },
-          kind: "number"
-        }
-      }, {
-        name: "column",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 98
-          },
-          kind: "number"
-        }
-      }],
-      returnType: {
+      type: {
         location: {
           type: "source",
           fileName: "JediService.js",
-          line: 99
+          line: 97
         },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 99
-          },
-          kind: "nullable",
+        kind: "function",
+        argumentTypes: [{
+          name: "src",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 99
-            },
-            kind: "array",
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "contents",
+          type: {
+            kind: "string"
+          }
+        }, {
+          name: "line",
+          type: {
+            kind: "number"
+          }
+        }, {
+          name: "column",
+          type: {
+            kind: "number"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
             type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 99
-              },
-              kind: "named",
-              name: "JediReference"
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "JediReference"
+              }
             }
           }
         }
       }
-    }
-  }], ["get_outline", {
-    kind: "function",
-    name: "get_outline",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 103
     },
-    type: {
+    get_outline: {
+      kind: "function",
+      name: "get_outline",
       location: {
         type: "source",
         fileName: "JediService.js",
-        line: 103
+        line: 106
       },
-      kind: "function",
-      argumentTypes: [{
-        name: "src",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 104
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "contents",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 105
-          },
-          kind: "string"
-        }
-      }],
-      returnType: {
+      type: {
         location: {
           type: "source",
           fileName: "JediService.js",
           line: 106
         },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 106
-          },
-          kind: "nullable",
+        kind: "function",
+        argumentTypes: [{
+          name: "src",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 106
-            },
-            kind: "array",
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "contents",
+          type: {
+            kind: "string"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
             type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 106
-              },
-              kind: "named",
-              name: "JediOutlineItem"
+              kind: "array",
+              type: {
+                kind: "named",
+                name: "JediOutlineItem"
+              }
             }
           }
         }
       }
-    }
-  }], ["add_paths", {
-    kind: "function",
-    name: "add_paths",
-    location: {
-      type: "source",
-      fileName: "JediService.js",
-      line: 110
     },
-    type: {
+    add_paths: {
+      kind: "function",
+      name: "add_paths",
       location: {
         type: "source",
         fileName: "JediService.js",
-        line: 110
+        line: 113
       },
-      kind: "function",
-      argumentTypes: [{
-        name: "paths",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 111
-          },
-          kind: "array",
-          type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 111
-            },
-            kind: "string"
-          }
-        }
-      }],
-      returnType: {
+      type: {
         location: {
           type: "source",
           fileName: "JediService.js",
-          line: 112
+          line: 113
         },
-        kind: "promise",
-        type: {
-          location: {
-            type: "source",
-            fileName: "JediService.js",
-            line: 112
-          },
-          kind: "nullable",
+        kind: "function",
+        argumentTypes: [{
+          name: "paths",
           type: {
-            location: {
-              type: "source",
-              fileName: "JediService.js",
-              line: 112
-            },
             kind: "array",
             type: {
-              location: {
-                type: "source",
-                fileName: "JediService.js",
-                line: 112
-              },
               kind: "string"
+            }
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "array",
+              type: {
+                kind: "string"
+              }
             }
           }
         }
       }
     }
-  }]])
+  }
 });

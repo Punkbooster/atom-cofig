@@ -1,13 +1,17 @@
 'use strict';
-'use babel';
 
-/*
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * 
+ * @format
  */
+
+/* eslint-disable nuclide-internal/no-commonjs */
 
 /**
  * Load expensive dependencies before packages import them so they don't skew
@@ -23,8 +27,8 @@
 
 require('immutable');
 require('log4js');
-require('react-for-atom').React;
-require('react-for-atom').ReactDOM;
+require('react');
+require('react-dom');
 require('redux');
 require('rxjs/bundles/Rx.min.js');
 

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -23,7 +14,7 @@ let getCtagsService = (() => {
     if (service == null) {
       return null;
     }
-    return yield service.getCtagsService(path);
+    return service.getCtagsService(path);
   });
 
   return function getCtagsService(_x) {
@@ -31,12 +22,18 @@ let getCtagsService = (() => {
   };
 })();
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _featureConfig;
 
 function _load_featureConfig() {
-  return _featureConfig = _interopRequireDefault(require('../../commons-atom/featureConfig'));
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
+}
+
+var _goToLocation;
+
+function _load_goToLocation() {
+  return _goToLocation = require('nuclide-commons-atom/go-to-location');
 }
 
 var _HackLanguage;
@@ -54,7 +51,7 @@ function _load_nuclideRemoteConnection() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _utils;
@@ -68,12 +65,21 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // ctags doesn't have a true limit API, so having too many results slows down Nuclide.
 
 // eslint-disable-next-line nuclide-internal/no-cross-atom-imports
-const MIN_QUERY_LENGTH = 2;
+const MIN_QUERY_LENGTH = 2; /**
+                             * Copyright (c) 2015-present, Facebook, Inc.
+                             * All rights reserved.
+                             *
+                             * This source code is licensed under the license found in the LICENSE file in
+                             * the root directory of this source tree.
+                             *
+                             * 
+                             * @format
+                             */
+
 const RESULTS_LIMIT = 10;
 const DEFAULT_ICON = 'icon-squirrel';
 
 class QuickOpenHelpers {
-
   static isEligibleForDirectory(directory) {
     return (0, _asyncToGenerator.default)(function* () {
       const svc = yield getCtagsService(directory);
@@ -95,19 +101,19 @@ class QuickOpenHelpers {
       icon = (_utils || _load_utils()).CTAGS_KIND_ICONS[item.kind];
     }
     icon = icon || DEFAULT_ICON;
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { title: kind },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'span',
-        { className: `file icon ${ icon }` },
-        _reactForAtom.React.createElement(
+        { className: `file icon ${icon}` },
+        _react.default.createElement(
           'code',
           null,
           item.name
         )
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'span',
         { className: 'omnisearch-symbol-result-filename' },
         path
@@ -117,7 +123,7 @@ class QuickOpenHelpers {
 
   static executeQuery(query, directory) {
     return (0, _asyncToGenerator.default)(function* () {
-      if (directory == null || query.length < MIN_QUERY_LENGTH) {
+      if (query.length < MIN_QUERY_LENGTH) {
         return [];
       }
 
@@ -142,28 +148,24 @@ class QuickOpenHelpers {
           limit: RESULTS_LIMIT
         });
 
-        return yield Promise.all(results.filter(function (tag) {
+        return results.filter(function (tag) {
           return !isHackProject || !tag.file.endsWith('.php');
-        }).map((() => {
-          var _ref2 = (0, _asyncToGenerator.default)(function* (tag) {
-            const line = yield (0, (_utils || _load_utils()).getLineNumberForTag)(tag);
-            return Object.assign({}, tag, {
-              path: tag.file,
-              dir,
-              line
-            });
+        }).map(function (tag) {
+          return Object.assign({}, tag, {
+            path: tag.file,
+            dir,
+            callback() {
+              return (0, _asyncToGenerator.default)(function* () {
+                const line = yield (0, (_utils || _load_utils()).getLineNumberForTag)(tag);
+                (0, (_goToLocation || _load_goToLocation()).goToLocation)(tag.file, line);
+              })();
+            }
           });
-
-          return function (_x2) {
-            return _ref2.apply(this, arguments);
-          };
-        })()));
+        });
       } finally {
         service.dispose();
       }
     })();
   }
-
 }
 exports.default = QuickOpenHelpers;
-module.exports = exports['default'];

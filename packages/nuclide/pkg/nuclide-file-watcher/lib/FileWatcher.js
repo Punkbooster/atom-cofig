@@ -1,13 +1,8 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -22,7 +17,7 @@ function _load_nuclideAnalytics() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _nuclideRemoteConnection;
@@ -31,15 +26,24 @@ function _load_nuclideRemoteConnection() {
   return _nuclideRemoteConnection = require('../../nuclide-remote-connection');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-file-watcher'); /**
+                                                                                    * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                    * All rights reserved.
+                                                                                    *
+                                                                                    * This source code is licensed under the license found in the LICENSE file in
+                                                                                    * the root directory of this source tree.
+                                                                                    *
+                                                                                    * 
+                                                                                    * @format
+                                                                                    */
 
 class FileWatcher {
 
@@ -52,7 +56,7 @@ class FileWatcher {
     const _subscriptions = new _atom.CompositeDisposable();
     _subscriptions.add(this._editor.onDidConflict(() => {
       if (this._shouldPromptToReload()) {
-        logger.info(`Conflict at file: ${ this._editor.getPath() || 'File not found' }`);
+        logger.info(`Conflict at file: ${this._editor.getPath() || 'File not found'}`);
         this._promptReload();
       }
     }));
@@ -64,7 +68,7 @@ class FileWatcher {
   }
 
   _promptReload() {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)('file-watcher:promptReload', () => this.__promptReload());
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('file-watcher:promptReload', () => this.__promptReload());
   }
 
   __promptReload() {
@@ -97,11 +101,13 @@ class FileWatcher {
 
       // Load the file contents locally or remotely.
       const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileSystemServiceByNuclideUri)(filePath);
-      const localFilePath = (_nuclideUri || _load_nuclideUri()).default.getPath(filePath);
-      const contents = (yield service.readFile(localFilePath)).toString(encoding);
+      const contents = (yield service.readFile(filePath)).toString(encoding);
 
       // Open a right split pane to compare the contents.
       // TODO: We can use the diff-view here when ready.
+      // TODO: Figure out wtf is going on here (why are we passing the empty string as a path) and
+      // consider using goToLocation instead.
+      // eslint-disable-next-line nuclide-internal/atom-apis
       const splitEditor = yield atom.workspace.open('', { split: 'right' });
 
       splitEditor.insertText(contents);
@@ -117,5 +123,4 @@ class FileWatcher {
     this._subscriptions = null;
   }
 }
-
-module.exports = FileWatcher;
+exports.default = FileWatcher;

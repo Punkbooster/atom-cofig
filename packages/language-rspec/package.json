@@ -2,42 +2,41 @@
   "_args": [
     [
       {
-        "raw": "/tmp/d-117110-21728-179dkdw/package.tgz",
+        "raw": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/tmp/d-117110-21728-179dkdw/package.tgz",
-        "spec": "/tmp/d-117110-21728-179dkdw/package.tgz",
+        "rawSpec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+        "spec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
         "type": "local"
       },
-      "/tmp/apm-install-dir-117110-21728-1nrefqm"
+      "/tmp/apm-install-dir-11774-27821-nvzqn7.ddq85mi"
     ]
   ],
-  "_from": "../d-117110-21728-179dkdw/package.tgz",
-  "_id": "language-rspec@0.5.1",
+  "_from": "../d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+  "_id": "language-rspec@0.6.3",
   "_inCache": true,
-  "_installable": true,
   "_location": "/language-rspec",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/tmp/d-117110-21728-179dkdw/package.tgz",
+    "raw": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/tmp/d-117110-21728-179dkdw/package.tgz",
-    "spec": "/tmp/d-117110-21728-179dkdw/package.tgz",
+    "rawSpec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+    "spec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-117110-21728-179dkdw/package.tgz",
-  "_shasum": "7960ef029ea15fe517fcb5c6df1335c4f1390da2",
+  "_resolved": "file:../d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+  "_shasum": "b7ce46acf5c419dfdb2273d4dd4ceee8fbfb80fc",
   "_shrinkwrap": null,
-  "_spec": "/tmp/d-117110-21728-179dkdw/package.tgz",
-  "_where": "/tmp/apm-install-dir-117110-21728-1nrefqm",
+  "_spec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+  "_where": "/tmp/apm-install-dir-11774-27821-nvzqn7.ddq85mi",
   "bugs": {
-    "url": "https://github.com/paveldruzyak/language-rspec/issues"
+    "url": "https://github.com/pauldruziak/language-rspec/issues"
   },
   "dependencies": {},
   "description": "RSpec language package for Atom",
@@ -45,7 +44,7 @@
   "engines": {
     "atom": ">0.50.0"
   },
-  "homepage": "https://github.com/paveldruzyak/language-rspec#readme",
+  "homepage": "https://github.com/pauldruziak/language-rspec#readme",
   "keywords": [
     "rspec",
     "spec",
@@ -57,11 +56,24 @@
   "main": "./lib/language-rspec",
   "name": "language-rspec",
   "optionalDependencies": {},
-  "readme": "[![Build Status](https://travis-ci.org/paveldruzyak/language-rspec.svg?branch=master)](https://travis-ci.org/paveldruzyak/language-rspec)\n\n# RSpec language support in Atom\n\nAdds syntax highlighting and snippets to RSpec file in Atom.\n\nOriginally [converted](http://atom.io/docs/latest/converting-a-text-mate-bundle)\nfrom the [RSpec TextMate bundle](https://github.com/rspec/rspec-tmbundle).\n\nContributions are greatly appreciated. Please fork this repository and open a\npull request to add snippets, make grammar tweaks, etc.\n",
+  "readme": "[![Build Status](https://travis-ci.org/pauldruziak/language-rspec.svg?branch=master)](https://travis-ci.org/pauldruziak/language-rspec)\n\n# RSpec language support in Atom\n\nAdds syntax highlighting and snippets to RSpec file in Atom.\n\nOriginally [converted](http://atom.io/docs/latest/converting-a-text-mate-bundle)\nfrom the [RSpec TextMate bundle](https://github.com/rspec/rspec-tmbundle).\n\nContributions are greatly appreciated. Please fork this repository and open a\npull request to add snippets, make grammar tweaks, etc.\n",
   "readmeFilename": "README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/paveldruzyak/language-rspec.git"
+    "url": "git+https://github.com/pauldruziak/language-rspec.git"
   },
-  "version": "0.5.1"
+  "version": "0.6.3",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [],
+    "extensions": {
+      ".coffee": [
+        "lib/language-rspec.coffee"
+      ],
+      ".json": [
+        "package.json"
+      ]
+    },
+    "folders": []
+  }
 }

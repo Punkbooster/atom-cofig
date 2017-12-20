@@ -1,25 +1,18 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.viewableFromReactElement = viewableFromReactElement;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _ReactMountRootElement;
 
 function _load_ReactMountRootElement() {
-  return _ReactMountRootElement = _interopRequireDefault(require('../nuclide-ui/ReactMountRootElement'));
+  return _ReactMountRootElement = _interopRequireDefault(require('nuclide-commons-ui/ReactMountRootElement'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -46,7 +39,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 function viewableFromReactElement(reactElement) {
   const container = new (_ReactMountRootElement || _load_ReactMountRootElement()).default();
-  const item = _reactForAtom.ReactDOM.render(reactElement, container);
+  const item = _reactDom.default.render(reactElement, container);
 
   // Add the a reference to the container to the item. This will allow Atom's view registry to
   // associate the item with the HTML element.
@@ -61,8 +54,17 @@ function viewableFromReactElement(reactElement) {
     throw new Error("Component cannot implement `destroy()`. That's added by `viewableFromReactElement`");
   }
   item.destroy = () => {
-    _reactForAtom.ReactDOM.unmountComponentAtNode(container);
+    _reactDom.default.unmountComponentAtNode(container);
   };
 
   return item;
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */

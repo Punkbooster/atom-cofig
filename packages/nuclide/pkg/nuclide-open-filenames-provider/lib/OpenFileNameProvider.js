@@ -1,18 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _nuclideFuzzyNative;
@@ -29,42 +20,35 @@ function getOpenTabsMatching(query) {
     score: result.score,
     matchIndexes: result.matchIndexes
   }));
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 const OpenFileListProvider = {
-
-  getName() {
-    return 'OpenFileListProvider';
+  providerType: 'GLOBAL',
+  name: 'OpenFileListProvider',
+  debounceDelay: 0,
+  display: {
+    title: 'Open Files',
+    prompt: 'Search open filenames...',
+    action: 'nuclide-open-filenames-provider:toggle-provider'
   },
 
-  getProviderType() {
-    return 'GLOBAL';
+  isEligibleForDirectories(directories) {
+    return Promise.resolve(true);
   },
 
-  getDebounceDelay() {
-    return 0;
-  },
-
-  isRenderable() {
-    return true;
-  },
-
-  getAction() {
-    return 'nuclide-open-filenames-provider:toggle-provider';
-  },
-
-  getPromptText() {
-    return 'Search names of open files';
-  },
-
-  getTabTitle() {
-    return 'Open Files';
-  },
-
-  executeQuery(query) {
+  executeQuery(query, directories) {
     return Promise.resolve(getOpenTabsMatching(query));
   }
-
 };
 
+// eslint-disable-next-line nuclide-internal/no-commonjs
 module.exports = OpenFileListProvider;

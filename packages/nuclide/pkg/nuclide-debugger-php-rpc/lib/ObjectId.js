@@ -1,13 +1,24 @@
 'use strict';
-'use babel';
 
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getWatchContextObjectId = getWatchContextObjectId;
+exports.remoteObjectIdOfObjectId = remoteObjectIdOfObjectId;
+exports.createContextObjectId = createContextObjectId;
+exports.pagedObjectId = pagedObjectId;
+exports.singlePageObjectId = singlePageObjectId;
+exports.isWatchContextObjectId = isWatchContextObjectId;
+exports.isContextObjectId = isContextObjectId;
+exports.isSinglePageObjectId = isSinglePageObjectId;
+exports.isPagedObjectId = isPagedObjectId;
+exports.copyObjectId = copyObjectId;
+exports.endIndexOfElementRange = endIndexOfElementRange;
+exports.endIndexOfObjectId = endIndexOfObjectId;
+exports.startIndexOfObjectId = startIndexOfObjectId;
+exports.countOfObjectId = countOfObjectId;
+exports.getChildIds = getChildIds;
+
 
 /*
  * An ElementRange identifies a range of child elements of a data value.
@@ -20,7 +31,16 @@
  * of 32, and count of 32^5, the children of the range will have a pagesize of 32
  * and count of 32^4.
  */
-
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 /*
  * ObjectIds identify data values with children.
@@ -173,7 +193,11 @@ function getChildIds(id) {
     if (childCount <= pagesize) {
       childId = singlePageObjectId(id, id.fullname, Math.trunc(childStartIndex / pagesize));
     } else {
-      childId = pagedObjectId(id, id.fullname, { pagesize, startIndex: childStartIndex, count: childCount });
+      childId = pagedObjectId(id, id.fullname, {
+        pagesize,
+        startIndex: childStartIndex,
+        count: childCount
+      });
     }
 
     result.push(childId);
@@ -183,21 +207,3 @@ function getChildIds(id) {
 
   return result;
 }
-
-module.exports = {
-  remoteObjectIdOfObjectId,
-  createContextObjectId,
-  pagedObjectId,
-  singlePageObjectId,
-  isContextObjectId,
-  isSinglePageObjectId,
-  isPagedObjectId,
-  copyObjectId,
-  endIndexOfElementRange,
-  endIndexOfObjectId,
-  startIndexOfObjectId,
-  countOfObjectId,
-  getChildIds,
-  getWatchContextObjectId,
-  isWatchContextObjectId
-};

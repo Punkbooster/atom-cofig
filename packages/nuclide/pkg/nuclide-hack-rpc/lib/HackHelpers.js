@@ -1,27 +1,17 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.HACK_WORD_REGEX = exports.callHHClient = undefined;
+exports.callHHClient = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 /**
- * Executes hh_client with proper arguments returning the result string or json object.
- */
+  * Executes hh_client with proper arguments returning the result string or json object.
+  */
 let callHHClient = exports.callHHClient = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (args, errorStream, processInput, filePath) {
-
     if (!hhPromiseQueue) {
       hhPromiseQueue = new (_promiseExecutors || _load_promiseExecutors()).PromiseQueue();
     }
@@ -32,7 +22,7 @@ let callHHClient = exports.callHHClient = (() => {
     }
     const { hackRoot, hackCommand } = hackExecOptions;
 
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)(trackingIdOfHackArgs(args) + ':plus-queue', function () {
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)(trackingIdOfHackArgs(args) + ':plus-queue', function () {
       if (!hhPromiseQueue) {
         throw new Error('Invariant violation: "hhPromiseQueue"');
       }
@@ -46,20 +36,32 @@ let callHHClient = exports.callHHClient = (() => {
 
         let execResult = null;
 
-        (_hackConfig || _load_hackConfig()).logger.logTrace(`Calling Hack: ${ hackCommand } with ${ allArgs.toString() }`);
-        execResult = yield (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackOperationTiming)(trackingIdOfHackArgs(args), function () {
-          return (0, (_process || _load_process()).asyncExecute)(hackCommand, allArgs, { stdin: processInput });
+        (_hackConfig || _load_hackConfig()).logger.debug(`Calling Hack: ${hackCommand} with ${allArgs.toString()}`);
+        execResult = yield (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)(trackingIdOfHackArgs(args), function () {
+          // TODO: Can't we do a better job with error handling here?
+          try {
+            return (0, (_process || _load_process()).runCommandDetailed)(hackCommand, allArgs, {
+              input: processInput,
+              isExitError: function () {
+                return false;
+              }
+            }).toPromise();
+          } catch (err) {
+            return { stdout: '', stderr: '' };
+          }
         });
 
         const { stdout, stderr } = execResult;
         if (stderr.indexOf(HH_SERVER_INIT_MESSAGE) !== -1) {
-          throw new Error(`${ HH_SERVER_INIT_MESSAGE }: try: \`arc build\` or try again later!`);
+          throw new Error(`${HH_SERVER_INIT_MESSAGE}: try: \`arc build\` or try again later!`);
         } else if (stderr.startsWith(HH_SERVER_BUSY_MESSAGE)) {
-          throw new Error(`${ HH_SERVER_BUSY_MESSAGE }: try: \`arc build\` or try again later!`);
+          throw new Error(`${HH_SERVER_BUSY_MESSAGE}: try: \`arc build\` or try again later!`);
         }
 
         const output = errorStream ? stderr : stdout;
-        (_hackConfig || _load_hackConfig()).logger.logTrace(`Hack output for ${ allArgs.toString() }: ${ output }`);
+        // keeping this at "Trace" log level, since output for --color contains
+        // entire file contents, which fills the logs too quickly
+        (_hackConfig || _load_hackConfig()).logger.trace(`Hack output for ${allArgs.toString()}: ${output}`);
         try {
           const result = JSON.parse(output);
 
@@ -72,9 +74,9 @@ let callHHClient = exports.callHHClient = (() => {
           result.hackRoot = hackRoot;
           return result;
         } catch (err) {
-          const errorMessage = `hh_client error, args: [${ args.join(',') }]
-stdout: ${ stdout }, stderr: ${ stderr }`;
-          (_hackConfig || _load_hackConfig()).logger.logError(errorMessage);
+          const errorMessage = `hh_client error, args: [${args.join(',')}]
+stdout: ${stdout}, stderr: ${stderr}`;
+          (_hackConfig || _load_hackConfig()).logger.error(errorMessage);
           throw new Error(errorMessage);
         }
       }));
@@ -87,12 +89,14 @@ stdout: ${ stdout }, stderr: ${ stderr }`;
 })();
 
 exports.hackRangeToAtomRange = hackRangeToAtomRange;
+exports.hackSpanToAtomRange = hackSpanToAtomRange;
 exports.atomPointOfHackRangeStart = atomPointOfHackRangeStart;
+exports.atomPointFromHack = atomPointFromHack;
 
 var _process;
 
 function _load_process() {
-  return _process = require('../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
 var _promiseExecutors;
@@ -121,19 +125,39 @@ function _load_nuclideAnalytics() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const HH_SERVER_INIT_MESSAGE = 'hh_server still initializing';
+const HH_SERVER_INIT_MESSAGE = 'hh_server still initializing'; /**
+                                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                                * All rights reserved.
+                                                                *
+                                                                * This source code is licensed under the license found in the LICENSE file in
+                                                                * the root directory of this source tree.
+                                                                *
+                                                                * 
+                                                                * @format
+                                                                */
+
 const HH_SERVER_BUSY_MESSAGE = 'hh_server is busy';
 
 
 let hhPromiseQueue = null;function hackRangeToAtomRange(position) {
-  return new (_simpleTextBuffer || _load_simpleTextBuffer()).Range(atomPointOfHackRangeStart(position), new (_simpleTextBuffer || _load_simpleTextBuffer()).Point(position.line - 1, position.char_end));
+  return new (_simpleTextBuffer || _load_simpleTextBuffer()).Range(atomPointOfHackRangeStart(position),
+  // Atom ranges exclude the endpoint.
+  atomPointFromHack(position.line, position.char_end + 1));
+}
+
+function hackSpanToAtomRange(span) {
+  return new (_simpleTextBuffer || _load_simpleTextBuffer()).Range(atomPointFromHack(span.line_start, span.char_start),
+  // Atom ranges exclude the endpoint.
+  atomPointFromHack(span.line_end, span.char_end + 1));
 }
 
 function atomPointOfHackRangeStart(position) {
-  return new (_simpleTextBuffer || _load_simpleTextBuffer()).Point(position.line - 1, position.char_start - 1);
+  return atomPointFromHack(position.line, position.char_start);
 }
 
-const HACK_WORD_REGEX = exports.HACK_WORD_REGEX = /[a-zA-Z0-9_$]+/g;
+function atomPointFromHack(hackLine, hackColumn) {
+  return new (_simpleTextBuffer || _load_simpleTextBuffer()).Point(hackLine - 1, hackColumn - 1);
+}
 
 function trackingIdOfHackArgs(args) {
   const command = args.length === 0 ? '--diagnostics' : args[0];

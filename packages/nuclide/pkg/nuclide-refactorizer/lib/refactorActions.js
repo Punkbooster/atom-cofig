@@ -1,30 +1,32 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.open = open;
 exports.gotRefactorings = gotRefactorings;
-exports.gotRefactoringsError = gotRefactoringsError;
+exports.error = error;
 exports.pickedRefactor = pickedRefactor;
 exports.execute = execute;
+exports.confirm = confirm;
+exports.apply = apply;
+exports.progress = progress;
 exports.close = close;
-
 function open(ui) {
   return {
     type: 'open',
     ui
   };
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 function gotRefactorings(editor, originalPoint, provider, availableRefactorings) {
   return {
@@ -38,10 +40,13 @@ function gotRefactorings(editor, originalPoint, provider, availableRefactorings)
   };
 }
 
-function gotRefactoringsError() {
+function error(source, err) {
   return {
-    type: 'got-refactorings',
-    error: true
+    type: 'error',
+    payload: {
+      source,
+      error: err
+    }
   };
 }
 
@@ -61,6 +66,27 @@ function execute(provider, refactoring) {
       provider,
       refactoring
     }
+  };
+}
+
+function confirm(response) {
+  return {
+    type: 'confirm',
+    payload: { response }
+  };
+}
+
+function apply(response) {
+  return {
+    type: 'apply',
+    payload: { response }
+  };
+}
+
+function progress(message, value, max) {
+  return {
+    type: 'progress',
+    payload: { message, value, max }
   };
 }
 

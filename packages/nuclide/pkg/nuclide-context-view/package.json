@@ -3,21 +3,19 @@
   "description": "UI for Context View sidebar",
   "repository": "https://github.com/facebook/nuclide",
   "main": "./lib/main.js",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "version": "0.0.0",
   "nuclide": {
     "packageType": "Atom",
     "testRunner": "apm"
   },
+  "deserializers": {
+    "nuclide.ContextViewPanelState": "deserializeContextViewPanelState"
+  },
   "consumedServices": {
-    "nuclide-definition-service": {
+    "definitions": {
       "versions": {
-        "0.0.0": "consumeDefinitionService"
-      }
-    },
-    "tool-bar": {
-      "versions": {
-        "^1.0.0": "consumeToolBar"
+        "0.1.0": "consumeDefinitionProvider"
       }
     }
   },
@@ -30,11 +28,6 @@
     "nuclide-context-view": {
       "versions": {
         "0.0.0": "provideNuclideContextView"
-      }
-    },
-    "nuclide-distraction-free-mode": {
-      "versions": {
-        "0.0.0": "getDistractionFreeModeProvider"
       }
     }
   }

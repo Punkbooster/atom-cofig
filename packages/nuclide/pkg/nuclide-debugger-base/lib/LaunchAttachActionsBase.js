@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -24,16 +15,26 @@ function _load_consumeFirstProvider() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const ATTACH_TARGET_LIST_REFRESH_INTERVAL = 2000;class LaunchAttachActionsBase {
+const ATTACH_TARGET_LIST_REFRESH_INTERVAL = 2000; /**
+                                                   * Copyright (c) 2015-present, Facebook, Inc.
+                                                   * All rights reserved.
+                                                   *
+                                                   * This source code is licensed under the license found in the LICENSE file in
+                                                   * the root directory of this source tree.
+                                                   *
+                                                   * 
+                                                   * @format
+                                                   */
+
+class LaunchAttachActionsBase {
 
   constructor(targetUri) {
     this._targetUri = targetUri;
     this._refreshTimerId = null;
     this._parentUIVisible = true; // Visible by default.
     this._attachUIVisible = false;
-    this.updateAttachTargetList = this.updateAttachTargetList.bind(this);
-    this.updateParentUIVisibility = this.updateParentUIVisibility.bind(this);
     this.updateAttachUIVisibility = this.updateAttachUIVisibility.bind(this);
+    this.updateParentUIVisibility = this.updateParentUIVisibility.bind(this);
   }
 
   getTargetUri() {
@@ -51,15 +52,17 @@ const ATTACH_TARGET_LIST_REFRESH_INTERVAL = 2000;class LaunchAttachActionsBase {
   }
 
   _updateAutoRefresh() {
+    this._killAutoRefreshTimer();
     if (this._parentUIVisible && this._attachUIVisible) {
+      this.updateAttachTargetList();
       this._refreshTimerId = setInterval(this.updateAttachTargetList, ATTACH_TARGET_LIST_REFRESH_INTERVAL);
-    } else {
-      this._killAutoRefreshTimer();
     }
   }
 
   updateAttachTargetList() {
-    throw Error('Not implemented');
+    return (0, _asyncToGenerator.default)(function* () {
+      throw Error('Not implemented');
+    })();
   }
 
   _killAutoRefreshTimer() {

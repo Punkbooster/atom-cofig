@@ -1,17 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 var _syncAtomCommands;
 
@@ -22,7 +9,13 @@ function _load_syncAtomCommands() {
 var _createPackage;
 
 function _load_createPackage() {
-  return _createPackage = _interopRequireDefault(require('../../commons-atom/createPackage'));
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
+}
+
+var _LocalStorageJsonTable;
+
+function _load_LocalStorageJsonTable() {
+  return _LocalStorageJsonTable = require('../../commons-atom/LocalStorageJsonTable');
 }
 
 var _PanelRenderer;
@@ -31,10 +24,16 @@ function _load_PanelRenderer() {
   return _PanelRenderer = _interopRequireDefault(require('../../commons-atom/PanelRenderer'));
 }
 
+var _event;
+
+function _load_event() {
+  return _event = require('nuclide-commons/event');
+}
+
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _reduxObservable;
@@ -46,19 +45,7 @@ function _load_reduxObservable() {
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
-}
-
-var _nuclideAnalytics;
-
-function _load_nuclideAnalytics() {
-  return _nuclideAnalytics = require('../../nuclide-analytics');
-}
-
-var _createEmptyAppState;
-
-function _load_createEmptyAppState() {
-  return _createEmptyAppState = require('./createEmptyAppState');
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _Actions;
@@ -73,16 +60,16 @@ function _load_Epics() {
   return _Epics = _interopRequireWildcard(require('./redux/Epics'));
 }
 
-var _Selectors;
-
-function _load_Selectors() {
-  return _Selectors = require('./redux/Selectors');
-}
-
 var _Reducers;
 
 function _load_Reducers() {
   return _Reducers = _interopRequireWildcard(require('./redux/Reducers'));
+}
+
+var _trackingMiddleware;
+
+function _load_trackingMiddleware() {
+  return _trackingMiddleware = require('./trackingMiddleware');
 }
 
 var _createPanelItem;
@@ -92,12 +79,6 @@ function _load_createPanelItem() {
 }
 
 var _atom = require('atom');
-
-var _nullthrows;
-
-function _load_nullthrows() {
-  return _nullthrows = _interopRequireDefault(require('nullthrows'));
-}
 
 var _redux;
 
@@ -113,125 +94,116 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // TODO: use a more general versioning mechanism.
 // Perhaps Atom should provide packages with some way of doing this.
-const SERIALIZED_VERSION = 2;
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
-const SHOW_PLACEHOLDER_INITIALLY_KEY = 'nuclide:nuclide-task-runner:showPlaceholderInitially';
+const SERIALIZED_VERSION = 2;
+// These match task types with shortcuts defined in nuclide-task-runner.json
+const COMMON_TASK_TYPES = ['build', 'run', 'test', 'debug'];
+
+function getVisible(event) {
+  if (event.detail != null && typeof event.detail === 'object') {
+    const { visible } = event.detail;
+    return visible != null ? Boolean(visible) : null;
+  }
+  return null;
+}
 
 class Activation {
 
   constructor(rawState) {
     let serializedState = rawState;
-    if (serializedState == null || serializedState.version !== SERIALIZED_VERSION) {
-      serializedState = {};
+    if (serializedState != null && serializedState.version !== SERIALIZED_VERSION) {
+      serializedState = null;
     }
 
-    const { previousSessionVisible } = serializedState;
-    const initialState = Object.assign({}, (0, (_createEmptyAppState || _load_createEmptyAppState()).createEmptyAppState)(), serializedState, {
-      // If the task runner toolbar was shown previously, we'll display a placholder until the view
-      // initializes so there's not a jump in the UI.
-      showPlaceholderInitially: typeof previousSessionVisible === 'boolean' ? previousSessionVisible : window.localStorage.getItem(SHOW_PLACEHOLDER_INITIALLY_KEY) === 'true'
-    });
+    // The serialized state that Atom gives us here is based on the open roots. However, users often
+    // open an empty window and then add a root (especially with remote projects). We need to go
+    // outside of Atom's normal serialization mechanism to account for this.
+    const preferencesForWorkingRoots = new (_LocalStorageJsonTable || _load_LocalStorageJsonTable()).LocalStorageJsonTable('nuclide:nuclide-task-runner:working-root-preferences');
 
     const epics = Object.keys(_Epics || _load_Epics()).map(k => (_Epics || _load_Epics())[k]).filter(epic => typeof epic === 'function');
-    const rootEpic = (0, (_reduxObservable || _load_reduxObservable()).combineEpics)(...epics);
-    this._store = (0, (_redux || _load_redux()).createStore)((_Reducers || _load_Reducers()).app, initialState, (0, (_redux || _load_redux()).applyMiddleware)((0, (_reduxObservable || _load_reduxObservable()).createEpicMiddleware)(rootEpic), trackingMiddleware));
-    const states = _rxjsBundlesRxMinJs.Observable.from(this._store).filter(state => state != null);
+    const epicOptions = { preferencesForWorkingRoots };
+    const rootEpic = (actions, store) => (0, (_reduxObservable || _load_reduxObservable()).combineEpics)(...epics)(actions, store, epicOptions);
+    this._store = (0, (_redux || _load_redux()).createStore)((0, (_redux || _load_redux()).combineReducers)(_Reducers || _load_Reducers()), {
+      visible: getInitialVisibility(serializedState, preferencesForWorkingRoots)
+    }, (0, (_redux || _load_redux()).applyMiddleware)((0, (_reduxObservable || _load_reduxObservable()).createEpicMiddleware)(rootEpic), (_trackingMiddleware || _load_trackingMiddleware()).trackingMiddleware));
+    const states = _rxjsBundlesRxMinJs.Observable.from(this._store).filter(state => state.taskRunnersReady).distinctUntilChanged().share();
     this._actionCreators = (0, (_redux || _load_redux()).bindActionCreators)(_Actions || _load_Actions(), this._store.dispatch);
     this._panelRenderer = new (_PanelRenderer || _load_PanelRenderer()).default({
       location: 'top',
       createItem: () => (0, (_createPanelItem || _load_createPanelItem()).createPanelItem)(this._store)
     });
 
-    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(
-    // We stick a stream of states onto the store so that epics can use them. This is less than
-    // ideal. See redux-observable/redux-observable#56
-    // $FlowFixMe: Teach flow about Symbol.observable
-    _rxjsBundlesRxMinJs.Observable.from(this._store).subscribe(initialState.states),
-
-    // A stand-in for `atom.packages.didLoadInitialPackages` until atom/atom#12897
-    _rxjsBundlesRxMinJs.Observable.interval(0).take(1).map(() => (_Actions || _load_Actions()).didLoadInitialPackages()).subscribe(this._store.dispatch),
-
-    // Whenever the visiblity changes, store the value in localStorage so that we can use it
-    // to decide whether we should show the placeholder at the beginning of the next session.
-    states.filter(state => state.viewIsInitialized).map(state => state.visible).subscribe(visible => {
-      window.localStorage.setItem(SHOW_PLACEHOLDER_INITIALLY_KEY, String(visible));
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(preferencesForWorkingRoots, activateInitialPackagesObservable().subscribe(() => {
+      this._store.dispatch((_Actions || _load_Actions()).didActivateInitialPackages());
     }), this._panelRenderer, atom.commands.add('atom-workspace', {
       'nuclide-task-runner:toggle-toolbar-visibility': event => {
-        const visible = event.detail != null && typeof event.detail === 'object' ? event.detail.visible : undefined;
-        if (typeof visible === 'boolean') {
-          this._actionCreators.setToolbarVisibility(visible);
-        } else {
-          this._actionCreators.toggleToolbarVisibility();
-        }
-      },
-      'nuclide-task-runner:run-selected-task': event => {
-        const detail = event != null ? event.detail : null;
-        const taskId = detail != null && detail.taskRunnerId && detail.type ? detail : null;
-        this._actionCreators.runTask(taskId);
+        this._actionCreators.requestToggleToolbarVisibility(getVisible(event));
       }
     }),
-
-    // Add a command for each task type. If there's more than one of the same type runnable, the
-    // first is used.
-    // TODO: Instead, prompt user for which to use and remember their choice.
-    (0, (_syncAtomCommands || _load_syncAtomCommands()).default)(states.debounceTime(500).map(state => state.taskLists).distinctUntilChanged().map(taskLists => {
-      const allTasks = Array.prototype.concat(...Array.from(taskLists.values()));
-      const types = allTasks.filter(taskMeta => taskMeta.runnable).map(taskMeta => taskMeta.type);
-      return new Set(types);
-    }), taskType => ({
+    // Add a command for each enabled task in each enabled task runner
+    (0, (_syncAtomCommands || _load_syncAtomCommands()).default)(states.map(state => state.statesForTaskRunners).distinctUntilChanged().map(statesForTaskRunners => {
+      const taskRunnersAndTasks = new Set();
+      statesForTaskRunners.forEach((state, taskRunner) => {
+        state.tasks.forEach(task => {
+          if (task.disabled !== true) {
+            taskRunnersAndTasks.add([taskRunner, task]);
+          }
+        });
+      });
+      return taskRunnersAndTasks;
+    }), ([taskRunner, taskMeta]) => ({
       'atom-workspace': {
-        [`nuclide-task-runner:${ taskType }`]: () => {
-          const state = this._store.getState();
-          const { activeTaskId, taskRunners } = state;
-          const taskRunnerIds = Array.from(taskRunners.keys());
-          // Give precedence to the task runner of the selected task.
-          if (activeTaskId != null) {
-            (0, (_collection || _load_collection()).arrayRemove)(taskRunnerIds, activeTaskId.taskRunnerId);
-            taskRunnerIds.unshift(activeTaskId.taskRunnerId);
-          }
-          for (const taskRunnerId of taskRunnerIds) {
-            const taskList = state.taskLists.get(taskRunnerId);
-            if (taskList == null) {
-              continue;
-            }
-            for (const taskMeta of taskList) {
-              if (taskMeta.runnable && taskMeta.type === taskType) {
-                this._actionCreators.runTask(taskMeta);
-                return;
-              }
-            }
-          }
+        [`nuclide-task-runner:${taskRunner.name.toLowerCase().replace(' ', '-')}-${taskMeta.type}`]: () => {
+          this._actionCreators.runTask(Object.assign({}, taskMeta, { taskRunner }));
         }
       }
     })),
-
-    // Add a command for each individual task ID.
-    (0, (_syncAtomCommands || _load_syncAtomCommands()).default)(states.debounceTime(500).map(state => state.taskLists).distinctUntilChanged().map(taskLists => {
-      const state = this._store.getState();
-      const taskIds = new Set();
-      for (const [taskRunnerId, taskList] of taskLists) {
-        const taskRunnerName = (0, (_nullthrows || _load_nullthrows()).default)(state.taskRunners.get(taskRunnerId)).name;
-        for (const taskMeta of taskList) {
-          taskIds.add({ taskRunnerId, taskRunnerName, type: taskMeta.type });
-        }
+    // Add a command for each enabled common task with mapped keyboard shortcuts
+    (0, (_syncAtomCommands || _load_syncAtomCommands()).default)(states.map(state => {
+      const { activeTaskRunner, isUpdatingTaskRunners } = state;
+      if (isUpdatingTaskRunners || !activeTaskRunner) {
+        return [];
       }
-      return taskIds;
-    }), taskId => ({
+      const taskRunnerState = state.statesForTaskRunners.get(activeTaskRunner);
+      if (!taskRunnerState) {
+        return [];
+      }
+      return taskRunnerState.tasks;
+    }).distinctUntilChanged((_collection || _load_collection()).arrayEqual).map(tasks => new Set(tasks.filter(task => task.disabled !== true && COMMON_TASK_TYPES.includes(task.type)))), taskMeta => ({
       'atom-workspace': {
-        [`nuclide-task-runner:${ taskId.taskRunnerName }-${ taskId.type }`]: () => {
-          this._actionCreators.runTask(taskId);
+        [`nuclide-task-runner:${taskMeta.type}`]: () => {
+          this._actionCreators.runTask(Object.assign({}, taskMeta, {
+            taskRunner: this._store.getState().activeTaskRunner
+          }));
         }
       }
     })),
-
-    // Add a toggle command for each task runner.
-    (0, (_syncAtomCommands || _load_syncAtomCommands()).default)(states.debounceTime(500).map(state => state.taskRunners).distinctUntilChanged().map(taskRunners => new Set(taskRunners.values())), taskRunner => ({
+    // Add a toggle command for each enabled task runner
+    (0, (_syncAtomCommands || _load_syncAtomCommands()).default)(states.map(state => state.statesForTaskRunners).distinctUntilChanged().map(statesForTaskRunners => {
+      const taskRunners = new Set();
+      statesForTaskRunners.forEach((state, runner) => {
+        if (state.enabled) {
+          taskRunners.add(runner);
+        }
+      });
+      return taskRunners;
+    }), taskRunner => ({
       'atom-workspace': {
-        [`nuclide-task-runner:toggle-${ taskRunner.name }-toolbar`]: () => {
-          this._actionCreators.toggleToolbarVisibility(taskRunner.id);
+        [`nuclide-task-runner:toggle-${taskRunner.name.toLowerCase()}-toolbar`]: event => {
+          this._actionCreators.requestToggleToolbarVisibility(getVisible(event), taskRunner);
         }
       }
-    }), taskRunner => taskRunner.id), states.map(state => state.visible || !state.viewIsInitialized && state.showPlaceholderInitially).distinctUntilChanged().subscribe(visible => {
+    }), taskRunner => taskRunner.id), states.map(state => state.visible).distinctUntilChanged().subscribe(visible => {
       this._panelRenderer.render({ visible });
     }));
   }
@@ -263,7 +235,7 @@ class Activation {
     const buttonUpdatesDisposable = new (_UniversalDisposable || _load_UniversalDisposable()).default(
     // $FlowFixMe: Update rx defs to accept ish with Symbol.observable
     _rxjsBundlesRxMinJs.Observable.from(this._store).subscribe(state => {
-      if (state.taskRunners.size > 0) {
+      if (state.taskRunners.length > 0) {
         element.removeAttribute('hidden');
       } else {
         element.setAttribute('hidden', 'hidden');
@@ -285,6 +257,11 @@ class Activation {
       this._disposables.remove(buttonUpdatesDisposable);
       this._disposables.remove(buttonPresenceDisposable);
     });
+  }
+
+  consumeConsole(service) {
+    this._actionCreators.setConsoleService(service);
+    return new _atom.Disposable(() => this._actionCreators.setConsoleService(null));
   }
 
   provideTaskRunnerServiceApi() {
@@ -311,8 +288,7 @@ class Activation {
   serialize() {
     const state = this._store.getState();
     return {
-      previousSessionActiveTaskId: state.activeTaskId || state.previousSessionActiveTaskId,
-      previousSessionVisible: state.previousSessionVisible == null ? state.visible : state.previousSessionVisible,
+      previousSessionVisible: state.visible,
       version: SERIALIZED_VERSION
     };
   }
@@ -336,52 +312,35 @@ class Activation {
           throw new Error('Invariant violation: "pkg != null"');
         }
 
-        pkg._actionCreators.toggleToolbarVisibility();
+        pkg._actionCreators.requestToggleToolbarVisibility();
       }
     };
   }
-
-  // Exported for testing :'(
-  _getCommands() {
-    return this._actionCreators;
-  }
-
 }
 
-exports.default = (0, (_createPackage || _load_createPackage()).default)(Activation);
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);
 
-
-function trackTaskAction(type, action, state) {
-  const task = action.payload.task;
-  const taskTrackingData = task != null && typeof task.getTrackingData === 'function' ? task.getTrackingData() : {};
-  const error = action.type === (_Actions || _load_Actions()).TASK_ERRORED ? action.payload.error : null;
-  const activeTaskId = (0, (_Selectors || _load_Selectors()).getActiveTaskId)(state);
-  (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackEvent)({
-    type,
-    data: Object.assign({}, taskTrackingData, {
-      taskRunnerId: activeTaskId && activeTaskId.taskRunnerId,
-      taskType: activeTaskId && activeTaskId.type,
-      errorMessage: error != null ? error.message : null,
-      stackTrace: error != null ? String(error.stack) : null
-    })
-  });
+function activateInitialPackagesObservable() {
+  if (atom.packages.hasActivatedInitialPackages) {
+    return _rxjsBundlesRxMinJs.Observable.of(undefined);
+  }
+  return (0, (_event || _load_event()).observableFromSubscribeFunction)(atom.packages.onDidActivateInitialPackages.bind(atom.packages));
 }
 
-const trackingMiddleware = store => next => action => {
-  switch (action.type) {
-    case (_Actions || _load_Actions()).TASK_STARTED:
-      trackTaskAction('nuclide-task-runner:task-started', action, store.getState());
-      break;
-    case (_Actions || _load_Actions()).TASK_STOPPED:
-      trackTaskAction('nuclide-task-runner:task-stopped', action, store.getState());
-      break;
-    case (_Actions || _load_Actions()).TASK_COMPLETED:
-      trackTaskAction('nuclide-task-runner:task-completed', action, store.getState());
-      break;
-    case (_Actions || _load_Actions()).TASK_ERRORED:
-      trackTaskAction('nuclide-task-runner:task-errored', action, store.getState());
-      break;
+function getInitialVisibility(serializedState, preferencesForWorkingRoots) {
+  // Unfortunately, since we haven't yet been connected to the current working directory service,
+  //  we don't know what root to check the previous visibility of. We could just assume it's
+  // `atom.project.getDirectories()[0]`, but using explicitly serialized package state is better.
+  if (serializedState && typeof serializedState.previousSessionVisible === 'boolean') {
+    return serializedState.previousSessionVisible;
+  } else {
+    // This collection of roots wasn't seen before.
+    // Just fall back to the state of the last known session.
+    const entries = preferencesForWorkingRoots.getEntries();
+    const lastEntry = entries[entries.length - 1];
+    if (!lastEntry || !lastEntry.value) {
+      return false;
+    }
+    return lastEntry.value.visible;
   }
-  return next(action);
-};
-module.exports = exports['default'];
+}

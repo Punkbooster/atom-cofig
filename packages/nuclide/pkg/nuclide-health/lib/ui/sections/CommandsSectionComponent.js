@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,12 +7,25 @@ Object.defineProperty(exports, "__esModule", {
 var _process;
 
 function _load_process() {
-  return _process = require('../../../../commons-node/process');
+  return _process = require('nuclide-commons/process');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
-class CommandsSectionComponent extends _reactForAtom.React.Component {
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class CommandsSectionComponent extends _react.default.Component {
 
   shouldComponentUpdate() {
     return this._lastRenderCount !== (_process || _load_process()).loggedCalls.length;
@@ -29,45 +33,45 @@ class CommandsSectionComponent extends _reactForAtom.React.Component {
 
   render() {
     this._lastRenderCount = (_process || _load_process()).loggedCalls.length;
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'table',
       { className: 'table' },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'thead',
         null,
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'th',
           { width: '10%' },
           'Time'
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'th',
           { width: '10%' },
           'Duration (ms)'
         ),
-        _reactForAtom.React.createElement(
+        _react.default.createElement(
           'th',
           null,
           'Command'
         )
       ),
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'tbody',
         null,
-        (_process || _load_process()).loggedCalls.map((call, i) => _reactForAtom.React.createElement(
+        (_process || _load_process()).loggedCalls.map((call, i) => _react.default.createElement(
           'tr',
           { key: i },
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             'td',
             null,
             call.time.toTimeString().replace(/ .+/, '')
           ),
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             'td',
             null,
             call.duration
           ),
-          _reactForAtom.React.createElement(
+          _react.default.createElement(
             'td',
             null,
             call.command
@@ -78,4 +82,3 @@ class CommandsSectionComponent extends _reactForAtom.React.Component {
   }
 }
 exports.default = CommandsSectionComponent;
-module.exports = exports['default'];

@@ -1,18 +1,9 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.unspyOnDefault = exports.uncachedRequire = exports.spyOnGetterValue = exports.spyOnDefault = exports.generateFixture = exports.generateHgRepo2Fixture = exports.generateHgRepo1Fixture = exports.expectObservableToStartWith = exports.expectAsyncFailure = exports.copyBuildFixture = exports.copyFixture = exports.clearRequireCache = exports.arePropertiesEqual = exports.addMatchers = undefined;
+exports.uncachedRequire = exports.spyOnGetterValue = exports.generateFixture = exports.generateHgRepo2Fixture = exports.generateHgRepo1Fixture = exports.expectObservableToStartWith = exports.expectAsyncFailure = exports.copyBuildFixture = exports.copyFixture = exports.clearRequireCache = exports.arePropertiesEqual = exports.addMatchers = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -33,7 +24,7 @@ let expectAsyncFailure = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (promise, verify) {
     try {
       yield promise;
-      return Promise.reject('Promise should have failed, but did not.');
+      return Promise.reject(new Error('Promise should have failed, but did not.'));
     } catch (e) {
       verify(e);
     }
@@ -53,7 +44,16 @@ let expectAsyncFailure = (() => {
   * The require parameter is needed because require is bound differently in each
   * file, and we need to execute this in the caller's context.
   */
-
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 /**
  * Warning: Callsites *must* await the resulting promise, or test failures may go unreported or
@@ -113,41 +113,6 @@ function spyOnGetterValue(object, f) {
 }
 
 /**
- * Allows spying on a function that is the default export of a module. Works
- * with ES modules and CommonJS.
- *
- * `id` should be the result of `require.resolve('module-name')`. That way relative modules are
- * resolved in the context of the caller.
- */
-function spyOnDefault(id) {
-  try {
-    // Load the module in case it hasn't been loaded already.
-    // $FlowIgnore
-    require(id);
-  } catch (e) {
-    if (e.message === `Cannot find module '${ id }'`) {
-      throw new Error(e.message + '. Did you forget to call `require.resolve`?');
-    }
-    throw e;
-  }
-  const _module = require.cache[id];
-  if (_module.exports.__esModule) {
-    return spyOn(_module.exports, 'default');
-  } else {
-    return spyOn(_module, 'exports');
-  }
-}
-
-function unspyOnDefault(id) {
-  const _module = require.cache[id];
-  if (_module.exports.__esModule) {
-    return jasmine.unspy(_module.exports, 'default');
-  } else {
-    return jasmine.unspy(_module, 'exports');
-  }
-}
-
-/**
  * Checks if the two objects have equal properties. This considers a property
  * set to undefined to be equivalent to a property that was not set at all.
  */
@@ -175,7 +140,5 @@ exports.expectObservableToStartWith = expectObservableToStartWith;
 exports.generateHgRepo1Fixture = (_fixtures || _load_fixtures()).generateHgRepo1Fixture;
 exports.generateHgRepo2Fixture = (_fixtures || _load_fixtures()).generateHgRepo2Fixture;
 exports.generateFixture = (_fixtures || _load_fixtures()).generateFixture;
-exports.spyOnDefault = spyOnDefault;
 exports.spyOnGetterValue = spyOnGetterValue;
 exports.uncachedRequire = uncachedRequire;
-exports.unspyOnDefault = unspyOnDefault;

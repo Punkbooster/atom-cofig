@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,25 +7,44 @@ exports.RemoteFile = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+var _passesGK;
+
+function _load_passesGK() {
+  return _passesGK = _interopRequireDefault(require('../../commons-node/passesGK'));
+}
+
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _crypto = _interopRequireDefault(require('crypto'));
 
 var _atom = require('atom');
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
+
+var _stream = _interopRequireDefault(require('stream'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
 
 /* Mostly implements https://atom.io/docs/api/latest/File */
 class RemoteFile {
@@ -70,13 +80,14 @@ class RemoteFile {
 
   _willAddSubscription() {
     this._subscriptionCount++;
-    return this._subscribeToNativeChangeEvents();
+    this._subscribeToNativeChangeEvents();
   }
 
   _subscribeToNativeChangeEvents() {
     if (this._watchSubscription) {
       return;
     }
+
     const watchStream = this._server.getFileWatch(this._path);
     this._watchSubscription = watchStream.subscribe(watchUpdate => {
       // This only happens after a `setPath` and subsequent file rename.
@@ -99,9 +110,26 @@ class RemoteFile {
       this._watchSubscription = null;
     }, () => {
       // Nothing needs to be done if the root directory watch has ended.
-      logger.debug(`watchFile ended: ${ this._path }`);
+      logger.debug(`watchFile ended: ${this._path}`);
       this._watchSubscription = null;
     });
+
+    // No need to wait for that async check.
+    this._checkWatchOutOfOpenDirectories();
+  }
+
+  _checkWatchOutOfOpenDirectories() {
+    var _this = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const isPathInOpenDirectories = atom.project.contains(_this._path);
+      if (!isPathInOpenDirectories && (yield (0, (_passesGK || _load_passesGK()).default)('nuclide_watch_warn_unmanaged_file'))) {
+        atom.notifications.addWarning(`Couldn't watch remote file \`${(_nuclideUri || _load_nuclideUri()).default.basename(_this._path)}\` for changes!`, {
+          detail: "Updates to the file outside Nuclide won't reload automatically\n" + "Please add the file's project directory to Nuclide\n",
+          dismissable: true
+        });
+      }
+    })();
   }
 
   _handleNativeChangeEvent() {
@@ -156,7 +184,7 @@ class RemoteFile {
   }
 
   exists() {
-    return this._getFileSystemService().exists(this._localPath);
+    return this._getFileSystemService().exists(this._path);
   }
 
   existsSync() {
@@ -178,19 +206,19 @@ class RemoteFile {
   }
 
   getDigest() {
-    var _this = this;
+    var _this2 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      if (_this._digest) {
-        return _this._digest;
+      if (_this2._digest) {
+        return _this2._digest;
       }
-      yield _this.read();
+      yield _this2.read();
 
-      if (!_this._digest) {
+      if (!_this2._digest) {
         throw new Error('Invariant violation: "this._digest"');
       }
 
-      return _this._digest;
+      return _this2._digest;
     })();
   }
 
@@ -231,18 +259,18 @@ class RemoteFile {
   }
 
   getRealPath() {
-    var _this2 = this;
+    var _this3 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      if (_this2._realpath == null) {
-        _this2._realpath = yield _this2._getFileSystemService().realpath(_this2._localPath);
+      if (_this3._realpath == null) {
+        _this3._realpath = yield _this3._getFileSystemService().realpath(_this3._path);
       }
 
-      if (!_this2._realpath) {
+      if (!_this3._realpath) {
         throw new Error('Invariant violation: "this._realpath"');
       }
 
-      return _this2._realpath;
+      return _this3._realpath;
     })();
   }
 
@@ -251,24 +279,24 @@ class RemoteFile {
   }
 
   create() {
-    var _this3 = this;
+    var _this4 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const wasCreated = yield _this3._getFileSystemService().newFile(_this3._localPath);
-      if (_this3._subscriptionCount > 0) {
-        _this3._subscribeToNativeChangeEvents();
+      const wasCreated = yield _this4._getFileSystemService().newFile(_this4._path);
+      if (_this4._subscriptionCount > 0) {
+        _this4._subscribeToNativeChangeEvents();
       }
       return wasCreated;
     })();
   }
 
   delete() {
-    var _this4 = this;
+    var _this5 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
       try {
-        yield _this4._getFileSystemService().unlink(_this4._localPath);
-        _this4._handleNativeDeleteEvent();
+        yield _this5._getFileSystemService().unlink(_this5._path);
+        _this5._handleNativeDeleteEvent();
       } catch (error) {
         if (error.code !== 'ENOENT') {
           throw error;
@@ -278,22 +306,22 @@ class RemoteFile {
   }
 
   copy(newPath) {
-    var _this5 = this;
+    var _this6 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const wasCopied = yield _this5._getFileSystemService().copy(_this5._localPath, newPath);
-      _this5._subscribeToNativeChangeEvents();
+      const wasCopied = yield _this6._getFileSystemService().copy(_this6._path, newPath);
+      _this6._subscribeToNativeChangeEvents();
       return wasCopied;
     })();
   }
 
   read(flushCache) {
-    var _this6 = this;
+    var _this7 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const data = yield _this6._getFileSystemService().readFile(_this6._localPath);
+      const data = yield _this7._getFileSystemService().readFile(_this7._path);
       const contents = data.toString();
-      _this6._setDigest(contents);
+      _this7._setDigest(contents);
       // TODO: respect encoding
       return contents;
     })();
@@ -304,29 +332,33 @@ class RemoteFile {
   }
 
   write(text) {
-    var _this7 = this;
+    var _this8 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const previouslyExisted = yield _this7.exists();
-      yield _this7._getFileSystemService().writeFile(_this7._localPath, text);
-      if (!previouslyExisted && _this7._subscriptionCount > 0) {
-        _this7._subscribeToNativeChangeEvents();
+      const previouslyExisted = yield _this8.exists();
+      yield _this8._getFileSystemService().writeFile(_this8._path, text);
+      if (!previouslyExisted && _this8._subscriptionCount > 0) {
+        _this8._subscribeToNativeChangeEvents();
+      }
+    })();
+  }
+
+  writeWithPermission(text, permission) {
+    var _this9 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const previouslyExisted = yield _this9.exists();
+      yield _this9._getFileSystemService().writeFile(_this9._path, text, {
+        mode: permission
+      });
+      if (!previouslyExisted && _this9._subscriptionCount > 0) {
+        _this9._subscribeToNativeChangeEvents();
       }
     })();
   }
 
   getParent() {
-    const { path: localPath, protocol, host } = (_nuclideUri || _load_nuclideUri()).default.parse(this._path);
-
-    if (!protocol) {
-      throw new Error('Invariant violation: "protocol"');
-    }
-
-    if (!host) {
-      throw new Error('Invariant violation: "host"');
-    }
-
-    const directoryPath = protocol + '//' + host + (_nuclideUri || _load_nuclideUri()).default.dirname(localPath);
+    const directoryPath = (_nuclideUri || _load_nuclideUri()).default.dirname(this._path);
     const remoteConnection = this._server.getRemoteConnectionForUri(this._path);
     const hgRepositoryDescription = remoteConnection != null ? remoteConnection.getHgRepositoryDescription() : null;
     return this._server.createDirectory(directoryPath, hgRepositoryDescription);
@@ -342,6 +374,66 @@ class RemoteFile {
 
   _getService(serviceName) {
     return this._server.getService(serviceName);
+  }
+
+  /**
+   * Implementing a real stream (with chunks) is potentially very inefficient, as making
+   * multiple RPC calls can take much longer than just fetching the entire file.
+   * This stream just fetches the entire file contents for now.
+   */
+  createReadStream() {
+    const path = this._path;
+    const service = this._getFileSystemService();
+    // push() triggers another read(), so make sure we don't read the file twice.
+    let pushed = false;
+    const stream = new _stream.default.Readable({
+      read(size) {
+        if (pushed) {
+          return;
+        }
+        service.readFile(path).then(buffer => {
+          pushed = true;
+          stream.push(buffer);
+          stream.push(null);
+        }, err => {
+          stream.emit('error', err);
+        });
+      }
+    });
+    return stream;
+  }
+
+  /**
+   * As with createReadStream, it's potentially very inefficient to write remotely in multiple
+   * chunks. This stream just accumulates the data locally and flushes it all at once.
+   */
+  createWriteStream() {
+    const writeData = [];
+    let writeLength = 0;
+    const stream = new _stream.default.Writable({
+      write(chunk, encoding, next) {
+        // `chunk` may be mutated by the caller, so make sure it's copied.
+        writeData.push(Buffer.from(chunk));
+        writeLength += chunk.length;
+        next();
+      }
+    });
+    const originalEnd = stream.end;
+    // TODO: (hansonw) T20364274 Override final() in Node 8 and above.
+    // For now, we'll overwrite the end function manually.
+    // $FlowIgnore
+    stream.end = cb => {
+      if (!(cb instanceof Function)) {
+        throw new Error('end() called without a callback');
+      }
+
+      this._getFileSystemService().writeFileBuffer(this._path, Buffer.concat(writeData, writeLength)).then(() => cb(), err => {
+        stream.emit('error', err);
+        cb();
+      });
+      originalEnd.call(stream);
+    };
+    return stream;
   }
 }
 exports.RemoteFile = RemoteFile;

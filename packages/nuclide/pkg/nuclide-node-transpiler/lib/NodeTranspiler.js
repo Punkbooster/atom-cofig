@@ -1,16 +1,19 @@
-'use strict';
-/* @noflow */
-
-/*
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
+ *
+ * @noflow
  */
+'use strict';
 
-/* NON-TRANSPILED FILE */
-/* eslint comma-dangle: [1, always-multiline], prefer-object-spread/prefer-object-spread: 0 */
+/* eslint
+  comma-dangle: [1, always-multiline],
+  prefer-object-spread/prefer-object-spread: 0,
+  nuclide-internal/no-commonjs: 0,
+  */
 
 /* eslint-disable no-console */
 
@@ -27,8 +30,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const PREFIXES = ["'use babel'", '"use babel"', '/* @flow */', '/** @babel */'];
-const PREFIX_LENGTH = Math.max(...PREFIXES.map(x => x.length));
+const docblock = require('./docblock');
 
 const BABEL_OPTIONS = {
   parserOpts: {
@@ -42,12 +44,7 @@ const BABEL_OPTIONS = {
   plugins: [
     [require.resolve('./inline-invariant-tr')],
     [require.resolve('./use-minified-libs-tr')],
-
-    // TODO(asuarez): Switch module boundaries to `module.exports` and remove:
-    [require.resolve('babel-plugin-add-module-exports')],
-
-    [require.resolve('babel-plugin-check-es2015-constants')],
-    [require.resolve('babel-plugin-transform-strict-mode')],
+    [require.resolve('babel-plugin-idx')],
 
     [require.resolve('babel-plugin-transform-async-to-module-method'), {
       module: 'async-to-generator',
@@ -55,6 +52,7 @@ const BABEL_OPTIONS = {
     }],
     [require.resolve('babel-plugin-transform-class-properties')],
     [require.resolve('babel-plugin-transform-object-rest-spread'), {useBuiltIns: true}],
+    [require.resolve('babel-plugin-transform-strict-mode')],
 
     // babel-preset-react:
     [require.resolve('babel-plugin-transform-react-jsx'), {useBuiltIns: true}],
@@ -68,7 +66,8 @@ const BABEL_OPTIONS = {
         'async-to-generator',
         'atom',
         'electron',
-        'react-for-atom',
+        'react',
+        'react-dom',
         'rxjs/bundles/Rx.min.js',
       ],
       excludeNodeBuiltins: true,
@@ -91,10 +90,10 @@ function getVersion(start) {
 }
 
 class NodeTranspiler {
-
   static shouldCompile(bufferOrString) {
-    const start = bufferOrString.slice(0, PREFIX_LENGTH).toString();
-    return PREFIXES.some(prefix => start.startsWith(prefix));
+    const src = bufferOrString.toString();
+    const directives = docblock.parseAsObject(docblock.extract(src));
+    return directives.hasOwnProperty('flow');
   }
 
   constructor() {
@@ -119,7 +118,7 @@ class NodeTranspiler {
       // The source of this file and that of our plugins is used as part of the
       // hash as a way to version our transforms. For external transforms their
       // package.json version is used.
-      [__filename]
+      [__filename, require.resolve('./docblock')]
         .concat(BABEL_OPTIONS.plugins)
         .filter(Boolean)
         .forEach(plugin => {

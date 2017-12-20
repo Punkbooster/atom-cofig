@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -73,7 +64,18 @@ function _load_HackHelpers() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const pendingSearchPromises = new Map();function parseQueryString(queryString_) {
+const pendingSearchPromises = new Map(); /**
+                                          * Copyright (c) 2015-present, Facebook, Inc.
+                                          * All rights reserved.
+                                          *
+                                          * This source code is licensed under the license found in the LICENSE file in
+                                          * the root directory of this source tree.
+                                          *
+                                          * 
+                                          * @format
+                                          */
+
+function parseQueryString(queryString_) {
   let queryString;
   let searchPostfix;
   switch (queryString_[0]) {
@@ -118,11 +120,42 @@ function convertSearchResults(hackRoot, searchResponse) {
       column: entry.char_start - 1,
       name: entry.name,
       path: resultFile,
-      length: entry.char_end - entry.char_start + 1,
-      scope: entry.scope,
-      additionalInfo: entry.desc
+      containerName: entry.scope,
+      icon: bestIconForDesc(entry.desc),
+      hoverText: entry.desc
     });
   }
 
   return result;
+}
+
+const ICONS = {
+  interface: 'puzzle',
+  function: 'zap',
+  method: 'zap',
+  typedef: 'tag',
+  class: 'code',
+  'abstract class': 'code',
+  constant: 'quote',
+  trait: 'checklist',
+  enum: 'file-binary',
+  default: null,
+  unknown: 'squirrel'
+};
+
+function bestIconForDesc(desc) {
+  if (!desc) {
+    return ICONS.default;
+  }
+  // Look for exact match.
+  if (ICONS[desc]) {
+    return ICONS[desc];
+  }
+  // Look for presence match, e.g. in 'static method in FooBarClass'.
+  for (const keyword in ICONS) {
+    if (desc.indexOf(keyword) !== -1) {
+      return ICONS[keyword];
+    }
+  }
+  return ICONS.unknown;
 }

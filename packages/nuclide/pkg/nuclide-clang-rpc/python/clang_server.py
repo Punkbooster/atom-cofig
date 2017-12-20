@@ -38,7 +38,7 @@ FD_FOR_READING = 3
 
 # Unfortunately Clang has no way of limiting autocompletion results, but set a reasonable limit
 # to avoid overloading the Atom UI.
-COMPLETIONS_LIMIT = 100
+COMPLETIONS_LIMIT = 200
 
 
 # Clang warns when you use #pragma once in the main compilation unit.
@@ -428,8 +428,12 @@ class Server:
             # Requires PARSE_INCOMPLETE above (or else this will cause type mismatch errors).
             '-DGTEST_ELLIPSIS_NEEDS_POD_',
         ]
+        skip = False
         for arg in self.flags:
-            if arg == self.src:
+            if skip:
+                skip = False
+                pass
+            elif arg == self.src:
                 # Including the input file as an argument causes index.parse() to fail.
                 pass
             elif arg == '-c':
@@ -442,6 +446,10 @@ class Server:
                 pass
             elif arg == '-MMD' or arg == '-MD':
                 # Do not write out dependency files.
+                pass
+            elif arg == '-MF':
+                # Skip the filename parameter as well.
+                skip = True
                 pass
             else:
                 args.append(arg)
@@ -474,6 +482,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('src', metavar='<path>', type=str,
                         help='Full path of source file to analyze.')
+    parser.add_argument('--flags-from-pipe', type=int,
+                        help='Read the flags from a given file descriptor as JSON')
     parser.add_argument('flags', metavar='<flags>', type=str, nargs='*',
                         help='Extra flags to pass to Clang.')
     parser.add_argument('--libclang-file', help='Path to libclang dynamic library')
@@ -481,5 +491,8 @@ if __name__ == '__main__':
 
     if args.libclang_file:
         Config.set_library_file(args.libclang_file)
-    set_up_logging(args.src)
+        set_up_logging(args.src)
+    if args.flags_from_pipe:
+        with os.fdopen(args.flags_from_pipe) as pipe:
+            args.flags = json.loads(pipe.readline().rstrip())
     Server(args.src, args.flags, sys.stdin, sys.stdout).run()

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -20,22 +11,31 @@ function _load_classnames() {
   return _classnames = _interopRequireDefault(require('classnames'));
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _ignoreTextSelectionEvents;
 
 function _load_ignoreTextSelectionEvents() {
-  return _ignoreTextSelectionEvents = _interopRequireDefault(require('./ignoreTextSelectionEvents'));
+  return _ignoreTextSelectionEvents = _interopRequireDefault(require('nuclide-commons-ui/ignoreTextSelectionEvents'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; } /**
+                                                                                                                                                                                                                              * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                                                                                                                                                              * All rights reserved.
+                                                                                                                                                                                                                              *
+                                                                                                                                                                                                                              * This source code is licensed under the license found in the LICENSE file in
+                                                                                                                                                                                                                              * the root directory of this source tree.
+                                                                                                                                                                                                                              *
+                                                                                                                                                                                                                              * 
+                                                                                                                                                                                                                              * @format
+                                                                                                                                                                                                                              */
 
 /**
  * Use ListViewItem in conjunction with ListView.
  */
-class ListViewItem extends _reactForAtom.React.Component {
+class ListViewItem extends _react.default.Component {
 
   _select(value, index, event) {
     this.props.onSelect(value, index);
@@ -44,15 +44,10 @@ class ListViewItem extends _reactForAtom.React.Component {
 
 
   render() {
-    const {
-      children,
-      index,
-      value
-    } = this.props;
-
-    const remainingProps = _objectWithoutProperties(this.props, ['children', 'index', 'value']);
-
-    return _reactForAtom.React.createElement(
+    const _props = this.props,
+          { children, index, value } = _props,
+          remainingProps = _objectWithoutProperties(_props, ['children', 'index', 'value']);
+    return _react.default.createElement(
       'div',
       Object.assign({
         className: 'nuclide-ui-listview-item'
@@ -64,26 +59,20 @@ class ListViewItem extends _reactForAtom.React.Component {
 }
 
 exports.ListViewItem = ListViewItem;
-class ListView extends _reactForAtom.React.Component {
+class ListView extends _react.default.Component {
+  constructor(...args) {
+    var _temp;
 
-  constructor(props) {
-    super(props);
-    this._handleSelect = this._handleSelect.bind(this);
-  }
-
-  _handleSelect(value, index, event) {
-    if (this.props.selectable && this.props.onSelect != null) {
-      this.props.onSelect(index, value);
-    }
+    return _temp = super(...args), this._handleSelect = (value, index, event) => {
+      if (this.props.selectable && this.props.onSelect != null) {
+        this.props.onSelect(index, value);
+      }
+    }, _temp;
   }
 
   render() {
-    const {
-      children,
-      alternateBackground,
-      selectable
-    } = this.props;
-    const renderedItems = _reactForAtom.React.Children.map(children, (child, index) => _reactForAtom.React.cloneElement(child, {
+    const { children, alternateBackground, selectable } = this.props;
+    const renderedItems = _react.default.Children.map(children, (child, index) => _react.default.cloneElement(child, {
       index,
       onSelect: this._handleSelect
     }));
@@ -93,7 +82,7 @@ class ListView extends _reactForAtom.React.Component {
       'nuclide-ui-listview-highlight-odd': alternateBackground,
       'nuclide-ui-listview-selectable': selectable
     });
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       { className: className, tabIndex: -1 },
       renderedItems

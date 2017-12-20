@@ -1,20 +1,13 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.TreeNodeComponent = undefined;
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _classnames;
 
@@ -23,6 +16,17 @@ function _load_classnames() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const INDENT_IN_PX = 10;
 const INDENT_PER_LEVEL_IN_PX = 15;
@@ -33,13 +37,22 @@ const SPINNER = '\uF087';
 /**
  * Represents one entry in a TreeComponent.
  */
-class TreeNodeComponent extends _reactForAtom.React.PureComponent {
+class TreeNodeComponent extends _react.default.PureComponent {
+  constructor(...args) {
+    var _temp;
 
-  constructor(props) {
-    super(props);
-    this._onClick = this._onClick.bind(this);
-    this._onDoubleClick = this._onDoubleClick.bind(this);
-    this._onMouseDown = this._onMouseDown.bind(this);
+    return _temp = super(...args), this._onClick = event => {
+      // $FlowFixMe
+      if (_reactDom.default.findDOMNode(this.refs.arrow).contains(event.target)) {
+        this.props.onClickArrow(event, this.props.node);
+      } else {
+        this.props.onClick(event, this.props.node);
+      }
+    }, this._onDoubleClick = event => {
+      this.props.onDoubleClick(event, this.props.node);
+    }, this._onMouseDown = event => {
+      this.props.onMouseDown(event, this.props.node);
+    }, _temp;
   }
 
   render() {
@@ -62,7 +75,7 @@ class TreeNodeComponent extends _reactForAtom.React.PureComponent {
     if (this.props.isContainer) {
       if (this.props.isExpanded) {
         if (this.props.isLoading) {
-          arrow = _reactForAtom.React.createElement(
+          arrow = _react.default.createElement(
             'span',
             { className: 'nuclide-tree-component-item-arrow-spinner' },
             SPINNER
@@ -75,7 +88,7 @@ class TreeNodeComponent extends _reactForAtom.React.PureComponent {
       }
     }
 
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       {
         className: (0, (_classnames || _load_classnames()).default)(rowClassNameObj),
@@ -83,12 +96,12 @@ class TreeNodeComponent extends _reactForAtom.React.PureComponent {
         onClick: this._onClick,
         onDoubleClick: this._onDoubleClick,
         onMouseDown: this._onMouseDown },
-      _reactForAtom.React.createElement(
+      _react.default.createElement(
         'span',
         { className: 'nuclide-tree-component-item-arrow', ref: 'arrow' },
         arrow
       ),
-      this.props.labelElement != null ? this.props.labelElement : _reactForAtom.React.createElement(
+      this.props.labelElement != null ? this.props.labelElement : _react.default.createElement(
         'span',
         {
           className: this.props.labelClassName
@@ -101,20 +114,5 @@ class TreeNodeComponent extends _reactForAtom.React.PureComponent {
     );
   }
 
-  _onClick(event) {
-    if (_reactForAtom.ReactDOM.findDOMNode(this.refs.arrow).contains(event.target)) {
-      this.props.onClickArrow(event, this.props.node);
-    } else {
-      this.props.onClick(event, this.props.node);
-    }
-  }
-
-  _onDoubleClick(event) {
-    this.props.onDoubleClick(event, this.props.node);
-  }
-
-  _onMouseDown(event) {
-    this.props.onMouseDown(event, this.props.node);
-  }
 }
 exports.TreeNodeComponent = TreeNodeComponent;

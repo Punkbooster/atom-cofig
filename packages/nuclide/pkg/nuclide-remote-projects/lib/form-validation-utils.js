@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -78,7 +69,7 @@ function validateFormInputs(profileName, connectionDetails, defaultRemoteServerC
   // Do not proceed if there are any missing fields.
   if (missingFields.length) {
     const missingFieldsString = missingFields.join(', ');
-    const errorMessage = `You must fill out all fields. Currently missing:\n${ missingFieldsString }`;
+    const errorMessage = `You must fill out all fields. Currently missing:\n${missingFieldsString}`;
     return { errorMessage };
   }
 
@@ -88,7 +79,7 @@ function validateFormInputs(profileName, connectionDetails, defaultRemoteServerC
 
   // 1. If a password is provided, all parts of the profile will be save except the password.
   if (authMethod === (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).SshHandshake.SupportedMethods.PASSWORD && connectionDetails.password) {
-    warningMessage += '* You provided a password for this profile. ' + 'For security, Nuclide will save the other parts of this profile, ' + `but not the password.\n`;
+    warningMessage += '* You provided a password for this profile. ' + 'For security, Nuclide will save the other parts of this profile, ' + 'but not the password.\n';
   }
   // 2. Save the remote server command only if it is changed.
   if (connectionDetails.remoteServerCommand && connectionDetails.remoteServerCommand !== defaultRemoteServerCommand) {
@@ -107,4 +98,13 @@ function validateFormInputs(profileName, connectionDetails, defaultRemoteServerC
     warningMessage
   } : { validatedProfile };
   return validationResult;
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */

@@ -1,18 +1,21 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.FileTree = undefined;
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _observable;
+
+function _load_observable() {
+  return _observable = require('nuclide-commons/observable');
+}
 
 var _FileTreeStore;
 
@@ -20,7 +23,9 @@ function _load_FileTreeStore() {
   return _FileTreeStore = require('../lib/FileTreeStore');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
 
 var _FileTreeEntryComponent;
 
@@ -28,10 +33,10 @@ function _load_FileTreeEntryComponent() {
   return _FileTreeEntryComponent = require('./FileTreeEntryComponent');
 }
 
-var _EmptyComponent;
+var _ProjectSelection;
 
-function _load_EmptyComponent() {
-  return _EmptyComponent = require('./EmptyComponent');
+function _load_ProjectSelection() {
+  return _ProjectSelection = require('./ProjectSelection');
 }
 
 var _classnames;
@@ -40,52 +45,82 @@ function _load_classnames() {
   return _classnames = _interopRequireDefault(require('classnames'));
 }
 
-var _atom = require('atom');
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// flowlint-next-line untyped-type-import:off
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const BUFFER_ELEMENTS = 15;
 
-class FileTree extends _reactForAtom.React.Component {
+class FileTree extends _react.default.Component {
 
   constructor(props) {
     super(props);
+
+    this._measureHeights = () => {
+      const measuredComponent = this.refs.measured;
+      if (measuredComponent == null) {
+        return;
+      }
+
+      const node = _reactDom.default.findDOMNode(measuredComponent);
+
+      // $FlowFixMe
+      const elementHeight = node.clientHeight;
+      if (elementHeight > 0) {
+        this.setState({
+          elementHeight,
+          initialHeightMeasured: true
+        });
+      }
+    };
+
     this._store = (_FileTreeStore || _load_FileTreeStore()).FileTreeStore.getInstance();
-    this._disposables = new _atom.CompositeDisposable();
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
 
     this.state = {
-      elementHeight: 22 };
-
-    this._initialHeightMeasured = false;
-    this._afRequestId = null;
-    this._measureHeights = this._measureHeights.bind(this);
+      elementHeight: 22, // The minimal observed height makes a good default
+      initialHeightMeasured: false
+    };
   }
 
   componentDidMount() {
-    this._scrollToTrackedNodeIfNeeded();
+    setImmediate(() => {
+      // Parent refs are not avalaible until _after_ children have mounted, so
+      // must wait to update the tracked node until our parent has a reference
+      // to our root DOM node.
+      this._scrollToTrackedNodeIfNeeded();
+    });
     this._measureHeights();
     window.addEventListener('resize', this._measureHeights);
 
     this._disposables.add(atom.themes.onDidChangeActiveThemes(() => {
-      this._initialHeightMeasured = false;
-      this._afRequestId = window.requestAnimationFrame(() => {
-        this._afRequestId = null;
+      this.setState({ initialHeightMeasured: false });
+      const sub = (_observable || _load_observable()).nextAnimationFrame.subscribe(() => {
+        this._disposables.remove(sub);
         this._measureHeights();
       });
-    }), new _atom.Disposable(() => {
+      this._disposables.add(sub);
+    }), () => {
       window.removeEventListener('resize', this._measureHeights);
-    }));
+    });
   }
 
   componentWillUnmount() {
-    if (this._afRequestId != null) {
-      window.cancelAnimationFrame(this._afRequestId);
-    }
     this._disposables.dispose();
   }
 
   componentDidUpdate() {
-    if (!this._initialHeightMeasured) {
+    if (!this.state.initialHeightMeasured) {
       this._measureHeights();
     }
 
@@ -98,22 +133,9 @@ class FileTree extends _reactForAtom.React.Component {
       return;
     }
 
-    this.props.scrollToPosition(trackedIndex * this.state.elementHeight, this.state.elementHeight);
-  }
+    const positionIsApproximate = !this.state.initialHeightMeasured;
 
-  _measureHeights() {
-    const measuredComponent = this.refs.measured;
-    if (measuredComponent == null) {
-      return;
-    }
-
-    this._initialHeightMeasured = true;
-
-    const node = _reactForAtom.ReactDOM.findDOMNode(measuredComponent);
-    const elementHeight = node.clientHeight;
-    if (elementHeight !== this.state.elementHeight && elementHeight > 0) {
-      this.setState({ elementHeight });
-    }
+    this.props.scrollToPosition(trackedIndex * this.state.elementHeight, this.state.elementHeight, positionIsApproximate);
   }
 
   render() {
@@ -124,9 +146,13 @@ class FileTree extends _reactForAtom.React.Component {
       'nuclide-file-tree-editing-working-set': this._store.isEditingWorkingSet()
     };
 
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
-      { className: (0, (_classnames || _load_classnames()).default)(classes), tabIndex: 0 },
+      {
+        className: (0, (_classnames || _load_classnames()).default)(classes),
+        tabIndex: 0,
+        onMouseEnter: this.props.onMouseEnter,
+        onMouseLeave: this.props.onMouseLeave },
       this._renderChildren()
     );
   }
@@ -136,7 +162,7 @@ class FileTree extends _reactForAtom.React.Component {
     const childrenCount = countShownNodes(roots);
 
     if (childrenCount === 0) {
-      return _reactForAtom.React.createElement((_EmptyComponent || _load_EmptyComponent()).EmptyComponent, null);
+      return _react.default.createElement((_ProjectSelection || _load_ProjectSelection()).ProjectSelection, null);
     }
 
     const scrollTop = this.props.containerScrollTop;
@@ -165,10 +191,10 @@ class FileTree extends _reactForAtom.React.Component {
     let key = firstToRender % amountToRender;
     while (node != null && visibleChildren.length < amountToRender) {
       if (!node.isRoot && !chosenMeasured) {
-        visibleChildren.push(_reactForAtom.React.createElement((_FileTreeEntryComponent || _load_FileTreeEntryComponent()).FileTreeEntryComponent, { key: key, node: node, ref: 'measured' }));
+        visibleChildren.push(_react.default.createElement((_FileTreeEntryComponent || _load_FileTreeEntryComponent()).FileTreeEntryComponent, { key: key, node: node, ref: 'measured' }));
         chosenMeasured = true;
       } else {
-        visibleChildren.push(_reactForAtom.React.createElement((_FileTreeEntryComponent || _load_FileTreeEntryComponent()).FileTreeEntryComponent, { key: key, node: node }));
+        visibleChildren.push(_react.default.createElement((_FileTreeEntryComponent || _load_FileTreeEntryComponent()).FileTreeEntryComponent, { key: key, node: node }));
       }
       node = node.findNext();
       key = (key + 1) % amountToRender;
@@ -178,16 +204,17 @@ class FileTree extends _reactForAtom.React.Component {
     const bottomPlaceholderCount = childrenCount - (firstToRender + visibleChildren.length);
     const bottomPlaceholderSize = bottomPlaceholderCount * elementHeight;
 
-    return _reactForAtom.React.createElement(
+    return _react.default.createElement(
       'div',
       null,
-      _reactForAtom.React.createElement('div', { style: { height: topPlaceholderSize + 'px' } }),
-      _reactForAtom.React.createElement(
+      _react.default.createElement('div', { style: { height: topPlaceholderSize + 'px' } }),
+      _react.default.createElement(
         'ul',
         { className: 'list-tree has-collapsable-children' },
         visibleChildren
       ),
-      _reactForAtom.React.createElement('div', { style: { height: bottomPlaceholderSize + 'px' } })
+      _react.default.createElement('div', { style: { height: bottomPlaceholderSize + 'px' } }),
+      _react.default.createElement((_ProjectSelection || _load_ProjectSelection()).ProjectSelection, null)
     );
   }
 }
@@ -197,11 +224,11 @@ function findFirstNodeToRender(roots, firstToRender) {
   let skipped = 0;
 
   const node = roots.find(r => {
-    if (skipped + r.shownChildrenBelow > firstToRender) {
+    if (skipped + r.shownChildrenCount > firstToRender) {
       return true;
     }
 
-    skipped += r.shownChildrenBelow;
+    skipped += r.shownChildrenCount;
     return false;
   });
 
@@ -224,7 +251,7 @@ function findIndexOfTheTrackedNode(nodes) {
       return true;
     }
 
-    skipped += node.shownChildrenBelow;
+    skipped += node.shownChildrenCount;
     return false;
   });
 
@@ -240,5 +267,5 @@ function findIndexOfTheTrackedNode(nodes) {
 }
 
 function countShownNodes(roots) {
-  return roots.reduce((sum, root) => sum + root.shownChildrenBelow, 0);
+  return roots.reduce((sum, root) => sum + root.shownChildrenCount, 0);
 }

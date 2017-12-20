@@ -9,40 +9,20 @@ module.exports = _client => {
     return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
       name: "directory",
       type: {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 32
-        },
         kind: "named",
         name: "NuclideUri"
       }
     }, {
       name: "regex",
       type: {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 33
-        },
         kind: "named",
         name: "RegExp"
       }
     }, {
       name: "subdirs",
       type: {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 34
-        },
         kind: "array",
         type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 34
-          },
           kind: "string"
         }
       }
@@ -50,13 +30,47 @@ module.exports = _client => {
       return _client.callRemoteFunction("GrepService/grepSearch", "observable", args);
     })).concatMap(id => id).concatMap(value => {
       return _client.unmarshal(value, {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 35
-        },
         kind: "named",
         name: "search$FileResult"
+      });
+    }).publish();
+  };
+
+  remoteModule.grepReplace = function (arg0, arg1, arg2, arg3) {
+    return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
+      name: "filePaths",
+      type: {
+        kind: "array",
+        type: {
+          kind: "named",
+          name: "NuclideUri"
+        }
+      }
+    }, {
+      name: "regex",
+      type: {
+        kind: "named",
+        name: "RegExp"
+      }
+    }, {
+      name: "replacementText",
+      type: {
+        kind: "string"
+      }
+    }, {
+      name: "concurrency",
+      type: {
+        kind: "nullable",
+        type: {
+          kind: "number"
+        }
+      }
+    }]).then(args => {
+      return _client.callRemoteFunction("GrepService/grepReplace", "observable", args);
+    })).concatMap(id => id).concatMap(value => {
+      return _client.unmarshal(value, {
+        kind: "named",
+        name: "search$ReplaceResult"
       });
     }).publish();
   };
@@ -70,283 +84,293 @@ Object.defineProperty(module.exports, "inject", {
   }
 });
 Object.defineProperty(module.exports, "defs", {
-  value: new Map([["Object", {
-    kind: "alias",
-    name: "Object",
-    location: {
-      type: "builtin"
-    }
-  }], ["Date", {
-    kind: "alias",
-    name: "Date",
-    location: {
-      type: "builtin"
-    }
-  }], ["RegExp", {
-    kind: "alias",
-    name: "RegExp",
-    location: {
-      type: "builtin"
-    }
-  }], ["Buffer", {
-    kind: "alias",
-    name: "Buffer",
-    location: {
-      type: "builtin"
-    }
-  }], ["fs.Stats", {
-    kind: "alias",
-    name: "fs.Stats",
-    location: {
-      type: "builtin"
-    }
-  }], ["NuclideUri", {
-    kind: "alias",
-    name: "NuclideUri",
-    location: {
-      type: "builtin"
-    }
-  }], ["atom$Point", {
-    kind: "alias",
-    name: "atom$Point",
-    location: {
-      type: "builtin"
-    }
-  }], ["atom$Range", {
-    kind: "alias",
-    name: "atom$Range",
-    location: {
-      type: "builtin"
-    }
-  }], ["search$Match", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "GrepService.js",
-      line: 19
+  value: {
+    Object: {
+      kind: "alias",
+      name: "Object",
+      location: {
+        type: "builtin"
+      }
     },
-    name: "search$Match",
-    definition: {
+    Date: {
+      kind: "alias",
+      name: "Date",
+      location: {
+        type: "builtin"
+      }
+    },
+    RegExp: {
+      kind: "alias",
+      name: "RegExp",
+      location: {
+        type: "builtin"
+      }
+    },
+    Buffer: {
+      kind: "alias",
+      name: "Buffer",
+      location: {
+        type: "builtin"
+      }
+    },
+    "fs.Stats": {
+      kind: "alias",
+      name: "fs.Stats",
+      location: {
+        type: "builtin"
+      }
+    },
+    NuclideUri: {
+      kind: "alias",
+      name: "NuclideUri",
+      location: {
+        type: "builtin"
+      }
+    },
+    atom$Point: {
+      kind: "alias",
+      name: "atom$Point",
+      location: {
+        type: "builtin"
+      }
+    },
+    atom$Range: {
+      kind: "alias",
+      name: "atom$Range",
+      location: {
+        type: "builtin"
+      }
+    },
+    search$Match: {
+      kind: "alias",
       location: {
         type: "source",
         fileName: "GrepService.js",
-        line: 19
+        line: 20
       },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 20
-        },
-        name: "lineText",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 20
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 21
-        },
-        name: "lineTextOffset",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 21
-          },
-          kind: "number"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 22
-        },
-        name: "matchText",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 22
-          },
-          kind: "string"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 23
-        },
-        name: "range",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 23
-          },
-          kind: "array",
+      name: "search$Match",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "lineText",
           type: {
-            location: {
-              type: "source",
-              fileName: "GrepService.js",
-              line: 23
-            },
+            kind: "string"
+          },
+          optional: false
+        }, {
+          name: "lineTextOffset",
+          type: {
+            kind: "number"
+          },
+          optional: false
+        }, {
+          name: "matchText",
+          type: {
+            kind: "string"
+          },
+          optional: false
+        }, {
+          name: "range",
+          type: {
             kind: "array",
             type: {
-              location: {
-                type: "source",
-                fileName: "GrepService.js",
-                line: 23
-              },
+              kind: "array",
+              type: {
+                kind: "number"
+              }
+            }
+          },
+          optional: false
+        }]
+      }
+    },
+    search$FileResult: {
+      kind: "alias",
+      location: {
+        type: "source",
+        fileName: "GrepService.js",
+        line: 27
+      },
+      name: "search$FileResult",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "filePath",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          },
+          optional: false
+        }, {
+          name: "matches",
+          type: {
+            kind: "array",
+            type: {
+              kind: "named",
+              name: "search$Match"
+            }
+          },
+          optional: false
+        }]
+      }
+    },
+    search$ReplaceResult: {
+      kind: "alias",
+      location: {
+        type: "source",
+        fileName: "GrepService.js",
+        line: 32
+      },
+      name: "search$ReplaceResult",
+      definition: {
+        kind: "union",
+        types: [{
+          kind: "object",
+          fields: [{
+            name: "type",
+            type: {
+              kind: "string-literal",
+              value: "success"
+            },
+            optional: false
+          }, {
+            name: "filePath",
+            type: {
+              kind: "named",
+              name: "NuclideUri"
+            },
+            optional: false
+          }, {
+            name: "replacements",
+            type: {
+              kind: "number"
+            },
+            optional: false
+          }]
+        }, {
+          kind: "object",
+          fields: [{
+            name: "type",
+            type: {
+              kind: "string-literal",
+              value: "error"
+            },
+            optional: false
+          }, {
+            name: "filePath",
+            type: {
+              kind: "named",
+              name: "NuclideUri"
+            },
+            optional: false
+          }, {
+            name: "message",
+            type: {
+              kind: "string"
+            },
+            optional: false
+          }]
+        }],
+        discriminantField: "type"
+      }
+    },
+    grepSearch: {
+      kind: "function",
+      name: "grepSearch",
+      location: {
+        type: "source",
+        fileName: "GrepService.js",
+        line: 44
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "GrepService.js",
+          line: 44
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "directory",
+          type: {
+            kind: "named",
+            name: "NuclideUri"
+          }
+        }, {
+          name: "regex",
+          type: {
+            kind: "named",
+            name: "RegExp"
+          }
+        }, {
+          name: "subdirs",
+          type: {
+            kind: "array",
+            type: {
+              kind: "string"
+            }
+          }
+        }],
+        returnType: {
+          kind: "observable",
+          type: {
+            kind: "named",
+            name: "search$FileResult"
+          }
+        }
+      }
+    },
+    grepReplace: {
+      kind: "function",
+      name: "grepReplace",
+      location: {
+        type: "source",
+        fileName: "GrepService.js",
+        line: 60
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "GrepService.js",
+          line: 60
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "filePaths",
+          type: {
+            kind: "array",
+            type: {
+              kind: "named",
+              name: "NuclideUri"
+            }
+          }
+        }, {
+          name: "regex",
+          type: {
+            kind: "named",
+            name: "RegExp"
+          }
+        }, {
+          name: "replacementText",
+          type: {
+            kind: "string"
+          }
+        }, {
+          name: "concurrency",
+          type: {
+            kind: "nullable",
+            type: {
               kind: "number"
             }
           }
-        },
-        optional: false
-      }]
-    }
-  }], ["search$FileResult", {
-    kind: "alias",
-    location: {
-      type: "source",
-      fileName: "GrepService.js",
-      line: 26
-    },
-    name: "search$FileResult",
-    definition: {
-      location: {
-        type: "source",
-        fileName: "GrepService.js",
-        line: 26
-      },
-      kind: "object",
-      fields: [{
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 27
-        },
-        name: "filePath",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 27
-          },
-          kind: "named",
-          name: "NuclideUri"
-        },
-        optional: false
-      }, {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 28
-        },
-        name: "matches",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 28
-          },
-          kind: "array",
+        }],
+        returnType: {
+          kind: "observable",
           type: {
-            location: {
-              type: "source",
-              fileName: "GrepService.js",
-              line: 28
-            },
             kind: "named",
-            name: "search$Match"
+            name: "search$ReplaceResult"
           }
-        },
-        optional: false
-      }]
-    }
-  }], ["grepSearch", {
-    kind: "function",
-    name: "grepSearch",
-    location: {
-      type: "source",
-      fileName: "GrepService.js",
-      line: 31
-    },
-    type: {
-      location: {
-        type: "source",
-        fileName: "GrepService.js",
-        line: 31
-      },
-      kind: "function",
-      argumentTypes: [{
-        name: "directory",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 32
-          },
-          kind: "named",
-          name: "NuclideUri"
-        }
-      }, {
-        name: "regex",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 33
-          },
-          kind: "named",
-          name: "RegExp"
-        }
-      }, {
-        name: "subdirs",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 34
-          },
-          kind: "array",
-          type: {
-            location: {
-              type: "source",
-              fileName: "GrepService.js",
-              line: 34
-            },
-            kind: "string"
-          }
-        }
-      }],
-      returnType: {
-        location: {
-          type: "source",
-          fileName: "GrepService.js",
-          line: 35
-        },
-        kind: "observable",
-        type: {
-          location: {
-            type: "source",
-            fileName: "GrepService.js",
-            line: 35
-          },
-          kind: "named",
-          name: "search$FileResult"
         }
       }
     }
-  }]])
+  }
 });

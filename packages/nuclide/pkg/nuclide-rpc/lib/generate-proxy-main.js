@@ -1,15 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/* eslint-disable no-console */
 
 var _yargs;
 
@@ -22,7 +11,7 @@ var _fs = _interopRequireDefault(require('fs'));
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _main;
@@ -98,7 +87,18 @@ const argv = (_yargs || _load_yargs()).default.usage('Usage: $0 -d path/to/defin
     describe: 'Validate the proxy by running it',
     type: 'boolean'
   }
-}).argv;
+}).argv; /**
+          * Copyright (c) 2015-present, Facebook, Inc.
+          * All rights reserved.
+          *
+          * This source code is licensed under the license found in the LICENSE file in
+          * the root directory of this source tree.
+          *
+          * 
+          * @format
+          */
+
+/* eslint-disable no-console */
 
 const definitionPath = (_nuclideUri || _load_nuclideUri()).default.resolve(argv.definitionPath);
 const preserveFunctionNames = argv.preserveFunctionNames;
@@ -121,7 +121,7 @@ if (argv.validate) {
     const factory = (0, (_main || _load_main()).createProxyFactory)(serviceName, preserveFunctionNames, definitionPath, predefinedTypeNames);
     factory(fakeClient);
   } catch (e) {
-    console.error(`Failed to validate "${ definitionPath }"`);
+    console.error(`Failed to validate "${definitionPath}"`);
     throw e;
   }
 }

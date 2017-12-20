@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19,9 +10,9 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 let clearConnectionConfig = exports.clearConnectionConfig = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (host) {
     try {
-      window.localStorage.removeItem(getStorageKey(host));
+      localStorage.removeItem(getStorageKey(host));
     } catch (e) {
-      logger.error(`Failed to clear configuration for ${ host }.`, e);
+      logger.error(`Failed to clear configuration for ${host}.`, e);
     }
   });
 
@@ -42,23 +33,36 @@ exports.setConnectionConfig = setConnectionConfig;
 
 var _crypto = _interopRequireDefault(require('crypto'));
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _keytarWrapper;
 
 function _load_keytarWrapper() {
-  return _keytarWrapper = _interopRequireDefault(require('./keytarWrapper'));
+  return _keytarWrapper = _interopRequireDefault(require('../../commons-atom/keytarWrapper'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+/* global localStorage */
+
 const CONFIG_DIR = 'nuclide-connections';
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
 
 /**
  * Version of ServerConnectionConfiguration that uses string instead of Buffer for fields so it can
@@ -72,23 +76,23 @@ function isInsecure(config) {
 }
 
 function getStorageKey(host) {
-  return `${ CONFIG_DIR }:${ host }`;
+  return `${CONFIG_DIR}:${host}`;
 }
 
 function getConnectionConfig(host) {
-  const storedConfig = window.localStorage.getItem(getStorageKey(host));
+  const storedConfig = localStorage.getItem(getStorageKey(host));
   if (storedConfig == null) {
     return null;
   }
   try {
     return decryptConfig(JSON.parse(storedConfig));
   } catch (e) {
-    logger.error(`The configuration file for ${ host } is corrupted.`, e);
+    logger.error(`The configuration file for ${host} is corrupted.`, e);
     return null;
   }
 }
 
-function setConnectionConfig(config) {
+function setConnectionConfig(config, ipAddress) {
   // Don't attempt to store insecure connections.
   // Insecure connections are used for testing and will fail the encryption call below.
   if (isInsecure(config)) {
@@ -96,18 +100,26 @@ function setConnectionConfig(config) {
   }
 
   try {
-    window.localStorage.setItem(getStorageKey(config.host), JSON.stringify(encryptConfig(config)));
+    const encrypted = JSON.stringify(encryptConfig(config));
+    localStorage.setItem(getStorageKey(config.host), encrypted);
+    // Store configurations by their IP address as well.
+    // This way, multiple aliases for the same hostname can reuse a single connection.
+    localStorage.setItem(getStorageKey(ipAddress), encrypted);
   } catch (e) {
-    logger.error(`Failed to store configuration file for ${ config.host }.`, e);
+    logger.error(`Failed to store configuration file for ${config.host}.`, e);
   }
 }
 
 function encryptConfig(remoteProjectConfig) {
   const sha1 = _crypto.default.createHash('sha1');
-  sha1.update(`${ remoteProjectConfig.host }:${ remoteProjectConfig.port }`);
+  sha1.update(`${remoteProjectConfig.host}:${remoteProjectConfig.port}`);
   const sha1sum = sha1.digest('hex');
 
-  const { certificateAuthorityCertificate, clientCertificate, clientKey } = remoteProjectConfig;
+  const {
+    certificateAuthorityCertificate,
+    clientCertificate,
+    clientKey
+  } = remoteProjectConfig;
 
   if (!clientKey) {
     throw new Error('Invariant violation: "clientKey"');
@@ -130,6 +142,7 @@ function encryptConfig(remoteProjectConfig) {
   return {
     host: remoteProjectConfig.host,
     port: remoteProjectConfig.port,
+    family: remoteProjectConfig.family,
     certificateAuthorityCertificate: certificateAuthorityCertificate.toString(),
     clientCertificate: clientCertificate.toString(),
     clientKey: clientKeyWithSalt
@@ -143,7 +156,7 @@ function encryptConfig(remoteProjectConfig) {
  */
 function decryptConfig(remoteProjectConfig) {
   const sha1 = _crypto.default.createHash('sha1');
-  sha1.update(`${ remoteProjectConfig.host }:${ remoteProjectConfig.port }`);
+  sha1.update(`${remoteProjectConfig.host}:${remoteProjectConfig.port}`);
   const sha1sum = sha1.digest('hex');
 
   const password = (_keytarWrapper || _load_keytarWrapper()).default.getPassword('nuclide.remoteProjectConfig', sha1sum);
@@ -152,7 +165,11 @@ function decryptConfig(remoteProjectConfig) {
     throw new Error('Cannot find password for encrypted client key');
   }
 
-  const { certificateAuthorityCertificate, clientCertificate, clientKey } = remoteProjectConfig;
+  const {
+    certificateAuthorityCertificate,
+    clientCertificate,
+    clientKey
+  } = remoteProjectConfig;
 
   if (!clientKey) {
     throw new Error('Invariant violation: "clientKey"');
@@ -165,11 +182,11 @@ function decryptConfig(remoteProjectConfig) {
   }
 
   const restoredClientKey = decryptString(encryptedString, password, salt);
-  //  "nolint" is to suppress ArcanistPrivateKeyLinter errors
-  if (!restoredClientKey.startsWith('-----BEGIN RSA PRIVATE KEY-----')) {
-    /* nolint */
-    (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)().error(`decrypted client key did not start with expected header: ${ restoredClientKey }`);
-  }
+  // "nolint" is to suppress ArcanistPrivateKeyLinter errors
+  if (!restoredClientKey.startsWith('-----BEGIN RSA PRIVATE KEY-----') // nolint
+  ) {
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection').error(`decrypted client key did not start with expected header: ${restoredClientKey}`);
+    }
 
   if (!certificateAuthorityCertificate) {
     throw new Error('Invariant violation: "certificateAuthorityCertificate"');
@@ -182,6 +199,7 @@ function decryptConfig(remoteProjectConfig) {
   return {
     host: remoteProjectConfig.host,
     port: remoteProjectConfig.port,
+    family: remoteProjectConfig.family,
     certificateAuthorityCertificate: new Buffer(certificateAuthorityCertificate),
     clientCertificate: new Buffer(clientCertificate),
     clientKey: new Buffer(restoredClientKey)
@@ -191,9 +209,7 @@ function decryptConfig(remoteProjectConfig) {
 function decryptString(text, password, salt) {
   const decipher = _crypto.default.createDecipheriv('aes-128-cbc', new Buffer(password, 'base64'), new Buffer(salt, 'base64'));
 
-  // $FlowFixMe
   let decryptedString = decipher.update(text, 'base64', 'utf8');
-  // $FlowFixMe
   decryptedString += decipher.final('utf8');
 
   return decryptedString;

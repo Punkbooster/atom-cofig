@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -76,7 +67,16 @@ let readCompileCommands = exports.readCompileCommands = (() => {
  * This function returns the path to YAML file that will be generated if a
  * build task is begun with the current store's settings.
  */
-
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 exports.llbuildYamlPath = llbuildYamlPath;
 
@@ -89,19 +89,19 @@ function _load_jsYaml() {
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function llbuildYamlPath(chdir, configuration, buildPath) {
-  const yamlFileName = `${ configuration }.yaml`;
+  const yamlFileName = `${configuration}.yaml`;
   if (buildPath.length > 0) {
     return (_nuclideUri || _load_nuclideUri()).default.join(buildPath, yamlFileName);
   } else {

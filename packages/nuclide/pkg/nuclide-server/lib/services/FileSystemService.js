@@ -1,26 +1,32 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
-
-/**
- * This code implements the NuclideFs service.  It exports the FS on http via
- * the endpoint: http://your.server:your_port/fs/method where method is one of
- * readFile, writeFile, etc.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.writeFile = exports.readFile = exports.rmdirAll = exports.copy = exports.move = exports.readdir = exports.newFile = undefined;
+exports.readFile = exports.rmdirAll = exports.copy = exports.move = exports.readdir = exports.newFile = exports.findNearestAncestorNamed = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+/**
+ * Starting in the directory `pathToDirectory`, checks if it contains a file named `fileName`.
+ * If so, it returns the path to the file. If not, it successively looks for `fileName` in the
+ * parent directory. If it gets all the way to the root and still does not find the file, then it
+ * returns `null`.
+ */
+let findNearestAncestorNamed = exports.findNearestAncestorNamed = (() => {
+  var _ref = (0, _asyncToGenerator.default)(function* (fileName, pathToDirectory) {
+    const directory = yield (_fsPromise || _load_fsPromise()).default.findNearestFile(fileName, pathToDirectory);
+    if (directory != null) {
+      return (_nuclideUri || _load_nuclideUri()).default.join(directory, fileName);
+    } else {
+      return null;
+    }
+  });
+
+  return function findNearestAncestorNamed(_x, _x2) {
+    return _ref.apply(this, arguments);
+  };
+})();
 
 /**
  * If no file (or directory) at the specified path exists, creates the parent
@@ -30,7 +36,7 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
  * @return A boolean indicating whether the file was created.
  */
 let newFile = exports.newFile = (() => {
-  var _ref = (0, _asyncToGenerator.default)(function* (filePath) {
+  var _ref2 = (0, _asyncToGenerator.default)(function* (filePath) {
     const isExistingFile = yield (_fsPromise || _load_fsPromise()).default.exists(filePath);
     if (isExistingFile) {
       return false;
@@ -40,27 +46,21 @@ let newFile = exports.newFile = (() => {
     return true;
   });
 
-  return function newFile(_x) {
-    return _ref.apply(this, arguments);
+  return function newFile(_x3) {
+    return _ref2.apply(this, arguments);
   };
 })();
 
 /**
- * The readdir endpoint accepts the following query parameters:
- *
- *   path: path to the folder to list entries inside.
- *
- * Body contains a JSON encoded array of objects with file: and stats: entries.
- * file: has the file or directory name, stats: has the stats of the file/dir,
- * isSymbolicLink: true if the entry is a symlink to another filesystem location.
+ * Lists all children of the given directory.
  */
 
 
 let readdir = exports.readdir = (() => {
-  var _ref2 = (0, _asyncToGenerator.default)(function* (path) {
+  var _ref3 = (0, _asyncToGenerator.default)(function* (path) {
     const files = yield (_fsPromise || _load_fsPromise()).default.readdir(path);
     const entries = yield Promise.all(files.map((() => {
-      var _ref3 = (0, _asyncToGenerator.default)(function* (file) {
+      var _ref4 = (0, _asyncToGenerator.default)(function* (file) {
         const fullpath = (_nuclideUri || _load_nuclideUri()).default.join(path, file);
         const lstats = yield (_fsPromise || _load_fsPromise()).default.lstat(fullpath);
         if (!lstats.isSymbolicLink()) {
@@ -75,18 +75,18 @@ let readdir = exports.readdir = (() => {
         }
       });
 
-      return function (_x3) {
-        return _ref3.apply(this, arguments);
+      return function (_x5) {
+        return _ref4.apply(this, arguments);
       };
     })()));
     // TODO: Return entries directly and change client to handle error.
     return (0, (_collection || _load_collection()).arrayCompact)(entries).map(function (entry) {
-      return { file: entry.file, stats: entry.stats, isSymbolicLink: entry.isSymbolicLink };
+      return [entry.file, entry.stats.isFile(), entry.isSymbolicLink];
     });
   });
 
-  return function readdir(_x2) {
-    return _ref2.apply(this, arguments);
+  return function readdir(_x4) {
+    return _ref3.apply(this, arguments);
   };
 })();
 
@@ -101,15 +101,15 @@ let readdir = exports.readdir = (() => {
  * Moves all sourcePaths into the specified destDir, assumed to be a directory name.
  */
 let move = exports.move = (() => {
-  var _ref4 = (0, _asyncToGenerator.default)(function* (sourcePaths, destDir) {
+  var _ref5 = (0, _asyncToGenerator.default)(function* (sourcePaths, destDir) {
     yield Promise.all(sourcePaths.map(function (path) {
       const destPath = (_nuclideUri || _load_nuclideUri()).default.join(destDir, (_nuclideUri || _load_nuclideUri()).default.basename(path));
       return (_fsPromise || _load_fsPromise()).default.move(path, destPath);
     }));
   });
 
-  return function move(_x4, _x5) {
-    return _ref4.apply(this, arguments);
+  return function move(_x6, _x7) {
+    return _ref5.apply(this, arguments);
   };
 })();
 
@@ -120,7 +120,7 @@ let move = exports.move = (() => {
 
 
 let copy = exports.copy = (() => {
-  var _ref5 = (0, _asyncToGenerator.default)(function* (sourcePath, destinationPath) {
+  var _ref6 = (0, _asyncToGenerator.default)(function* (sourcePath, destinationPath) {
     const isExistingFile = yield (_fsPromise || _load_fsPromise()).default.exists(destinationPath);
     if (isExistingFile) {
       return false;
@@ -130,8 +130,8 @@ let copy = exports.copy = (() => {
     return true;
   });
 
-  return function copy(_x6, _x7) {
-    return _ref5.apply(this, arguments);
+  return function copy(_x8, _x9) {
+    return _ref6.apply(this, arguments);
   };
 })();
 
@@ -141,14 +141,14 @@ let copy = exports.copy = (() => {
 
 
 let rmdirAll = exports.rmdirAll = (() => {
-  var _ref6 = (0, _asyncToGenerator.default)(function* (paths) {
+  var _ref7 = (0, _asyncToGenerator.default)(function* (paths) {
     yield Promise.all(paths.map(function (p) {
       return (_fsPromise || _load_fsPromise()).default.rmdir(p);
     }));
   });
 
-  return function rmdirAll(_x8) {
-    return _ref6.apply(this, arguments);
+  return function rmdirAll(_x10) {
+    return _ref7.apply(this, arguments);
   };
 })();
 
@@ -187,74 +187,80 @@ let rmdirAll = exports.rmdirAll = (() => {
  *   Callers who want a string should call buffer.toString('utf8').
  */
 let readFile = exports.readFile = (() => {
-  var _ref7 = (0, _asyncToGenerator.default)(function* (path, options) {
+  var _ref8 = (0, _asyncToGenerator.default)(function* (path, options) {
     const stats = yield (_fsPromise || _load_fsPromise()).default.stat(path);
     if (stats.size > READFILE_SIZE_LIMIT) {
-      throw new Error(`File is too large (${ stats.size } bytes)`);
+      throw new Error(`File is too large (${stats.size} bytes)`);
     }
     return (_fsPromise || _load_fsPromise()).default.readFile(path, options);
   });
 
-  return function readFile(_x9, _x10) {
-    return _ref7.apply(this, arguments);
+  return function readFile(_x11, _x12) {
+    return _ref8.apply(this, arguments);
   };
 })();
 
-/**
- * Returns true if the path being checked exists in a `NFS` mounted directory device.
- */
-
-
 let copyFilePermissions = (() => {
-  var _ref8 = (0, _asyncToGenerator.default)(function* (sourcePath, destinationPath) {
-    let permissions = null;
+  var _ref9 = (0, _asyncToGenerator.default)(function* (sourcePath, destinationPath) {
     try {
-      permissions = (yield (_fsPromise || _load_fsPromise()).default.stat(sourcePath)).mode;
+      const { mode, uid, gid } = yield (_fsPromise || _load_fsPromise()).default.stat(sourcePath);
+      yield Promise.all([
+      // The user may not have permissions to use the uid/gid.
+      (_fsPromise || _load_fsPromise()).default.chown(destinationPath, uid, gid).catch(function () {}), (_fsPromise || _load_fsPromise()).default.chmod(destinationPath, mode)]);
     } catch (e) {
       // If the file does not exist, then ENOENT will be thrown.
       if (e.code !== 'ENOENT') {
         throw e;
       }
-    }
-    if (permissions != null) {
-      yield (_fsPromise || _load_fsPromise()).default.chmod(destinationPath, permissions);
+      // For new files, use the default process file creation mask.
+      yield (_fsPromise || _load_fsPromise()).default.chmod(destinationPath,
+      // $FlowIssue: umask argument is optional
+      0o666 & ~process.umask());
     }
   });
 
-  return function copyFilePermissions(_x11, _x12) {
-    return _ref8.apply(this, arguments);
+  return function copyFilePermissions(_x13, _x14) {
+    return _ref9.apply(this, arguments);
   };
 })();
 
 /**
- * The writeFile endpoint accepts the following query parameters:
+ * A small wrapper around fs.writeFile that also implements:
  *
- *   path: path to the file to read (it must be url encoded).
- *   data: file contents to write.
- *   options: options to pass to fs.writeFile
+ * - atomic writes (by writing to a temporary file first)
+ * - uses a promise rather than a callback
  *
- * TODO: move to nuclide-commons and rename to writeFileAtomic
+ * `options` is passed directly into fs.writeFile.
  */
 
 
-let writeFile = exports.writeFile = (() => {
-  var _ref9 = (0, _asyncToGenerator.default)(function* (path, data, options) {
-
+let _writeFile = (() => {
+  var _ref10 = (0, _asyncToGenerator.default)(function* (path, data, options) {
     let complete = false;
     const tempFilePath = yield (_fsPromise || _load_fsPromise()).default.tempfile('nuclide');
     try {
       yield (_fsPromise || _load_fsPromise()).default.writeFile(tempFilePath, data, options);
+
+      // Expand the target path in case it contains symlinks.
+      let realPath = path;
+      try {
+        realPath = yield resolveRealPath(path);
+      } catch (e) {}
+      // Fallback to using the specified path if it cannot be expanded.
+      // Note: this is expected in cases where the remote file does not
+      // actually exist.
+
 
       // Ensure file still has original permissions:
       // https://github.com/facebook/nuclide/issues/157
       // We update the mode of the temp file rather than the destination file because
       // if we did the mv() then the chmod(), there would be a brief period between
       // those two operations where the destination file might have the wrong permissions.
-      yield copyFilePermissions(path, tempFilePath);
+      yield copyFilePermissions(realPath, tempFilePath);
 
       // TODO(mikeo): put renames into a queue so we don't write older save over new save.
       // Use mv as fs.rename doesn't work across partitions.
-      yield mvPromise(tempFilePath, path);
+      yield mvPromise(tempFilePath, realPath);
       complete = true;
     } finally {
       if (!complete) {
@@ -263,13 +269,13 @@ let writeFile = exports.writeFile = (() => {
     }
   });
 
-  return function writeFile(_x13, _x14, _x15) {
-    return _ref9.apply(this, arguments);
+  return function _writeFile(_x15, _x16, _x17) {
+    return _ref10.apply(this, arguments);
   };
 })();
 
 exports.exists = exists;
-exports.findNearestFile = findNearestFile;
+exports.findFilesInDirectories = findFilesInDirectories;
 exports.lstat = lstat;
 exports.mkdir = mkdir;
 exports.mkdirp = mkdirp;
@@ -280,7 +286,10 @@ exports.rename = rename;
 exports.rmdir = rmdir;
 exports.stat = stat;
 exports.unlink = unlink;
+exports.createReadStream = createReadStream;
 exports.isNfs = isNfs;
+exports.writeFile = writeFile;
+exports.writeFileBuffer = writeFileBuffer;
 
 var _mv;
 
@@ -293,25 +302,56 @@ var _fs = _interopRequireDefault(require('fs'));
 var _collection;
 
 function _load_collection() {
-  return _collection = require('../../../commons-node/collection');
+  return _collection = require('nuclide-commons/collection');
 }
 
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _fsPromise;
 
 function _load_fsPromise() {
-  return _fsPromise = _interopRequireDefault(require('../../../commons-node/fsPromise'));
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
+
+var _process;
+
+function _load_process() {
+  return _process = require('nuclide-commons/process');
+}
+
+var _stream;
+
+function _load_stream() {
+  return _stream = require('nuclide-commons/stream');
+}
+
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Attempting to read large files just crashes node, so just fail.
 // Atom can't handle files of this scale anyway.
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+/**
+ * This code implements the NuclideFs service.  It exports the FS on http via
+ * the endpoint: http://your.server:your_port/fs/method where method is one of
+ * readFile, writeFile, etc.
+ */
+
 const READFILE_SIZE_LIMIT = 10 * 1024 * 1024;
 
 //------------------------------------------------------------------------------
@@ -323,10 +363,12 @@ const READFILE_SIZE_LIMIT = 10 * 1024 * 1024;
  */
 function exists(path) {
   return (_fsPromise || _load_fsPromise()).default.exists(path);
-}
-
-function findNearestFile(fileName, pathToDirectory) {
-  return (_fsPromise || _load_fsPromise()).default.findNearestFile(fileName, pathToDirectory);
+}function findFilesInDirectories(searchPaths, fileName) {
+  if (searchPaths.length === 0) {
+    return _rxjsBundlesRxMinJs.Observable.throw(new Error('No directories to search in!')).publish();
+  }
+  const findArgs = [...searchPaths, '-type', 'f', '-name', fileName];
+  return (0, (_process || _load_process()).runCommand)('find', findArgs).map(stdout => stdout.split('\n').filter(filePath => filePath !== '')).publish();
 }
 
 /**
@@ -396,7 +438,14 @@ function unlink(path) {
       throw error;
     }
   });
-}function isNfs(path) {
+}function createReadStream(path, options) {
+  return (0, (_stream || _load_stream()).observeRawStream)(_fs.default.createReadStream(path, options)).publish();
+}
+
+/**
+ * Returns true if the path being checked exists in a `NFS` mounted directory device.
+ */
+function isNfs(path) {
   return (_fsPromise || _load_fsPromise()).default.isNfs(path);
 }
 
@@ -411,4 +460,17 @@ function mvPromise(sourcePath, destinationPath) {
       }
     });
   });
+}
+
+function writeFile(path, data, options) {
+  return _writeFile(path, data, options);
+}
+
+/**
+ * This is the same as writeFile but with buffers.
+ * The RPC framework can't use string | Buffer so we have to create a separate function.
+ * Note that options.encoding is ignored for raw buffers.
+ */
+function writeFileBuffer(path, data, options) {
+  return _writeFile(path, data, options);
 }

@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -15,10 +6,16 @@ Object.defineProperty(exports, "__esModule", {
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
+var _collection;
+
+function _load_collection() {
+  return _collection = require('nuclide-commons/collection');
+}
+
 var _nuclideUri;
 
 function _load_nuclideUri() {
-  return _nuclideUri = _interopRequireDefault(require('../../commons-node/nuclideUri'));
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
 var _nuclideRemoteConnection;
@@ -27,14 +24,38 @@ function _load_nuclideRemoteConnection() {
   return _nuclideRemoteConnection = require('../../nuclide-remote-connection');
 }
 
+var _constants;
+
+function _load_constants() {
+  return _constants = require('../../nuclide-working-sets-common/lib/constants');
+}
+
+var _constants2;
+
+function _load_constants2() {
+  return _constants2 = require('./constants');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class RemoteDirectorySearcher {
 
   // When constructed, RemoteDirectorySearcher must be passed a function that
   // it can use to get a 'GrepService' for a given remote path.
-  constructor(serviceProvider) {
+  constructor(serviceProvider, getWorkingSetsStore) {
     this._serviceProvider = serviceProvider;
+    this._getWorkingSetsStore = getWorkingSetsStore;
   }
 
   canSearchDirectory(directory) {
@@ -48,7 +69,13 @@ class RemoteDirectorySearcher {
     // Get the remote service that corresponds to each remote directory.
     const services = directories.map(dir => this._serviceProvider(dir));
 
-    const searchStreams = directories.map((dir, index) => services[index].grepSearch(dir.getPath(), regex, RemoteDirectorySearcher.processPaths(dir.getPath(), options.inclusions)).refCount());
+    const includePaths = directories.map(dir => this.processPaths(dir.getPath(), options.inclusions));
+
+    const searchStreams = includePaths.map((inclusion, index) =>
+    // processPaths returns null if the inclusions are too strict for the
+    // given directory, so we don't even want to start the search. This can
+    // happen if we're searching in a working set that excludes the directory.
+    inclusion ? services[index].grepSearch(directories[index].getPath(), regex, inclusion).refCount() : _rxjsBundlesRxMinJs.Observable.empty());
 
     // Start the search in each directory, and merge the resulting streams.
     const searchStream = _rxjsBundlesRxMinJs.Observable.merge(...searchStreams);
@@ -86,15 +113,48 @@ class RemoteDirectorySearcher {
   /**
    * If a query's prefix matches the rootPath's basename, treat the query as a relative search.
    * Based on https://github.com/atom/atom/blob/master/src/scan-handler.coffee.
-   * Marked as static for testing.
+   * Returns null if we shouldn't search rootPath.
    */
-  static processPaths(rootPath, paths) {
+  processPaths(rootPath, paths) {
     if (paths == null) {
       return [];
     }
     const rootPathBase = (_nuclideUri || _load_nuclideUri()).default.basename(rootPath);
     const results = [];
     for (const path of paths) {
+      if (path === (_constants || _load_constants()).WORKING_SET_PATH_MARKER) {
+        const workingSetsStore = this._getWorkingSetsStore();
+        if (!workingSetsStore) {
+          (_constants2 || _load_constants2()).logger.error('workingSetsStore not found but trying to search in working sets');
+          continue;
+        }
+
+        const workingSetUris = (0, (_collection || _load_collection()).arrayFlatten)(workingSetsStore.getApplicableDefinitions().filter(def => def.active).map(def => def.uris))
+        // A working set can contain paths outside of rootPath. Ignore these.
+        .filter(uri => (_nuclideUri || _load_nuclideUri()).default.contains(rootPath, uri))
+        // `processPaths` expects the second argument to be a relative path
+        // instead of the fully qualified NuclideUris we have here.
+        .map(uri => (_nuclideUri || _load_nuclideUri()).default.relative(rootPath, uri));
+
+        if (workingSetUris.length === 0) {
+          // Working set and rootPath are disjoint, we shouldn't search rootPath
+          return null;
+        }
+
+        if (!!workingSetUris.includes((_constants || _load_constants()).WORKING_SET_PATH_MARKER)) {
+          throw new Error('Invariant violation: "!workingSetUris.includes(WORKING_SET_PATH_MARKER)"');
+        }
+
+        const processed = this.processPaths(rootPath, workingSetUris);
+
+        if (!processed) {
+          throw new Error('Invariant violation: "processed"');
+        }
+
+        results.push(...processed);
+        continue;
+      }
+
       const segments = (_nuclideUri || _load_nuclideUri()).default.split(path);
       const firstSegment = segments.shift();
       results.push(path);
@@ -112,4 +172,3 @@ class RemoteDirectorySearcher {
   }
 }
 exports.default = RemoteDirectorySearcher;
-module.exports = exports['default'];

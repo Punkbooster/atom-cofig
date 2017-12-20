@@ -1,19 +1,19 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = registerGrammar;
-
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 /**
  * Utility to make it easier to register a file extension with a grammar,
@@ -30,24 +30,30 @@ exports.default = registerGrammar;
  *   the grammar is available.
  * @return whether the extension was registered or not.
  */
-function registerGrammar(scopeName, extension) {
+function registerGrammar(scopeName, extensions) {
   let customFileTypes = atom.config.get('core.customFileTypes');
-  if (!customFileTypes || typeof customFileTypes !== 'object') {
+  if (customFileTypes == null || typeof customFileTypes !== 'object') {
     customFileTypes = {};
-  }
-
-  if (!customFileTypes) {
-    throw new Error('Invariant violation: "customFileTypes"');
   }
 
   let customFileType = customFileTypes[scopeName];
   if (!Array.isArray(customFileType)) {
-    customFileType = [];
+    customFileTypes[scopeName] = customFileType = [];
   }
-  if (customFileType.indexOf(extension) === -1) {
-    customFileTypes[scopeName] = customFileType.concat(extension);
+
+  let didChange = false;
+  for (let i = 0; i < extensions.length; i++) {
+    const extension = extensions[i];
+    if (!customFileType.includes(extension)) {
+      customFileType.push(extension);
+      didChange = true;
+    }
+  }
+
+  if (didChange) {
     atom.config.set('core.customFileTypes', customFileTypes);
     return true;
   }
+
   return false;
-}module.exports = exports['default'];
+}

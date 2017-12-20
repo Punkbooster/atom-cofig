@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -16,7 +7,7 @@ Object.defineProperty(exports, "__esModule", {
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('../../commons-node/UniversalDisposable'));
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _tasks;
@@ -28,7 +19,7 @@ function _load_tasks() {
 var _event;
 
 function _load_event() {
-  return _event = require('../../commons-node/event');
+  return _event = require('nuclide-commons/event');
 }
 
 var _createExtraUiComponent;
@@ -37,7 +28,7 @@ function _load_createExtraUiComponent() {
   return _createExtraUiComponent = require('./ui/createExtraUiComponent');
 }
 
-var _reactForAtom = require('react-for-atom');
+var _react = _interopRequireDefault(require('react'));
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
@@ -47,15 +38,21 @@ class ArcBuildSystem {
 
   constructor() {
     this.id = 'arcanist';
-    this._outputMessages = new _rxjsBundlesRxMinJs.Subject();
     this._model = this._getModel();
     this.name = this._model.getName();
-    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._outputMessages);
   }
 
-  setCwdApi(cwdApi) {
-    this._cwdApi = cwdApi;
-    this._model.setCwdApi(cwdApi);
+  setProjectRoot(projectRoot, callback) {
+    const path = projectRoot ? projectRoot.getPath() : null;
+    this._model.setProjectPath(path);
+
+    const storeReady = (0, (_event || _load_event()).observableFromSubscribeFunction)(this._model.onChange.bind(this._model)).map(() => this._model).startWith(this._model).filter(model => model.isArcSupported() !== null && model.getActiveProjectPath() === path);
+
+    const enabledObservable = storeReady.map(model => model.isArcSupported() === true).distinctUntilChanged();
+
+    const tasksObservable = storeReady.map(model => model.getTaskList());
+
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(_rxjsBundlesRxMinJs.Observable.combineLatest(enabledObservable, tasksObservable).subscribe(([enabled, tasks]) => callback(enabled, tasks)));
   }
 
   _getModel() {
@@ -66,14 +63,7 @@ class ArcBuildSystem {
     } catch (_) {
       ArcToolbarModel = require('./ArcToolbarModel').ArcToolbarModel;
     }
-    return new ArcToolbarModel(this._outputMessages);
-  }
-
-  observeTaskList(cb) {
-    if (this._tasks == null) {
-      this._tasks = _rxjsBundlesRxMinJs.Observable.concat(_rxjsBundlesRxMinJs.Observable.of(this._model.getTaskList()), (0, (_event || _load_event()).observableFromSubscribeFunction)(this._model.onChange.bind(this._model)).map(() => this._model.getTaskList()));
-    }
-    return new (_UniversalDisposable || _load_UniversalDisposable()).default(this._tasks.subscribe({ next: cb }));
+    return new ArcToolbarModel();
   }
 
   getExtraUi() {
@@ -87,37 +77,38 @@ class ArcBuildSystem {
     return ArcIcon;
   }
 
-  getOutputMessages() {
-    return this._outputMessages;
-  }
-
   runTask(taskType) {
     if (!this._model.getTaskList().some(task => task.type === taskType)) {
-      throw new Error(`There's no hhvm task named "${ taskType }"`);
+      throw new Error(`There's no hhvm task named "${taskType}"`);
     }
 
     const taskFunction = getTaskRunFunction(this._model, taskType);
     return (0, (_tasks || _load_tasks()).taskFromObservable)(taskFunction());
   }
-
-  dispose() {
-    this._disposables.dispose();
-  }
 }
 
-exports.default = ArcBuildSystem;
+exports.default = ArcBuildSystem; /**
+                                   * Copyright (c) 2015-present, Facebook, Inc.
+                                   * All rights reserved.
+                                   *
+                                   * This source code is licensed under the license found in the LICENSE file in
+                                   * the root directory of this source tree.
+                                   *
+                                   * 
+                                   * @format
+                                   */
+
 function getTaskRunFunction(model, taskType) {
   switch (taskType) {
     case 'build':
       return () => model.arcBuild();
     default:
-      throw new Error(`Invalid task type: ${ taskType }`);
+      throw new Error(`Invalid task type: ${taskType}`);
   }
 }
 
-const ArcIcon = () => _reactForAtom.React.createElement(
+const ArcIcon = () => _react.default.createElement(
   'span',
   null,
   'arc'
 );
-module.exports = exports['default'];

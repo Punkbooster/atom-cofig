@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -26,10 +17,10 @@ function _load_TypeRegistry() {
   return _TypeRegistry = require('./TypeRegistry');
 }
 
-var _nuclideLogging;
+var _log4js;
 
-function _load_nuclideLogging() {
-  return _nuclideLogging = require('../../nuclide-logging');
+function _load_log4js() {
+  return _log4js = require('log4js');
 }
 
 var _config;
@@ -38,7 +29,18 @@ function _load_config() {
   return _config = require('./config');
 }
 
-const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();class ServiceRegistry {
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-rpc'); /**
+                                                                           * Copyright (c) 2015-present, Facebook, Inc.
+                                                                           * All rights reserved.
+                                                                           *
+                                                                           * This source code is licensed under the license found in the LICENSE file in
+                                                                           * the root directory of this source tree.
+                                                                           *
+                                                                           * 
+                                                                           * @format
+                                                                           */
+
+class ServiceRegistry {
 
   /**
    * Store a mapping from function name to a structure holding both the local implementation and
@@ -73,15 +75,15 @@ const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();clas
     const preserveFunctionNames = service.preserveFunctionNames != null && service.preserveFunctionNames;
     try {
       const factory = (0, (_main || _load_main()).createProxyFactory)(service.name, preserveFunctionNames, service.definition, this._predefinedTypes);
-      // $FlowIssue - the parameter passed to require must be a literal string.
-      const localImpl = require(service.implementation);
       this._services.set(service.name, {
         name: service.name,
         factory
       });
 
       // Register type aliases.
-      factory.defs.forEach(definition => {
+      const defs = factory.defs;
+      Object.keys(defs).forEach(defName => {
+        const definition = defs[defName];
         const name = definition.name;
         switch (definition.kind) {
           case 'alias':
@@ -89,40 +91,58 @@ const logger = (0, (_nuclideLogging || _load_nuclideLogging()).getLogger)();clas
               this._typeRegistry.registerAlias(name, definition.location, definition.definition);
             }
             break;
+
           case 'function':
             // Register module-level functions.
-            const functionName = service.preserveFunctionNames ? name : `${ service.name }/${ name }`;
-            this._registerFunction(functionName, localImpl[name], definition.type);
+            const functionName = service.preserveFunctionNames ? name : `${service.name}/${name}`;
+            this._registerFunction(functionName, service.implementation, impl => impl[name], definition.type);
             break;
+
           case 'interface':
             // Register interfaces.
-            this._classesByName.set(name, {
-              localImplementation: localImpl[name],
-              definition
-            });
-
+            this._registerClass(name, service.implementation, impl => impl[name], definition);
             this._typeRegistry.registerType(name, definition.location, (object, context) => context.marshal(name, object), (objectId, context) => context.unmarshal(objectId, name, context.getService(service.name)[name]));
-
             // Register all of the static methods as remote functions.
-            definition.staticMethods.forEach((funcType, funcName) => {
-              this._registerFunction(`${ name }/${ funcName }`, localImpl[name][funcName], funcType);
+            Object.keys(definition.staticMethods).forEach(methodName => {
+              this._registerFunction(`${name}/${methodName}`, service.implementation, impl => impl[name][methodName], definition.staticMethods[methodName]);
             });
             break;
         }
       });
     } catch (e) {
-      logger.error(`Failed to load service ${ service.name }. Stack Trace:\n${ e.stack }`);
+      logger.error(`Failed to load service ${service.name}. Stack Trace:\n${e.stack}`);
       throw e;
     }
   }
 
-  _registerFunction(name, localImpl, type) {
+  _registerFunction(name, id, accessor, type) {
     if (this._functionsByName.has(name)) {
-      throw new Error(`Duplicate RPC function: ${ name }`);
+      throw new Error(`Duplicate RPC function: ${name}`);
     }
+    let impl;
     this._functionsByName.set(name, {
-      localImplementation: localImpl,
+      getLocalImplementation() {
+        if (impl == null) {
+          // $FlowIgnore
+          impl = accessor(require(id));
+        }
+        return impl;
+      },
       type
+    });
+  }
+
+  _registerClass(name, id, accessor, definition) {
+    let impl;
+    this._classesByName.set(name, {
+      getLocalImplementation() {
+        if (impl == null) {
+          // $FlowIgnore
+          impl = accessor(require(id));
+        }
+        return impl;
+      },
+      definition
     });
   }
 

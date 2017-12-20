@@ -1,13 +1,4 @@
 'use strict';
-'use babel';
-
-/*
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- */
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -51,16 +42,41 @@ Object.defineProperty(exports, 'DebuggerLaunchAttachProvider', {
     return _interopRequireDefault(_DebuggerLaunchAttachProvider || _load_DebuggerLaunchAttachProvider()).default;
   }
 });
-Object.defineProperty(exports, 'DebuggerLaunchAttachEventTypes', {
-  enumerable: true,
-  get: function () {
-    return (_DebuggerLaunchAttachProvider || _load_DebuggerLaunchAttachProvider()).DebuggerLaunchAttachEventTypes;
-  }
-});
 Object.defineProperty(exports, 'DebuggerInstance', {
   enumerable: true,
   get: function () {
     return (_DebuggerInstance || _load_DebuggerInstance()).DebuggerInstance;
+  }
+});
+
+var _DebuggerConfigSerializer;
+
+function _load_DebuggerConfigSerializer() {
+  return _DebuggerConfigSerializer = require('./DebuggerConfigSerializer');
+}
+
+Object.defineProperty(exports, 'serializeDebuggerConfig', {
+  enumerable: true,
+  get: function () {
+    return (_DebuggerConfigSerializer || _load_DebuggerConfigSerializer()).serializeDebuggerConfig;
+  }
+});
+Object.defineProperty(exports, 'deserializeDebuggerConfig', {
+  enumerable: true,
+  get: function () {
+    return (_DebuggerConfigSerializer || _load_DebuggerConfigSerializer()).deserializeDebuggerConfig;
+  }
+});
+Object.defineProperty(exports, 'getLastUsedDebugger', {
+  enumerable: true,
+  get: function () {
+    return (_DebuggerConfigSerializer || _load_DebuggerConfigSerializer()).getLastUsedDebugger;
+  }
+});
+Object.defineProperty(exports, 'setLastUsedDebugger', {
+  enumerable: true,
+  get: function () {
+    return (_DebuggerConfigSerializer || _load_DebuggerConfigSerializer()).setLastUsedDebugger;
   }
 });
 
@@ -93,6 +109,50 @@ Object.defineProperty(exports, 'LaunchAttachActionsBase', {
   enumerable: true,
   get: function () {
     return (_LaunchAttachActionsBase || _load_LaunchAttachActionsBase()).LaunchAttachActionsBase;
+  }
+});
+
+var _evaluationExpression;
+
+function _load_evaluationExpression() {
+  return _evaluationExpression = require('./evaluationExpression');
+}
+
+Object.defineProperty(exports, 'getDefaultEvaluationExpression', {
+  enumerable: true,
+  get: function () {
+    return (_evaluationExpression || _load_evaluationExpression()).getDefaultEvaluationExpression;
+  }
+});
+
+var _types;
+
+function _load_types() {
+  return _types = require('./types');
+}
+
+Object.defineProperty(exports, 'DebuggerConfigAction', {
+  enumerable: true,
+  get: function () {
+    return (_types || _load_types()).DebuggerConfigAction;
+  }
+});
+Object.defineProperty(exports, 'DebuggerCapabilities', {
+  enumerable: true,
+  get: function () {
+    return (_types || _load_types()).DebuggerCapabilities;
+  }
+});
+Object.defineProperty(exports, 'DebuggerProperties', {
+  enumerable: true,
+  get: function () {
+    return (_types || _load_types()).DebuggerProperties;
+  }
+});
+Object.defineProperty(exports, 'ThreadColumn', {
+  enumerable: true,
+  get: function () {
+    return (_types || _load_types()).ThreadColumn;
   }
 });
 

@@ -4,10 +4,13 @@
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "A panel for running tests provided by test runner service packages",
-  "atomTestRunner": "../../lib/test-runner.js",
+  "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
     "testRunner": "apm"
+  },
+  "deserializers": {
+    "nuclide.TestRunnerPanelState": "deserializeTestRunnerPanelState"
   },
   "consumedServices": {
     "nuclide-file-tree.context-menu": {
@@ -23,13 +26,6 @@
     "tool-bar": {
       "versions": {
         "^1.0.0": "consumeToolBar"
-      }
-    }
-  },
-  "providedServices": {
-    "nuclide-distraction-free-mode": {
-      "versions": {
-        "0.0.0": "getDistractionFreeModeProvider"
       }
     }
   }
