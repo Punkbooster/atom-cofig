@@ -28,7 +28,7 @@ function _load_nuclideRemoteConnection() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// eslint-disable-next-line nuclide-internal/no-commonjs
+// eslint-disable-next-line rulesdir/no-commonjs
 module.exports = {
   priority: 20,
   providerName: 'nuclide-ocaml',
@@ -62,7 +62,10 @@ module.exports = {
           return {
             range,
             callback() {
-              return (0, (_goToLocation || _load_goToLocation()).goToLocation)(location.file, location.pos.line - 1, location.pos.col);
+              return (0, (_goToLocation || _load_goToLocation()).goToLocation)(location.file, {
+                line: location.pos.line - 1,
+                column: location.pos.col
+              });
             }
           };
         }

@@ -3,13 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ColumnSizer = exports.default = undefined;
+exports.ColumnSizer = undefined;
 
-var _ColumnSizer2 = require('./ColumnSizer');
+var _ColumnSizer = require('./ColumnSizer');
 
-var _ColumnSizer3 = _interopRequireDefault(_ColumnSizer2);
+var _ColumnSizer2 = _interopRequireDefault(_ColumnSizer);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = _ColumnSizer3.default;
-exports.ColumnSizer = _ColumnSizer3.default;
+exports.default = _ColumnSizer2.default;
+exports.ColumnSizer = _ColumnSizer2.default;

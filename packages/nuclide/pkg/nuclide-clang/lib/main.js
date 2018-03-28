@@ -10,7 +10,6 @@ exports.activate = activate;
 exports.createAutocompleteProvider = createAutocompleteProvider;
 exports.createTypeHintProvider = createTypeHintProvider;
 exports.provideDefinitions = provideDefinitions;
-exports.consumeBusySignal = consumeBusySignal;
 exports.provideCodeFormat = provideCodeFormat;
 exports.provideLinter = provideLinter;
 exports.provideOutlineView = provideOutlineView;
@@ -18,14 +17,13 @@ exports.provideRefactoring = provideRefactoring;
 exports.provideDeclarationInfo = provideDeclarationInfo;
 exports.provideRelatedFiles = provideRelatedFiles;
 exports.consumeClangConfigurationProvider = consumeClangConfigurationProvider;
+exports.provideCodeActions = provideCodeActions;
 exports.deactivate = deactivate;
 
-var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+var _featureConfig;
 
-var _SharedObservableCache;
-
-function _load_SharedObservableCache() {
-  return _SharedObservableCache = _interopRequireDefault(require('../../commons-node/SharedObservableCache'));
+function _load_featureConfig() {
+  return _featureConfig = _interopRequireDefault(require('nuclide-commons-atom/feature-config'));
 }
 
 var _UniversalDisposable;
@@ -34,12 +32,16 @@ function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
-var _atom = require('atom');
-
 var _AutocompleteHelpers;
 
 function _load_AutocompleteHelpers() {
   return _AutocompleteHelpers = _interopRequireDefault(require('./AutocompleteHelpers'));
+}
+
+var _CodeActions;
+
+function _load_CodeActions() {
+  return _CodeActions = _interopRequireDefault(require('./CodeActions'));
 }
 
 var _CodeFormatHelpers;
@@ -92,21 +94,19 @@ function _load_libclang() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-let busySignalService = null; /**
-                               * Copyright (c) 2015-present, Facebook, Inc.
-                               * All rights reserved.
-                               *
-                               * This source code is licensed under the license found in the LICENSE file in
-                               * the root directory of this source tree.
-                               *
-                               * 
-                               * @format
-                               */
-
-let subscriptions = null;
+let subscriptions = null; /**
+                           * Copyright (c) 2015-present, Facebook, Inc.
+                           * All rights reserved.
+                           *
+                           * This source code is licensed under the license found in the LICENSE file in
+                           * the root directory of this source tree.
+                           *
+                           * 
+                           * @format
+                           */
 
 function activate() {
-  subscriptions = new _atom.CompositeDisposable();
+  subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
   // Provide a 'Clean and rebuild' command to restart the Clang server for the current file
   // and reset all compilation flags. Useful when BUCK targets or headers change,
   // since those are heavily cached for performance. Also great for testing!
@@ -120,12 +120,29 @@ function activate() {
       return;
     }
     yield (0, (_libclang || _load_libclang()).resetForSource)(editor);
+    // Save the file to trigger compilation.
+    yield editor.save();
   })));
+  if ((_featureConfig || _load_featureConfig()).default.get('nuclide-cquery-lsp.use-cquery')) {
+    const deactivateSelf = () => {
+      if (atom.packages.isPackageActive((_constants || _load_constants()).PACKAGE_NAME)) {
+        atom.packages.deactivatePackage((_constants || _load_constants()).PACKAGE_NAME);
+      }
+    };
+    if (subscriptions != null) {
+      subscriptions.add(atom.packages.onDidActivatePackage(deactivateSelf));
+      deactivateSelf();
+    }
+  }
 }
 
 /** Provider for autocomplete service. */
 function createAutocompleteProvider() {
   return {
+    analytics: {
+      eventName: 'nuclide-clang',
+      shouldLogInsertedSuggestion: false
+    },
     selector: '.source.objc, .source.objcpp, .source.cpp, .source.c',
     inclusionPriority: 1,
     suggestionPriority: 5, // Higher than the snippets provider.
@@ -157,19 +174,6 @@ function provideDefinitions() {
   };
 }
 
-function consumeBusySignal(service) {
-  if (subscriptions != null) {
-    subscriptions.add(service);
-  }
-  busySignalService = service;
-  return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
-    if (subscriptions != null) {
-      subscriptions.remove(service);
-    }
-    busySignalService = null;
-  });
-}
-
 function provideCodeFormat() {
   return {
     grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
@@ -180,31 +184,13 @@ function provideCodeFormat() {
   };
 }
 
-const busySignalCache = new (_SharedObservableCache || _load_SharedObservableCache()).default(path => {
-  // Return an observable that starts the busy signal on subscription
-  // and disposes it upon unsubscription.
-  return _rxjsBundlesRxMinJs.Observable.create(() => {
-    if (busySignalService != null) {
-      return new (_UniversalDisposable || _load_UniversalDisposable()).default(busySignalService.reportBusy(`Clang: compiling \`${path}\``));
-    }
-  }).share();
-});
-
 function provideLinter() {
   return {
     grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
     scope: 'file',
     lintOnFly: false,
     name: 'Clang',
-    lint(editor) {
-      const getResult = () => (_ClangLinter || _load_ClangLinter()).default.lint(editor);
-      if (busySignalService != null) {
-        // Use the busy signal cache to dedupe busy signal messages.
-        // The shared subscription gets released when all the lints finish.
-        return busySignalCache.get(editor.getTitle()).race(_rxjsBundlesRxMinJs.Observable.defer(getResult)).toPromise();
-      }
-      return getResult();
-    }
+    lint: editor => (_ClangLinter || _load_ClangLinter()).default.lint(editor)
   };
 }
 
@@ -224,8 +210,8 @@ function provideRefactoring() {
   return {
     grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
     priority: 1,
-    refactoringsAtPoint(editor, point) {
-      return (_Refactoring || _load_Refactoring()).default.refactoringsAtPoint(editor, point);
+    refactorings(editor, range) {
+      return (_Refactoring || _load_Refactoring()).default.refactorings(editor, range);
     },
     refactor(request) {
       return (_Refactoring || _load_Refactoring()).default.refactor(request);
@@ -249,6 +235,16 @@ function provideRelatedFiles() {
 
 function consumeClangConfigurationProvider(provider) {
   return (0, (_libclang || _load_libclang()).registerClangProvider)(provider);
+}
+
+function provideCodeActions() {
+  return {
+    grammarScopes: Array.from((_constants || _load_constants()).GRAMMAR_SET),
+    priority: 1,
+    getCodeActions(editor, range, diagnostics) {
+      return (_CodeActions || _load_CodeActions()).default.getCodeActions(editor, range, diagnostics);
+    }
+  };
 }
 
 function deactivate() {

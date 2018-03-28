@@ -8,10 +8,10 @@ exports.WORKSPACE_VIEW_URI = undefined;
 var _immutable;
 
 function _load_immutable() {
-  return _immutable = _interopRequireDefault(require('immutable'));
+  return _immutable = _interopRequireWildcard(require('immutable'));
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _HomeFeatureComponent;
 
@@ -49,49 +49,55 @@ function _load_Checkbox() {
   return _Checkbox = require('nuclide-commons-ui/Checkbox');
 }
 
+var _nuclideAnalytics;
+
+function _load_nuclideAnalytics() {
+  return _nuclideAnalytics = require('../../nuclide-analytics');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/home';
+const WORKSPACE_VIEW_URI = exports.WORKSPACE_VIEW_URI = 'atom://nuclide/home'; /**
+                                                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                * All rights reserved.
+                                                                                *
+                                                                                * This source code is licensed under the license found in the LICENSE file in
+                                                                                * the root directory of this source tree.
+                                                                                *
+                                                                                * 
+                                                                                * @format
+                                                                                */
 
 const NUCLIDE_DOCS_URL = (0, (_createUtmUrl || _load_createUtmUrl()).default)('http://nuclide.io', 'welcome');
-const DEFAULT_WELCOME = _react.default.createElement(
+const DEFAULT_WELCOME = _react.createElement(
   'div',
   null,
-  _react.default.createElement(
+  _react.createElement(
     'p',
     null,
     'Thanks for trying Nuclide, Facebook\'s',
-    _react.default.createElement('br', null),
+    _react.createElement('br', null),
     'unified developer environment.'
   ),
-  _react.default.createElement(
+  _react.createElement(
     'ul',
     { className: 'text-left' },
-    _react.default.createElement(
+    _react.createElement(
       'li',
       null,
-      _react.default.createElement(
+      _react.createElement(
         'a',
         { href: NUCLIDE_DOCS_URL },
         'Get Started!'
       ),
       ' In-depth docs on our features.'
     ),
-    _react.default.createElement(
+    _react.createElement(
       'li',
       null,
-      _react.default.createElement(
+      _react.createElement(
         'a',
         { href: 'https://github.com/facebook/nuclide' },
         'GitHub'
@@ -99,16 +105,16 @@ const DEFAULT_WELCOME = _react.default.createElement(
       ' Pull requests, issues, and feedback.'
     )
   ),
-  _react.default.createElement(
+  _react.createElement(
     'p',
     null,
     'We hope you enjoy using Nuclide',
-    _react.default.createElement('br', null),
+    _react.createElement('br', null),
     'at least as much as we enjoy building it.'
   )
 );
 
-class HomePaneItem extends _react.default.Component {
+class HomePaneItem extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -119,7 +125,7 @@ class HomePaneItem extends _react.default.Component {
 
     this.state = {
       showOnStartup: Boolean((_featureConfig || _load_featureConfig()).default.get('nuclide-home.showHome')),
-      allHomeFragments: (_immutable || _load_immutable()).default.Set()
+      allHomeFragments: (_immutable || _load_immutable()).Set()
     };
   }
 
@@ -137,39 +143,39 @@ class HomePaneItem extends _react.default.Component {
     sortedHomeFragments.forEach(fragment => {
       const { welcome, feature } = fragment;
       if (welcome) {
-        welcomes.push(_react.default.createElement(
+        welcomes.push(_react.createElement(
           'div',
           { key: welcomes.length },
           welcome
         ));
       }
       if (feature) {
-        features.push(_react.default.createElement((_HomeFeatureComponent || _load_HomeFeatureComponent()).default, Object.assign({ key: features.length }, feature)));
+        features.push(_react.createElement((_HomeFeatureComponent || _load_HomeFeatureComponent()).default, Object.assign({ key: features.length }, feature)));
       }
     });
 
-    const containers = [_react.default.createElement(
+    const containers = [_react.createElement(
       'div',
       { key: 'welcome', className: 'nuclide-home-container' },
-      _react.default.createElement(
+      _react.createElement(
         'section',
         { className: 'text-center' },
-        _react.default.createElement((_NuclideLogo || _load_NuclideLogo()).default, { className: 'nuclide-home-logo' }),
-        _react.default.createElement(
+        _react.createElement((_NuclideLogo || _load_NuclideLogo()).default, { className: 'nuclide-home-logo' }),
+        _react.createElement(
           'h1',
           { className: 'nuclide-home-title' },
           'Welcome to Nuclide'
         )
       ),
-      _react.default.createElement(
+      _react.createElement(
         'section',
-        { className: 'text-center' },
+        { className: 'text-center', onClick: trackAnchorClicks },
         welcomes.length > 0 ? welcomes : DEFAULT_WELCOME
       ),
-      _react.default.createElement(
+      _react.createElement(
         'section',
         { className: 'text-center' },
-        _react.default.createElement((_Checkbox || _load_Checkbox()).Checkbox, {
+        _react.createElement((_Checkbox || _load_Checkbox()).Checkbox, {
           checked: this.state.showOnStartup,
           onChange: this._handleShowOnStartupChange,
           label: 'Show this screen on startup.'
@@ -178,7 +184,7 @@ class HomePaneItem extends _react.default.Component {
     )];
 
     if (features.length > 0) {
-      containers.push(_react.default.createElement(
+      containers.push(_react.createElement(
         'div',
         { key: 'features', className: 'nuclide-home-container' },
         features
@@ -187,7 +193,7 @@ class HomePaneItem extends _react.default.Component {
 
     return (
       // Re-use styles from the Atom welcome pane where possible.
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { className: 'nuclide-home pane-item padded nuclide-home-containers' },
         containers
@@ -222,4 +228,15 @@ class HomePaneItem extends _react.default.Component {
     }
   }
 }
+
 exports.default = HomePaneItem;
+function trackAnchorClicks(e) {
+  const { target } = e;
+  if (target.tagName !== 'A' || target.href == null) {
+    return;
+  }
+
+  // $FlowFixMe
+  const { href, innerText } = target;
+  (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('home-link-clicked', { href, text: innerText });
+}

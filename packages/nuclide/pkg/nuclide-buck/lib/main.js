@@ -12,7 +12,11 @@ function _load_registerGrammar() {
   return _registerGrammar = _interopRequireDefault(require('../../commons-atom/register-grammar'));
 }
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _buildFiles;
 
@@ -71,7 +75,7 @@ class Activation {
     this._initialState = null;
 
     this._taskRunner = new (_BuckTaskRunner || _load_BuckTaskRunner()).BuckTaskRunner(rawState);
-    this._disposables = new _atom.CompositeDisposable(atom.commands.add('atom-workspace', OPEN_NEAREST_BUILD_FILE_COMMAND, event => {
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(atom.commands.add('atom-workspace', OPEN_NEAREST_BUILD_FILE_COMMAND, event => {
       (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)(OPEN_NEAREST_BUILD_FILE_COMMAND);
       // Add feature logging.
       const target = event.target;
@@ -87,7 +91,15 @@ class Activation {
   }
 
   consumeTaskRunnerServiceApi(api) {
-    this._disposables.add(api.register(this._taskRunner));
+    this._printToConsole = message => api.printToConsole(message, this._taskRunner);
+    this._disposables.add(new (_UniversalDisposable || _load_UniversalDisposable()).default(api.register(this._taskRunner), () => this._printToConsole = null));
+  }
+
+  consumeBusySignal(service) {
+    this._busySignalService = service;
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
+      this._busySignalService = null;
+    });
   }
 
   provideObservableDiagnosticUpdates() {
@@ -112,12 +124,22 @@ class Activation {
     return this._taskRunner.getBuildSystem();
   }
 
+  provideBuckTaskRunnerService() {
+    return {
+      getBuildTarget: () => this._taskRunner.getBuildTarget(),
+      setBuildTarget: buildTarget => this._taskRunner.setBuildTarget(buildTarget),
+      onDidCompleteTask: callback => {
+        return new (_UniversalDisposable || _load_UniversalDisposable()).default(this._taskRunner.getCompletedTasks().subscribe(callback));
+      }
+    };
+  }
+
   providePlatformService() {
     return this._taskRunner.getPlatformService();
   }
 
   provideClangConfiguration() {
-    return (0, (_BuckClangProvider || _load_BuckClangProvider()).getClangProvider)(this._taskRunner);
+    return (0, (_BuckClangProvider || _load_BuckClangProvider()).getClangProvider)(this._taskRunner, () => this._busySignalService, () => this._printToConsole);
   }
 }
 

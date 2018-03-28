@@ -36,7 +36,7 @@ function _GEP(a, l, h, y, c) {
   return i;
 }
 function dispatchBsearchGE(a, y, c, l, h) {
-  if (typeof c === "function") {
+  if (typeof c === 'function') {
     return _GEP(a, l === void 0 ? 0 : l | 0, h === void 0 ? a.length - 1 : h | 0, y, c);
   } else {
     return _GEA(a, c === void 0 ? 0 : c | 0, l === void 0 ? a.length - 1 : l | 0, y);
@@ -72,7 +72,7 @@ function _GTP(a, l, h, y, c) {
   return i;
 }
 function dispatchBsearchGT(a, y, c, l, h) {
-  if (typeof c === "function") {
+  if (typeof c === 'function') {
     return _GTP(a, l === void 0 ? 0 : l | 0, h === void 0 ? a.length - 1 : h | 0, y, c);
   } else {
     return _GTA(a, c === void 0 ? 0 : c | 0, l === void 0 ? a.length - 1 : l | 0, y);
@@ -108,7 +108,7 @@ function _LTP(a, l, h, y, c) {
   return i;
 }
 function dispatchBsearchLT(a, y, c, l, h) {
-  if (typeof c === "function") {
+  if (typeof c === 'function') {
     return _LTP(a, l === void 0 ? 0 : l | 0, h === void 0 ? a.length - 1 : h | 0, y, c);
   } else {
     return _LTA(a, c === void 0 ? 0 : c | 0, l === void 0 ? a.length - 1 : l | 0, y);
@@ -144,7 +144,7 @@ function _LEP(a, l, h, y, c) {
   return i;
 }
 function dispatchBsearchLE(a, y, c, l, h) {
-  if (typeof c === "function") {
+  if (typeof c === 'function') {
     return _LEP(a, l === void 0 ? 0 : l | 0, h === void 0 ? a.length - 1 : h | 0, y, c);
   } else {
     return _LEA(a, c === void 0 ? 0 : c | 0, l === void 0 ? a.length - 1 : l | 0, y);
@@ -183,7 +183,7 @@ function _EQP(a, l, h, y, c) {
   return -1;
 }
 function dispatchBsearchEQ(a, y, c, l, h) {
-  if (typeof c === "function") {
+  if (typeof c === 'function') {
     return _EQP(a, l === void 0 ? 0 : l | 0, h === void 0 ? a.length - 1 : h | 0, y, c);
   } else {
     return _EQA(a, c === void 0 ? 0 : c | 0, l === void 0 ? a.length - 1 : l | 0, y);

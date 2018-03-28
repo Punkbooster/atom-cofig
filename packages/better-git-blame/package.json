@@ -1,0 +1,109 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "/tmp/d-118019-18356-orm188.980zqfflxr/package.tgz",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "/tmp/d-118019-18356-orm188.980zqfflxr/package.tgz",
+        "spec": "/tmp/d-118019-18356-orm188.980zqfflxr/package.tgz",
+        "type": "local"
+      },
+      "/tmp/apm-install-dir-118019-18356-1euciws.kopu6av2t9"
+    ]
+  ],
+  "_from": "../d-118019-18356-orm188.980zqfflxr/package.tgz",
+  "_id": "better-git-blame@0.3.2",
+  "_inCache": true,
+  "_location": "/better-git-blame",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "/tmp/d-118019-18356-orm188.980zqfflxr/package.tgz",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "/tmp/d-118019-18356-orm188.980zqfflxr/package.tgz",
+    "spec": "/tmp/d-118019-18356-orm188.980zqfflxr/package.tgz",
+    "type": "local"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "file:../d-118019-18356-orm188.980zqfflxr/package.tgz",
+  "_shasum": "26b79f64c39a262fdafe977141a13d3c10be5646",
+  "_shrinkwrap": null,
+  "_spec": "/tmp/d-118019-18356-orm188.980zqfflxr/package.tgz",
+  "_where": "/tmp/apm-install-dir-118019-18356-1euciws.kopu6av2t9",
+  "bugs": {
+    "url": "https://github.com/Stepsize/atom-better-git-blame/issues"
+  },
+  "dependencies": {},
+  "description": "Git blame gutter with pull requests, related issues, and age color-coding of code.",
+  "devDependencies": {
+    "@types/atom": "^0.0.39",
+    "@types/lodash": "^4.14.74",
+    "@types/lowdb": "^0.15.0",
+    "@types/react": "^16.0.5",
+    "@types/react-dom": "^15.5.4",
+    "git-url-parse": "^7.0.0",
+    "install": "^0.10.1",
+    "lodash": "^4.17.4",
+    "lowdb": "^1.0.0",
+    "moment": "^2.18.1",
+    "node-color-gradient": "github:Stepsize/node-color-gradient",
+    "preact": "^8.2.5",
+    "preact-compat": "^3.17.0",
+    "prettier": "^1.6.1",
+    "rollup": "^0.50.0",
+    "rollup-plugin-commonjs": "^8.2.1",
+    "rollup-plugin-json": "^2.3.0",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "rollup-plugin-re": "^1.0.6",
+    "rollup-plugin-replace": "^2.0.0",
+    "rollup-plugin-typescript": "^0.8.1",
+    "ts-loader": "^2.3.4",
+    "typescript": "^2.5.2",
+    "uuid-v4": "^0.1.0",
+    "webpack": "^3.5.5"
+  },
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "homepage": "https://github.com/Stepsize/atom-better-git-blame#readme",
+  "keywords": [
+    "git",
+    "blame",
+    "pull-request",
+    "github",
+    "jira",
+    "stepsize",
+    "layer"
+  ],
+  "license": "MIT",
+  "main": "dist/bundle.js",
+  "name": "better-git-blame",
+  "optionalDependencies": {},
+  "readme": "[![Downloads](https://img.shields.io/apm/dm/better-git-blame.svg)](https://atom.io/packages/better-git-blame) [![Version](https://img.shields.io/apm/v/better-git-blame.svg)](https://atom.io/packages/better-git-blame) [![bitHound Overall Score](https://www.bithound.io/github/Stepsize/atom-better-git-blame/badges/score.svg)](https://www.bithound.io/github/Stepsize/atom-better-git-blame) [![bitHound Dependencies](https://img.shields.io/bithound/dependencies/github/Stepsize/atom-better-git-blame.svg)](https://www.bithound.io/github/Stepsize/atom-better-git-blame/master/dependencies/npm) [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier) [![License](https://img.shields.io/apm/l/better-git-blame.svg)](https://github.com/Stepsize/atom-better-git-blame/blob/master/LICENSE.md)\n\n# Better Git Blame Atom package <img src=\"https://user-images.githubusercontent.com/13640069/31381614-f76a2990-adac-11e7-99d1-c3e53c4f5802.png\" alt=\"better git blame logo\" height=\"48px\" align=\"right\" />\n\n**A better way to view git blame info in Atom.**\n\n(Doubles up as the Atom integration for the [Layer app](http://bit.ly/1tvB1HC).)\n\n- [What makes it better?](#what-makes-it-better)\n- [How do I use it?](#how-do-i-use-it)\n- [How do I get setup?](#how-do-i-get-setup)\n- [FAQ](#faq)\n- [Contributing](#contributing)\n- [License](#license)\n- [What is Layer?](#what-is-layer)\n- [What is Stepsize?](#what-is-stepsize)\n- [Security and privacy](#security-and-privacy)\n\n## What makes it better?\n\nTL;DR: it does more than just display `git blame` annotations in the gutter – it pulls in info about pull requests & related issues, and helps you visualise the blame info.\n\n**A rich popover displays summary info about the commit, its corresponding pull request, any related issues, and visualises the commit's age.**\n\n![Better Git Blame popover](https://i.imgur.com/Un1v31P.png)\n\n**Line highlighting makes it clear which other lines were introduced by the blame commit and its corresponding pull request.**\n\n![Line highlighting](https://i.imgur.com/PV8YfdR.png)\n\nOh and it's also fast and nicely designed.\n\n## How do I use it?\n\nUse `ctrl-b`  to toggle the blame gutter.\n\nAlternatively, right click the file you want to blame and select `Toggle Better Git Blame`, or search for this command in the [command palette](http://flight-manual.atom.io/getting-started/sections/atom-basics/#command-palette) (`cmd-shift-p`).\n\nHover over the blame text to display the popover & line highlighting.\n\n## How do I get setup?\n\n#### Install the Atom package\n\nRun `apm install better-git-blame` and restart Atom. You can also install it from Atom's Settings pane.\n\nThat's all you need to get going, but if you want to see info about pull requests and issues, you'll need to install one of our integrations.\n\n#### Setup the GitHub integration\n\nInstall the [Layer GitHub app](http://bit.ly/2hzJJkj) to view pull requests and issues in the blame popover. Wondering about permissions? See [here](#permissions).\n\n#### Setup the Jira integration\n\nInstall our Jira integration to view Jira issues in the blame popover. (This currently requires the GitHub integration to work.)\n\nGo the `Add-ons` page of your Jira instance (see screenshot below) and search for `Layer connector for Jira`.\n\n![jira-addons-page](https://i.imgur.com/aBeE2Pl.png)\n\n## FAQ\n\n**Is this free?**\n\nYep.\n\n**Do you integrate with other code hosting tools?**\n\nCurrently we only support GitHub, but we plan to support GitLab and BitBucket in the near future. Let us know that you're interested in another integration by tweeting at us [@StepsizeHQ](https://twitter.com/stepsizehq).\n\n**Do you integrate with other project management tools?**\n\nCurrently we only support GitHub and Jira, but we plan to support Trello and Pivotal Tracker in the near future. Let us know that you're interested in another integration by tweeting at us [@StepsizeHQ](https://twitter.com/stepsizehq).\n\n**Can I use this plugin if I don't use pull requests or issues?**\n\nSure, everything will still work. In that case you don't need to setup any integrations and can use the plugin out of the box.\n\n**Can I use this plugin without the integrations?**\n\nSure, everything will still work but you'll only see information about commits.\n\n**Is this available for other editors?**\n\nNot yet, but we intend to port it to other editors. Don't hesitate to get in touch ([@StepsizeHQ](https://twitter.com/stepsizehq) or hello@stepsize.com) if you'd like to develop a version for your favourite editor so we can give you an overview of what this plugin does under the hood.\n\n**Can I use this plugin with the Layer app?**\n\nAbsolutely, this plugin talks to the app so you can search over selected code.\n\n**Do I have to use the Layer app with this plugin?**\n\nNope, you can use this plugin standalone and can turn off the UDP connection used with the Layer app (you can do this from the plugin's settings).\n\n<a name=\"permissions\"></a>\n**Is my code sent anywhere?**\n\n*GitHub integration*\n\nYour code is not sent anywhere, but we need read access to code so we can map commits to pull requests (this is just how permissions work for GitHub apps unfortunately).\n\n*UDP messaging to Layer*\n\nTo work with the Layer app, this plugin sends UDP messages to the app so it can perform searches for the code you selected. These UDP messages only contain file paths and selected line numbers, not code.\n\n**Does the plugin do any dodgy stuff I should know about?**\n\nNo it doesn't, although you may find the fact that we collect usage analytics dodgy.\n\nTo be completely transparent, we offer this plugin for free in the hope that it will entice you to try out other Stepsize products. We're a business, after all, and developing this and hosting the backend for it costs us money, so we'd like to measure its worth.\n\nOur analytics are completely anonymous, do not track any sensitive or personally identifiable data, and will only be used to improve Stepsize products.\n\nWe hope you understand, but if you don't you can turn off absolutely all the analytics and use the plugin under the radar. You can also poke around the code to see for yourself what is tracked.\n\n## Contributing\n\nIf you'd like to contribute we'd love to hear from you - just tweet at us [@StepsizeHQ](https://twitter.com/stepsizehq) or email us at hello@stepsize.com. Alternatively you can just fork the plugin and submit a PR.\n\n## License\n\nAll the software in this repository is released under the MIT License. See [LICENSE.md](https://github.com/stepsize/layer-atom-plugin/blob/master/LICENSE.md) for details.\n\n## What is Layer?\n\nLayer is a desktop app we're working on, currently in private beta. It surfaces all the relevant commits, pull requests, and issues for any piece of code you select in your editor. This allows you to quickly dig up the history of any piece of code and understand its origin and purpose.\n\nYou can find a bit more about it at [stepsize.com](http://bit.ly/1tvB1HC).\n\n## What is Stepsize?\n\n[Stepsize](http://bit.ly/1tvB1HC) is a small startup based in London. We build dev tools to help engineers in medium to large teams be well-informed and productive.\n\nWe do this by integrating with all the tools you use, structuring the information found inside them, and making it easily accessible and searchable.\n\nCheck us out [here](http://bit.ly/1tvB1HC) or tweet at us [@StepsizeHQ](https://twitter.com/stepsizehq) 🙏\n\n## Security and privacy\n\nIf you set up the GitHub and/or Jira integrations, you might be interested in our [security statement](http://bit.ly/2gvkQGO) & [privacy policy](http://bit.ly/2gvkSyq).\n\nYou can safely ignore them if you don't use the integrations.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Stepsize/atom-better-git-blame.git"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "tsc --watch",
+    "pretty": "prettier \"lib/**/*.ts\" --write"
+  },
+  "version": "0.3.2",
+  "_atomModuleCache": {
+    "version": 1,
+    "dependencies": [],
+    "extensions": {
+      ".json": [
+        "package.json"
+      ]
+    },
+    "folders": []
+  }
+}

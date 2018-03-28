@@ -36,17 +36,12 @@ function SortIndicator(_ref) {
 
   return _react2.default.createElement(
     'svg',
-    {
-      className: classNames,
-      width: 18,
-      height: 18,
-      viewBox: '0 0 24 24'
-    },
+    { className: classNames, width: 18, height: 18, viewBox: '0 0 24 24' },
     sortDirection === _SortDirection2.default.ASC ? _react2.default.createElement('path', { d: 'M7 14l5-5 5 5z' }) : _react2.default.createElement('path', { d: 'M7 10l5 5 5-5z' }),
     _react2.default.createElement('path', { d: 'M0 0h24v24H0z', fill: 'none' })
   );
 }
 
-process.env.NODE_ENV !== "production" ? SortIndicator.propTypes = {
+SortIndicator.propTypes = process.env.NODE_ENV !== "production" ? {
   sortDirection: _propTypes2.default.oneOf([_SortDirection2.default.ASC, _SortDirection2.default.DESC])
-} : void 0;
+} : {};

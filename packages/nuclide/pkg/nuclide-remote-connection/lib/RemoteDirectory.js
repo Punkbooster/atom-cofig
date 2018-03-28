@@ -7,6 +7,12 @@ exports.RemoteDirectory = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
 var _nuclideUri;
 
 function _load_nuclideUri() {
@@ -68,6 +74,7 @@ class RemoteDirectory {
     this._localPath = directoryPath;
     // A workaround before Atom 2.0: see ::getHgRepoInfo of main.js.
     this._hgRepositoryDescription = options ? options.hgRepositoryDescription : null;
+    this._isArchive = options != null && Boolean(options.isArchive);
     this._deleted = false;
   }
 
@@ -86,6 +93,14 @@ class RemoteDirectory {
     return this._trackUnsubscription(this._emitter.on('did-delete', callback));
   }
 
+  /**
+   * We may want to provide an implementation for this at some point.
+   * However, for the time being, we don't get any benefits from doing so.
+   */
+  onDidChangeFiles(callback) {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default();
+  }
+
   _willAddSubscription() {
     this._subscriptionCount++;
     try {
@@ -99,7 +114,7 @@ class RemoteDirectory {
     if (this._watchSubscription) {
       return;
     }
-    const watchStream = this._server.getDirectoryWatch(this._uri);
+    const watchStream = (_nuclideUri || _load_nuclideUri()).default.isInArchive(this._uri) ? this._server.getFileWatch((_nuclideUri || _load_nuclideUri()).default.ancestorOutsideArchive(this._uri)) : this._server.getDirectoryWatch(this._uri);
     this._watchSubscription = watchStream.subscribe(watchUpdate => {
       logger.debug('watchDirectory update:', watchUpdate);
       switch (watchUpdate.type) {
@@ -131,7 +146,7 @@ class RemoteDirectory {
   }
 
   _trackUnsubscription(subscription) {
-    return new _atom.Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       subscription.dispose();
       this._didRemoveSubscription();
     });
@@ -153,6 +168,10 @@ class RemoteDirectory {
       }
       this._watchSubscription = null;
     }
+  }
+
+  _joinLocalPath(name) {
+    return this._isArchive ? (_nuclideUri || _load_nuclideUri()).default.archiveJoin(this._localPath, name) : (_nuclideUri || _load_nuclideUri()).default.join(this._localPath, name);
   }
 
   isFile() {
@@ -205,9 +224,11 @@ class RemoteDirectory {
     if (!uri) {
       return uri;
     }
-    // Note: host of uri must match this._host.
-    const subpath = (_nuclideUri || _load_nuclideUri()).default.parse(uri).path;
-    return (_nuclideUri || _load_nuclideUri()).default.relative(this._localPath, subpath);
+    const parsedUrl = (_nuclideUri || _load_nuclideUri()).default.parse(uri);
+    if (parsedUrl.hostname !== this._host) {
+      return uri;
+    }
+    return (_nuclideUri || _load_nuclideUri()).default.relative(this._localPath, parsedUrl.path);
   }
 
   getParent() {
@@ -220,12 +241,12 @@ class RemoteDirectory {
   }
 
   getFile(filename) {
-    const uri = (_nuclideUri || _load_nuclideUri()).default.createRemoteUri(this._host, (_nuclideUri || _load_nuclideUri()).default.join(this._localPath, filename));
+    const uri = (_nuclideUri || _load_nuclideUri()).default.createRemoteUri(this._host, this._joinLocalPath(filename));
     return this._server.createFile(uri);
   }
 
   getSubdirectory(dir) {
-    const uri = (_nuclideUri || _load_nuclideUri()).default.createRemoteUri(this._host, (_nuclideUri || _load_nuclideUri()).default.join(this._localPath, dir));
+    const uri = (_nuclideUri || _load_nuclideUri()).default.createRemoteUri(this._host, this._joinLocalPath(dir));
     return this._server.createDirectory(uri, this._hgRepositoryDescription);
   }
 
@@ -283,7 +304,7 @@ class RemoteDirectory {
         return a[0].toLowerCase().localeCompare(b[0].toLowerCase());
       }).forEach(function (entry) {
         const [name, isFile, symlink] = entry;
-        const uri = (_nuclideUri || _load_nuclideUri()).default.createRemoteUri(_this3._host, (_nuclideUri || _load_nuclideUri()).default.join(_this3._localPath, name));
+        const uri = (_nuclideUri || _load_nuclideUri()).default.createRemoteUri(_this3._host, _this3._joinLocalPath(name));
         if (isFile) {
           files.push(_this3._server.createFile(uri, symlink));
         } else {

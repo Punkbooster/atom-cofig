@@ -1,14 +1,18 @@
 'use strict';
 
-var _atom = require('atom');
-
 var _createPackage;
 
 function _load_createPackage() {
   return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
 
@@ -45,7 +49,7 @@ function _load_Reducers() {
 var _reduxObservable;
 
 function _load_reduxObservable() {
-  return _reduxObservable = require('../../commons-node/redux-observable');
+  return _reduxObservable = require('nuclide-commons/redux-observable');
 }
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
@@ -86,14 +90,15 @@ class Activation {
       headers: {
         cookie: ''
       },
-      body: null
+      body: null,
+      parameters: [{ key: '', value: '' }]
     };
     const epics = Object.keys(_Epics || _load_Epics()).map(k => (_Epics || _load_Epics())[k]).filter(epic => typeof epic === 'function');
     const rootEpic = (0, (_reduxObservable || _load_reduxObservable()).combineEpics)(...epics);
     this._store = (0, (_redux || _load_redux()).createStore)((_Reducers || _load_Reducers()).app, initialState, (0, (_redux || _load_redux()).applyMiddleware)((0, (_reduxObservable || _load_reduxObservable()).createEpicMiddleware)(rootEpic)));
     this._actionCreators = (0, (_redux || _load_redux()).bindActionCreators)(_Actions || _load_Actions(), this._store.dispatch);
     this._requestEditDialog = null;
-    this._disposables = new _atom.CompositeDisposable(atom.commands.add('atom-workspace', {
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(atom.commands.add('atom-workspace', {
       'nuclide-http-request-sender:toggle-http-request-edit-dialog': () => {
         (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nuclide-http-request-sender:toggle-http-request-edit-dialog');
         this._toggleRequestEditDialog();
@@ -126,8 +131,8 @@ class Activation {
       item: container,
       visible: false
     });
-    _reactDom.default.render(_react.default.createElement(BoundEditDialog, { actionCreators: this._actionCreators }), container);
-    this._disposables.add(new _atom.Disposable(() => {
+    _reactDom.default.render(_react.createElement(BoundEditDialog, { actionCreators: this._actionCreators }), container);
+    this._disposables.add(new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       requestEditDialog.destroy();
       this._requestEditDialog = null;
       _reactDom.default.unmountComponentAtNode(container);

@@ -22,8 +22,6 @@ function _load_ContextViewManager() {
   return _ContextViewManager = require('./ContextViewManager');
 }
 
-var _atom = require('atom');
-
 var _destroyItemWhere;
 
 function _load_destroyItemWhere() {
@@ -32,21 +30,22 @@ function _load_destroyItemWhere() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-let manager = null; /**
-                     * Copyright (c) 2015-present, Facebook, Inc.
-                     * All rights reserved.
-                     *
-                     * This source code is licensed under the license found in the LICENSE file in
-                     * the root directory of this source tree.
-                     *
-                     * 
-                     * @format
-                     */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
+let manager = null;
 let disposables;
 
 function activate() {
-  disposables = new _atom.CompositeDisposable(_registerCommandAndOpener());
+  disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(_registerCommandAndOpener());
 }
 
 function deactivate() {
@@ -79,7 +78,7 @@ const Service = {
 
     const contextViewManager = getContextViewManager();
     contextViewManager.registerProvider(provider);
-    return new _atom.Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       contextViewManager.unregisterProvider(provider.id);
     });
   }
@@ -100,8 +99,8 @@ function getHomeFragments() {
       icon: 'info',
       description: 'Easily navigate between symbols and their definitions in your code',
       command: () => {
-        // eslint-disable-next-line nuclide-internal/atom-apis
-        atom.workspace.open((_ContextViewManager || _load_ContextViewManager()).WORKSPACE_VIEW_URI);
+        // eslint-disable-next-line rulesdir/atom-apis
+        atom.workspace.open((_ContextViewManager || _load_ContextViewManager()).WORKSPACE_VIEW_URI, { searchAllPanes: true });
       }
     },
     priority: 2

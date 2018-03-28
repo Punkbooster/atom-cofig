@@ -4,17 +4,27 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
 var _nuclideRemoteConnection;
 
 function _load_nuclideRemoteConnection() {
   return _nuclideRemoteConnection = require('../../nuclide-remote-connection');
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _NuclideSocket;
+
+function _load_NuclideSocket() {
+  return _NuclideSocket = require('../../nuclide-server/lib/NuclideSocket');
+}
+
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
-
-var _atom = require('atom');
 
 var _StatusBarTile;
 
@@ -40,13 +50,26 @@ function _load_ConnectionState() {
   return _ConnectionState = _interopRequireDefault(require('./ConnectionState'));
 }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class RemoteProjectsController {
 
   constructor() {
     this._statusBarTile = null;
-    this._disposables = new _atom.CompositeDisposable();
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
 
     this._statusSubscription = null;
     this._disposables.add(atom.workspace.onDidChangeActivePaneItem(this._disposeSubscription.bind(this)), atom.workspace.onDidStopChangingActivePaneItem(this._updateConnectionStatus.bind(this)));
@@ -71,6 +94,7 @@ class RemoteProjectsController {
     // Flow does not understand that isTextEditor refines the type to atom$TextEditor
     const textEditor = paneItem;
     const fileUri = textEditor.getPath();
+    // flowlint-next-line sketchy-null-string:off
     if (!fileUri) {
       return;
     }
@@ -89,11 +113,14 @@ class RemoteProjectsController {
       return;
     }
 
-    const socket = connection.getSocket();
-    updateStatus(socket.isConnected());
+    const socket = connection.getClient().getTransport();
+    updateStatus(!socket.isClosed());
 
-    this._statusSubscription = socket.onStatus(updateStatus);
-    this._disposables.add(this._statusSubscription);
+    // TODO: implement for big-dig
+    if (socket instanceof (_NuclideSocket || _load_NuclideSocket()).NuclideSocket) {
+      this._statusSubscription = socket.onStatus(updateStatus);
+      this._disposables.add(this._statusSubscription);
+    }
   }
 
   consumeStatusBar(statusBar) {
@@ -113,7 +140,7 @@ class RemoteProjectsController {
       priority: -99
     });
 
-    this._disposables.add(new _atom.Disposable(() => {
+    this._disposables.add(new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       if (!this._statusBarDiv) {
         throw new Error('Invariant violation: "this._statusBarDiv"');
       }
@@ -139,7 +166,7 @@ class RemoteProjectsController {
       return;
     }
 
-    const component = _reactDom.default.render(_react.default.createElement((_StatusBarTile || _load_StatusBarTile()).default, { connectionState: connectionState, fileUri: fileUri }), this._statusBarDiv);
+    const component = _reactDom.default.render(_react.createElement((_StatusBarTile || _load_StatusBarTile()).default, { connectionState: connectionState, fileUri: fileUri }), this._statusBarDiv);
 
     if (!(component instanceof (_StatusBarTile || _load_StatusBarTile()).default)) {
       throw new Error('Invariant violation: "component instanceof StatusBarTile"');
@@ -152,13 +179,4 @@ class RemoteProjectsController {
     this._disposables.dispose();
   }
 }
-exports.default = RemoteProjectsController; /**
-                                             * Copyright (c) 2015-present, Facebook, Inc.
-                                             * All rights reserved.
-                                             *
-                                             * This source code is licensed under the license found in the LICENSE file in
-                                             * the root directory of this source tree.
-                                             *
-                                             * 
-                                             * @format
-                                             */
+exports.default = RemoteProjectsController;

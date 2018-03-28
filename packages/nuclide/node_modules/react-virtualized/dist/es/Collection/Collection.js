@@ -15,6 +15,10 @@ import getUpdatedOffsetForIndex from '../utils/getUpdatedOffsetForIndex';
  * Renders scattered or non-linear data.
  * Unlike Grid, which renders checkerboard data, Collection can render arbitrarily positioned- even overlapping- data.
  */
+var babelPluginFlowReactPropTypes_proptype_SizeInfo = require('./types').babelPluginFlowReactPropTypes_proptype_SizeInfo || require('prop-types').any;
+
+var babelPluginFlowReactPropTypes_proptype_ScrollPosition = require('./types').babelPluginFlowReactPropTypes_proptype_ScrollPosition || require('prop-types').any;
+
 var Collection = function (_PureComponent) {
   _inherits(Collection, _PureComponent);
 
@@ -205,7 +209,7 @@ Collection.defaultProps = {
   cellGroupRenderer: defaultCellGroupRenderer
 };
 export default Collection;
-process.env.NODE_ENV !== "production" ? Collection.propTypes = {
+Collection.propTypes = process.env.NODE_ENV !== "production" ? {
   'aria-label': PropTypes.string,
 
   /**
@@ -239,7 +243,7 @@ process.env.NODE_ENV !== "production" ? Collection.propTypes = {
    * Optionally override the size of the sections a Collection's cells are split into.
    */
   sectionSize: PropTypes.number
-} : void 0;
+} : {};
 
 
 function defaultCellGroupRenderer(_ref4) {

@@ -5,10 +5,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ObservableManager = undefined;
 
-var _nuclideDebuggerBase;
+var _AtomServiceContainer;
 
-function _load_nuclideDebuggerBase() {
-  return _nuclideDebuggerBase = require('../../nuclide-debugger-base');
+function _load_AtomServiceContainer() {
+  return _AtomServiceContainer = require('../../nuclide-debugger/lib/AtomServiceContainer');
 }
 
 var _utils;
@@ -50,6 +50,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
+// eslint-disable-next-line rulesdir/no-cross-atom-imports
 class ObservableManager {
 
   constructor(notifications, outputWindowMessages) {
@@ -66,7 +67,7 @@ class ObservableManager {
   }
 
   _registerConsoleLogging(outputMessages) {
-    const outputDisposable = (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).registerConsoleLogging)('PHP Debugger', outputMessages);
+    const outputDisposable = (0, (_AtomServiceContainer || _load_AtomServiceContainer()).registerConsoleLogging)('PHP Debugger', outputMessages);
     if (outputDisposable != null) {
       this._disposables.add(outputDisposable);
     }

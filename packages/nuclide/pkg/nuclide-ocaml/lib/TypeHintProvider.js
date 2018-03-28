@@ -14,6 +14,12 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
+var _nuclideLanguageServiceRpc;
+
+function _load_nuclideLanguageServiceRpc() {
+  return _nuclideLanguageServiceRpc = require('../../nuclide-language-service-rpc');
+}
+
 var _nuclideRemoteConnection;
 
 function _load_nuclideRemoteConnection() {
@@ -23,16 +29,18 @@ function _load_nuclideRemoteConnection() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Ignore typehints that span too many lines. These tend to be super spammy.
-const MAX_LINES = 10; /**
-                       * Copyright (c) 2015-present, Facebook, Inc.
-                       * All rights reserved.
-                       *
-                       * This source code is licensed under the license found in the LICENSE file in
-                       * the root directory of this source tree.
-                       *
-                       * 
-                       * @format
-                       */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const MAX_LINES = 10;
 
 class TypeHintProvider {
   typeHint(editor, position) {
@@ -54,10 +62,7 @@ class TypeHintProvider {
       if (type.end.line - type.start.line > MAX_LINES) {
         return null;
       }
-      return {
-        hint: type.type,
-        range: new _atom.Range(new _atom.Point(type.start.line - 1, type.start.col), new _atom.Point(type.end.line - 1, type.end.col))
-      };
+      return (0, (_nuclideLanguageServiceRpc || _load_nuclideLanguageServiceRpc()).typeHintFromSnippet)(type.type, new _atom.Range(new _atom.Point(type.start.line - 1, type.start.col), new _atom.Point(type.end.line - 1, type.end.col)));
     }));
   }
 }

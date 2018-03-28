@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.asyncRequest = asyncRequest;
+exports.protocolLogger = undefined;
 exports.sendTextResponse = sendTextResponse;
 exports.sendJsonResponse = sendJsonResponse;
 exports.parseRequestBody = parseRequestBody;
@@ -13,66 +13,26 @@ exports.deserializeArgs = deserializeArgs;
 
 var _url = _interopRequireDefault(require('url'));
 
-var _request;
+var _memoryLogger;
 
-function _load_request() {
-  return _request = _interopRequireDefault(require('request'));
+function _load_memoryLogger() {
+  return _memoryLogger = require('../../commons-node/memoryLogger');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
+const MAX_REQUEST_LENGTH = 1e6; /**
+                                 * Copyright (c) 2015-present, Facebook, Inc.
+                                 * All rights reserved.
+                                 *
+                                 * This source code is licensed under the license found in the LICENSE file in
+                                 * the root directory of this source tree.
+                                 *
+                                 * 
+                                 * @format
+                                 */
 
-const MAX_REQUEST_LENGTH = 1e6;
-
-/**
- * Promisified version of the request function:
- * https://www.npmjs.com/package/request#requestoptions-callback
- * Defaults to using the node's querystring module to encode the url query parameters.
- * If you want to use the npm's qs module to encode the query parameters, explicitly provide
- * the option:
- * {useQuerystring: false}
- */
-function asyncRequest(options) {
-  return new Promise((resolve, reject) => {
-    if (options.useQuerystring === undefined) {
-      options.useQuerystring = true;
-    }
-    // TODO(t8118670): This can cause an uncaught exception.
-    // Likely requires a fix to 'request'.
-    (0, (_request || _load_request()).default)(options, (error, response, body) => {
-      if (error) {
-        reject(error);
-      } else if (response.statusCode < 200 || response.statusCode >= 300) {
-        let errorJson = body;
-        if (typeof body !== 'object') {
-          try {
-            errorJson = JSON.parse(body);
-          } catch (e) {
-            // 404 responses aren't currently JSON.
-            errorJson = { message: body };
-          }
-        }
-        // Cast to Object for use of code field below...
-        const err = new Error(errorJson.message);
-        // Success http status codes range from 200 to 299.
-        err.code = errorJson.code || response.statusCode;
-        reject(err);
-      } else {
-        resolve({ body, response });
-      }
-    });
-  });
-}
+const protocolLogger = exports.protocolLogger = new (_memoryLogger || _load_memoryLogger()).MemoryLogger(null);
 
 /**
  * Write a text or convert to text response with an optional status code.
@@ -94,8 +54,8 @@ function sendJsonResponse(response, json, statusCode) {
 }
 
 /**
-  * Parses the request body in an anyc/promise way
-  */
+ * Parses the request body in an anyc/promise way
+ */
 function parseRequestBody(httpRequest, isJson) {
   return new Promise((resolve, reject) => {
     let body = '';

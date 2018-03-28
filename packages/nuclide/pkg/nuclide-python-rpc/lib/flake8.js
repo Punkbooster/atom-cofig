@@ -25,7 +25,7 @@ function classifyCode(code) {
    */
 
 function parseFlake8Output(src, output) {
-  const regex = /(\d+):(\d+):\s([A-Z]\d{2,3})\s+(.*)/g;
+  const regex = /(\d+):(\d+):\s([A-Z]{1,2}\d{2,3})\s+(.*)/g;
   const results = [];
 
   for (;;) {

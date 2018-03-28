@@ -49,17 +49,19 @@ class RemoteProjectsService {
 
   createRemoteConnection(remoteProjectConfig) {
     return (0, _asyncToGenerator.default)(function* () {
-      const { host, cwd, displayTitle } = remoteProjectConfig;
-      let connection = (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).RemoteConnection.getByHostnameAndPath(host, cwd);
+      const {
+        host,
+        cwd,
+        displayTitle,
+        promptReconnectOnFailure = true
+      } = remoteProjectConfig;
+      const connection = yield (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).RemoteConnection.reconnect(host, cwd, displayTitle, promptReconnectOnFailure);
       if (connection != null) {
         return connection;
       }
-
-      connection = yield (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).RemoteConnection.createConnectionBySavedConfig(host, cwd, displayTitle);
-      if (connection != null) {
-        return connection;
+      if (promptReconnectOnFailure === false) {
+        return null;
       }
-
       // If connection fails using saved config, open connect dialog.
       return (0, (_openConnection || _load_openConnection()).openConnectionDialog)({
         initialServer: host,

@@ -1,11 +1,11 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = createWrapper;
 
-var _binarySearchBounds = require("./binarySearchBounds");
+var _binarySearchBounds = require('./binarySearchBounds');
 
 var _binarySearchBounds2 = _interopRequireDefault(_binarySearchBounds);
 
@@ -368,7 +368,7 @@ tproto.queryInterval = function (lo, hi, cb) {
   }
 };
 
-Object.defineProperty(tproto, "count", {
+Object.defineProperty(tproto, 'count', {
   get: function get() {
     if (this.root) {
       return this.root.count;
@@ -377,7 +377,7 @@ Object.defineProperty(tproto, "count", {
   }
 });
 
-Object.defineProperty(tproto, "intervals", {
+Object.defineProperty(tproto, 'intervals', {
   get: function get() {
     if (this.root) {
       return this.root.intervals([]);

@@ -3,7 +3,6 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.setProjectRootEpic = setProjectRootEpic;
 exports.setProjectRootForNewTaskRunnerEpic = setProjectRootForNewTaskRunnerEpic;
 exports.setConsolesForTaskRunnersEpic = setConsolesForTaskRunnersEpic;
 exports.addConsoleForTaskRunnerEpic = addConsoleForTaskRunnerEpic;
@@ -21,10 +20,10 @@ exports.printTaskCancelledEpic = printTaskCancelledEpic;
 exports.printTaskSucceededEpic = printTaskSucceededEpic;
 exports.appendMessageToConsoleEpic = appendMessageToConsoleEpic;
 
-var _nuclideRemoteConnection;
+var _process;
 
-function _load_nuclideRemoteConnection() {
-  return _nuclideRemoteConnection = require('../../../nuclide-remote-connection');
+function _load_process() {
+  return _process = require('nuclide-commons/process');
 }
 
 var _tasks;
@@ -51,6 +50,12 @@ function _load_Actions() {
   return _Actions = _interopRequireWildcard(require('./Actions'));
 }
 
+var _immutable;
+
+function _load_immutable() {
+  return _immutable = _interopRequireWildcard(require('immutable'));
+}
+
 var _nullthrows;
 
 function _load_nullthrows() {
@@ -63,21 +68,6 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
-
-function setProjectRootEpic(actions, store) {
-  return actions.ofType((_Actions || _load_Actions()).DID_ACTIVATE_INITIAL_PACKAGES).map(() => (_Actions || _load_Actions()).setProjectRoot(store.getState().projectRoot));
-}
-
 function setProjectRootForNewTaskRunnerEpic(actions, store) {
   return actions.ofType((_Actions || _load_Actions()).REGISTER_TASK_RUNNER).switchMap(action => {
     if (!(action.type === (_Actions || _load_Actions()).REGISTER_TASK_RUNNER)) {
@@ -85,32 +75,39 @@ function setProjectRootForNewTaskRunnerEpic(actions, store) {
     }
 
     const { taskRunner } = action.payload;
-    const { projectRoot, taskRunnersReady } = store.getState();
-
-    if (!taskRunnersReady) {
+    const { projectRoot, initialPackagesActivated } = store.getState();
+    if (!initialPackagesActivated || projectRoot == null) {
       return _rxjsBundlesRxMinJs.Observable.empty();
     }
-
     return getTaskRunnerState(taskRunner, projectRoot).map(result => (_Actions || _load_Actions()).setStateForTaskRunner(result.taskRunner, result.taskRunnerState));
   });
-}
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */
 
 function setConsolesForTaskRunnersEpic(actions, store) {
-  return actions.ofType((_Actions || _load_Actions()).SET_CONSOLE_SERVICE, (_Actions || _load_Actions()).DID_ACTIVATE_INITIAL_PACKAGES).switchMap(() => {
-    const { consoleService, taskRunnersReady } = store.getState();
-    if (consoleService == null || !taskRunnersReady) {
+  return actions.ofType((_Actions || _load_Actions()).SET_CONSOLE_SERVICE).switchMap(() => {
+    const { consoleService } = store.getState();
+    if (consoleService == null) {
       return _rxjsBundlesRxMinJs.Observable.empty();
     }
 
     const consolesForTaskRunners = store.getState().taskRunners.map(runner => [runner, consoleService({ id: runner.name, name: runner.name })]);
-    return _rxjsBundlesRxMinJs.Observable.of((_Actions || _load_Actions()).setConsolesForTaskRunners(new Map(consolesForTaskRunners)));
+    return _rxjsBundlesRxMinJs.Observable.of((_Actions || _load_Actions()).setConsolesForTaskRunners((_immutable || _load_immutable()).Map(consolesForTaskRunners)));
   });
 }
 
 function addConsoleForTaskRunnerEpic(actions, store) {
   return actions.ofType((_Actions || _load_Actions()).REGISTER_TASK_RUNNER).switchMap(action => {
-    const { consoleService, taskRunnersReady } = store.getState();
-    if (consoleService == null || !taskRunnersReady) {
+    const { consoleService } = store.getState();
+    if (consoleService == null) {
       return _rxjsBundlesRxMinJs.Observable.empty();
     }
 
@@ -126,8 +123,8 @@ function addConsoleForTaskRunnerEpic(actions, store) {
 
 function removeConsoleForTaskRunnerEpic(actions, store) {
   return actions.ofType((_Actions || _load_Actions()).UNREGISTER_TASK_RUNNER).switchMap(action => {
-    const { consoleService, taskRunnersReady } = store.getState();
-    if (consoleService == null || !taskRunnersReady) {
+    const { consoleService } = store.getState();
+    if (consoleService == null) {
       return _rxjsBundlesRxMinJs.Observable.empty();
     }
 
@@ -140,10 +137,10 @@ function removeConsoleForTaskRunnerEpic(actions, store) {
 }
 
 function setActiveTaskRunnerEpic(actions, store, options) {
-  return actions.filter(action => action.type === (_Actions || _load_Actions()).SET_STATES_FOR_TASK_RUNNERS || action.type === (_Actions || _load_Actions()).UNREGISTER_TASK_RUNNER && action.payload.taskRunner === store.getState().activeTaskRunner).switchMap(action => {
+  return actions.filter(action => action.type === (_Actions || _load_Actions()).SET_STATES_FOR_TASK_RUNNERS || action.type === (_Actions || _load_Actions()).SET_STATE_FOR_TASK_RUNNER || action.type === (_Actions || _load_Actions()).UNREGISTER_TASK_RUNNER && action.payload.taskRunner === store.getState().activeTaskRunner).switchMap(action => {
     const { projectRoot } = store.getState();
 
-    if (!projectRoot) {
+    if (projectRoot == null) {
       return _rxjsBundlesRxMinJs.Observable.of((_Actions || _load_Actions()).selectTaskRunner(null, false));
     }
 
@@ -153,7 +150,7 @@ function setActiveTaskRunnerEpic(actions, store, options) {
       statesForTaskRunners
     } = store.getState();
     const { preferencesForWorkingRoots } = options;
-    const preference = preferencesForWorkingRoots.getItem(projectRoot.getPath());
+    const preference = preferencesForWorkingRoots.getItem(projectRoot);
 
     let visibilityAction;
     let taskRunner = activeTaskRunner;
@@ -193,16 +190,19 @@ function setActiveTaskRunnerEpic(actions, store, options) {
 }
 
 function combineTaskRunnerStatesEpic(actions, store, options) {
-  return actions.ofType((_Actions || _load_Actions()).SET_PROJECT_ROOT).switchMap(() => {
-    const { projectRoot, taskRunners, taskRunnersReady } = store.getState();
+  return actions.ofType((_Actions || _load_Actions()).SET_PROJECT_ROOT, (_Actions || _load_Actions()).DID_ACTIVATE_INITIAL_PACKAGES).switchMap(() => {
+    const {
+      projectRoot,
+      taskRunners,
+      initialPackagesActivated
+    } = store.getState();
 
-    if (!taskRunnersReady) {
-      // We will dispatch another set project root when everyone is ready.
+    if (!initialPackagesActivated) {
       return _rxjsBundlesRxMinJs.Observable.empty();
     }
 
-    if (taskRunners.length === 0) {
-      return _rxjsBundlesRxMinJs.Observable.of((_Actions || _load_Actions()).setStatesForTaskRunners(new Map()));
+    if (taskRunners.count() === 0) {
+      return _rxjsBundlesRxMinJs.Observable.of((_Actions || _load_Actions()).setStatesForTaskRunners((_immutable || _load_immutable()).Map()));
     }
 
     const runnersAndStates = taskRunners.map(taskRunner => getTaskRunnerState(taskRunner, projectRoot));
@@ -216,7 +216,7 @@ function combineTaskRunnerStatesEpic(actions, store, options) {
           statesForTaskRunners.set(result.taskRunner, result.taskRunnerState);
         }
       });
-      return (_Actions || _load_Actions()).setStatesForTaskRunners(statesForTaskRunners);
+      return (_Actions || _load_Actions()).setStatesForTaskRunners((_immutable || _load_immutable()).Map(statesForTaskRunners));
     });
   });
 }
@@ -232,6 +232,7 @@ function toggleToolbarVisibilityEpic(actions, store) {
     const currentlyVisible = state.visible;
     const { visible, taskRunner } = action.payload;
 
+    // eslint-disable-next-line eqeqeq
     if (visible === true || visible === null && !currentlyVisible) {
       if (projectRoot == null) {
         atom.notifications.addError('Add a project to use the task runner toolbar', {
@@ -262,7 +263,7 @@ function updatePreferredVisibilityEpic(actions, store, options) {
     if (updateUserPreferences && projectRoot != null && activeTaskRunner != null) {
       // The user explicitly changed the visibility, remember this state
       const { preferencesForWorkingRoots } = options;
-      preferencesForWorkingRoots.setItem(projectRoot.getPath(), {
+      preferencesForWorkingRoots.setItem(projectRoot, {
         taskRunnerId: activeTaskRunner.id,
         visible
       });
@@ -279,14 +280,14 @@ function updatePreferredTaskRunnerEpic(actions, store, options) {
     const { updateUserPreferences } = action.payload;
     const { projectRoot, activeTaskRunner } = store.getState();
 
-    if (updateUserPreferences && projectRoot && activeTaskRunner) {
+    if (updateUserPreferences && projectRoot != null && activeTaskRunner) {
       // The user explicitly selected this task runner, remember this state
       const { preferencesForWorkingRoots } = options;
       const updatedPreference = {
         visible: true,
         taskRunnerId: activeTaskRunner.id
       };
-      preferencesForWorkingRoots.setItem(projectRoot.getPath(), updatedPreference);
+      preferencesForWorkingRoots.setItem(projectRoot, updatedPreference);
     }
   }).ignoreElements();
 }
@@ -312,7 +313,7 @@ function verifySavedBeforeRunningTaskEpic(actions, store) {
       if (shouldSave) {
         const saveAll = _rxjsBundlesRxMinJs.Observable.defer(() => {
           const stillUnsaved = atom.workspace.getTextEditors().filter(editor => editor.getPath() != null && editor.isModified());
-          return Promise.all(unsavedEditors.filter(editor => stillUnsaved.indexOf(editor) !== -1).map(editor => (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).saveBuffer)(editor.getBuffer())));
+          return Promise.all(unsavedEditors.filter(editor => stillUnsaved.indexOf(editor) !== -1).map(editor => editor.save()));
         });
         return _rxjsBundlesRxMinJs.Observable.concat(saveAll.ignoreElements(), _rxjsBundlesRxMinJs.Observable.of((_Actions || _load_Actions()).runTask(taskMeta))).catch(err => {
           atom.notifications.addError('An unexpected error occurred while saving the files.', { dismissable: true, detail: err.stack.toString() });
@@ -453,7 +454,11 @@ function createTaskObservable(taskMeta, getState) {
       taskFailedNotification.dismiss();
     }
     const task = taskMeta.taskRunner.runTask(taskMeta.type);
-    const taskStatus = { metadata: taskMeta, task };
+    const taskStatus = {
+      metadata: taskMeta,
+      task,
+      startDate: new Date()
+    };
     const events = (0, (_tasks || _load_tasks()).observableFromTask)(task);
 
     return _rxjsBundlesRxMinJs.Observable.of({
@@ -492,8 +497,21 @@ function createTaskObservable(taskMeta, getState) {
       }
     }));
   }).catch(error => {
+    let description;
+    let buttons;
+    if (error instanceof (_process || _load_process()).ProcessExitError) {
+      description = formatProcessExitError(error);
+      buttons = [{
+        text: 'Copy command',
+        className: 'icon icon-clippy',
+        onDidClick: () => atom.clipboard.write(error.command + ' ' + error.args.join(' '))
+      }];
+    } else {
+      description = error.message;
+    }
     taskFailedNotification = atom.notifications.addError(`The task "${taskMeta.label}" failed`, {
-      description: error.message,
+      buttons,
+      description,
       dismissable: true
     });
     taskFailedNotification.onDidDismiss(() => {
@@ -584,5 +602,33 @@ function getTaskRunnerState(taskRunner, projectRoot) {
       taskRunner,
       taskRunnerState: { enabled, tasks: enabled ? tasks : [] }
     });
-  })));
+  })))
+  // We need the initial state to return within reasonable time, otherwise the toolbar hangs.
+  // We don't want to start with all runners disabled because it causes UI jumps
+  // when a preferred runner gets enabled after a non-preferred one.
+  .race(_rxjsBundlesRxMinJs.Observable.timer(5000).switchMap(() => _rxjsBundlesRxMinJs.Observable.throw('Enabling timed out'))).catch(error => {
+    (0, (_log4js || _load_log4js()).getLogger)('nuclide-task-runner').error(`Disabling ${taskRunner.name} task runner, because setProjectRoot failed.\n\n${error}`);
+    return _rxjsBundlesRxMinJs.Observable.of({
+      taskRunner,
+      taskRunnerState: { enabled: false, tasks: [] }
+    });
+  });
+}
+
+function formatProcessExitError(error) {
+  let message = '```\n';
+  message += error.command + ' ' + error.args.join(' ');
+  message += '\n```\n<br />';
+  if (error.stderr !== '') {
+    message += 'Stderr:\n';
+    message += '```\n';
+    message += error.stderr;
+    message += '\n```\n<br />';
+  }
+  if (error.exitCode != null) {
+    message += `Exit code: ${error.exitCode}\n<br />`;
+  } else if (error.signal != null) {
+    message += `Signal: ${error.signal}\n<br />`;
+  }
+  return message;
 }

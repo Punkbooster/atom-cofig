@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.formatCode = exports.getLocalReferences = exports.getOutline = exports.getRelatedSourceOrHeader = exports.getDeclarationInfo = exports.getDeclaration = exports.getCompletions = exports.ClangCursorTypes = exports.ClangCursorToDeclarationTypes = undefined;
+exports.loadFlagsFromCompilationDatabaseAndCacheThem = exports.formatCode = exports.getLocalReferences = exports.getOutline = exports.getRelatedSourceOrHeader = exports.getDeclarationInfo = exports.getDeclaration = exports.getCompletions = exports.ClangCursorTypes = exports.ClangCursorToDeclarationTypes = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -125,7 +125,9 @@ let formatCode = exports.formatCode = (() => {
     if (length != null) {
       args.push(`-length=${length}`);
     }
-    const stdout = yield (0, (_process || _load_process()).runCommand)('clang-format', args, {
+    const binary = yield getArcanistClangFormatBinary(src);
+    const command = binary == null ? 'clang-format' : binary;
+    const stdout = yield (0, (_process || _load_process()).runCommand)(command, args, {
       input: contents
     }).toPromise();
 
@@ -142,11 +144,60 @@ let formatCode = exports.formatCode = (() => {
   };
 })();
 
+let getArcanistClangFormatBinary = (() => {
+  var _ref10 = (0, _asyncToGenerator.default)(function* (src) {
+    try {
+      // $FlowFB
+      const arcService = require('../../fb-arcanist-rpc/lib/ArcanistService');
+      const [arcConfigDirectory, arcConfig] = yield Promise.all([arcService.findArcConfigDirectory(src), arcService.readArcConfig(src)]);
+      if (arcConfigDirectory == null || arcConfig == null) {
+        return null;
+      }
+      const lintClangFormatBinary = arcConfig['lint.clang-format.binary'];
+      if (lintClangFormatBinary == null) {
+        return null;
+      }
+      return (_nuclideUri || _load_nuclideUri()).default.join((yield (_fsPromise || _load_fsPromise()).default.realpath(arcConfigDirectory)), lintClangFormatBinary);
+    } catch (err) {
+      return null;
+    }
+  });
+
+  return function getArcanistClangFormatBinary(_x43) {
+    return _ref10.apply(this, arguments);
+  };
+})();
+
+let loadFlagsFromCompilationDatabaseAndCacheThem = exports.loadFlagsFromCompilationDatabaseAndCacheThem = (() => {
+  var _ref11 = (0, _asyncToGenerator.default)(function* (requestSettings) {
+    const flagsManager = serverManager.getClangFlagsManager();
+    const compilationHandles = yield flagsManager.loadFlagsFromCompilationDatabase(requestSettings);
+    const compilationFlags = new Map();
+    for (const [src, handle] of compilationHandles) {
+      const flags = flagsManager.getFlags(handle);
+      if (flags != null) {
+        compilationFlags.set(src, flags);
+      }
+    }
+    return compilationFlags;
+  });
+
+  return function loadFlagsFromCompilationDatabaseAndCacheThem(_x44) {
+    return _ref11.apply(this, arguments);
+  };
+})();
+
+/**
+ * Kill the Clang server for a particular source file,
+ * as well as all the cached compilation flags.
+ */
+
+
 exports.compile = compile;
-exports.loadFlagsFromCompilationDatabaseAndCacheThem = loadFlagsFromCompilationDatabaseAndCacheThem;
 exports.resetForSource = resetForSource;
 exports.reset = reset;
 exports.dispose = dispose;
+exports.setMemoryLimit = setMemoryLimit;
 
 var _collection;
 
@@ -166,6 +217,18 @@ var _ClangServerManager;
 
 function _load_ClangServerManager() {
   return _ClangServerManager = _interopRequireDefault(require('./ClangServerManager'));
+}
+
+var _nuclideUri;
+
+function _load_nuclideUri() {
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
+
+var _fsPromise;
+
+function _load_fsPromise() {
+  return _fsPromise = _interopRequireDefault(require('nuclide-commons/fsPromise'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -251,14 +314,6 @@ function compile(src, contents, requestSettings, defaultFlags) {
   return _rxjsBundlesRxMinJs.Observable.fromPromise(doCompile()).publish();
 }
 
-function loadFlagsFromCompilationDatabaseAndCacheThem(requestSettings) {
-  return serverManager.getClangFlagsManager().loadFlagsFromCompilationDatabase(requestSettings).then(fullFlags => (0, (_collection || _load_collection()).mapCompact)((0, (_collection || _load_collection()).mapTransform)(fullFlags, flags => flags.rawData)));
-}
-
-/**
- * Kill the Clang server for a particular source file,
- * as well as all the cached compilation flags.
- */
 function resetForSource(src) {
   serverManager.reset(src);
 }
@@ -272,4 +327,8 @@ function reset() {
 
 function dispose() {
   serverManager.dispose();
+}
+
+function setMemoryLimit(percent) {
+  serverManager.setMemoryLimit(percent);
 }

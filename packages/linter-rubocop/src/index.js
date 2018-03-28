@@ -6,6 +6,7 @@ import path from 'path'
 import pluralize from 'pluralize'
 import * as helpers from 'atom-linter'
 import { get } from 'request-promise'
+import semver from 'semver'
 
 const DEFAULT_ARGS = [
   '--cache', 'false',
@@ -16,11 +17,12 @@ const DEFAULT_ARGS = [
 const DOCUMENTATION_LIFETIME = 86400 * 1000 // 1 day TODO: Configurable?
 
 const docsRuleCache = new Map()
+const execPathVersions = new Map()
 let docsLastRetrieved
 
 const takeWhile = (source, predicate) => {
   const result = []
-  const length = source.length
+  const { length } = source
   let i = 0
 
   while (i < length && predicate(source[i], i)) {
@@ -43,8 +45,7 @@ const parseFromStd = (stdout, stderr) => {
 }
 
 const getProjectDirectory = filePath =>
-                              atom.project.relativizePath(filePath)[0] || path.dirname(filePath)
-
+  atom.project.relativizePath(filePath)[0] || path.dirname(filePath)
 
 // Retrieves style guide documentation with cached responses
 const getMarkDown = async (url) => {
@@ -66,9 +67,11 @@ const getMarkDown = async (url) => {
 
   const byLine = rawRulesMarkdown.split('\n')
   // eslint-disable-next-line no-confusing-arrow
-  const ruleAnchors = byLine.reduce((acc, line, idx) =>
-                                      line.match(/\* <a name=/g) ? acc.concat([[idx, line]]) : acc,
-                                      [])
+  const ruleAnchors = byLine.reduce(
+    (acc, line, idx) =>
+      (line.match(/\* <a name=/g) ? acc.concat([[idx, line]]) : acc),
+    [],
+  )
 
   ruleAnchors.forEach(([startingIndex, startingLine]) => {
     const ruleName = startingLine.split('"')[1]
@@ -86,7 +89,9 @@ const getMarkDown = async (url) => {
 }
 
 const forwardRubocopToLinter =
-  ({ message: rawMessage, location, severity, cop_name: copName }, file, editor) => {
+  ({
+    message: rawMessage, location, severity, cop_name: copName,
+  }, file, editor) => {
     const [excerpt, url] = rawMessage.split(/ \((.*)\)/, 2)
     let position
     if (location) {
@@ -106,7 +111,7 @@ const forwardRubocopToLinter =
 
     const linterMessage = {
       url,
-      excerpt: `${excerpt} (${copName})`,
+      excerpt: `${copName}: ${excerpt}`,
       severity: severityMapping[severity],
       description: url ? () => getMarkDown(url) : null,
       location: {
@@ -116,6 +121,35 @@ const forwardRubocopToLinter =
     }
     return linterMessage
   }
+
+const determineExecVersion = async (command, cwd) => {
+  const args = command.slice(1)
+  args.push('--version')
+  const versionString = await helpers.exec(command[0], args, { cwd, ignoreExitCode: true })
+  const versionPattern = /^(\d+\.\d+\.\d+)/i
+  const match = versionString.match(versionPattern)
+  if (match !== null && match[1]) {
+    return match[1]
+  }
+  throw new Error(`Unable to parse rubocop version from command output: ${versionString}`)
+}
+
+const getRubocopVersion = async (command, cwd) => {
+  const key = [cwd, command].toString()
+  if (!execPathVersions.has(key)) {
+    execPathVersions.set(key, await determineExecVersion(command, cwd))
+  }
+  return execPathVersions.get(key)
+}
+
+const getCopNameArg = async (command, cwd) => {
+  const version = await getRubocopVersion(command, cwd)
+  if (semver.gte(version, '0.52.0')) {
+    return ['--no-display-cop-names']
+  }
+
+  return []
+}
 
 export default {
   activate() {
@@ -135,11 +169,16 @@ export default {
           }
 
           const filePath = textEditor.getPath()
-          const command = this.command
-                              .split(/\s+/)
-                              .filter(i => i)
-                              .concat(DEFAULT_ARGS, '--auto-correct', filePath)
+          if (!filePath) { return null }
+
           const cwd = getProjectDirectory(filePath)
+          const command = this.command
+            .split(/\s+/)
+            .filter(i => i)
+            .concat(DEFAULT_ARGS, '--auto-correct')
+          command.push(...(await getCopNameArg(command, cwd)))
+          command.push(filePath)
+
           const { stdout, stderr } = await helpers.exec(command[0], command.slice(1), { cwd, stream: 'both' })
           const { summary: { offense_count: offenseCount } } = parseFromStd(stdout, stderr)
           return offenseCount === 0 ?
@@ -147,22 +186,11 @@ export default {
             atom.notifications.addSuccess(`Linter-Rubocop: Fixed ${pluralize('offenses', offenseCount, true)}`)
         },
       }),
-    )
-
-    // Config observers
-    this.subscriptions.add(
       atom.config.observe('linter-rubocop.command', (value) => {
         this.command = value
       }),
-    )
-    this.subscriptions.add(
       atom.config.observe('linter-rubocop.disableWhenNoConfigFile', (value) => {
         this.disableWhenNoConfigFile = value
-      }),
-    )
-    this.subscriptions.add(
-      atom.config.observe('linter-rubocop.linterTimeout', (value) => {
-        this.linterTimeout = value
       }),
     )
   },
@@ -176,6 +204,7 @@ export default {
       name: 'RuboCop',
       grammarScopes: [
         'source.ruby',
+        'source.ruby.gemfile',
         'source.ruby.rails',
         'source.ruby.rspec',
         'source.ruby.chef',
@@ -184,6 +213,7 @@ export default {
       lintsOnChange: true,
       lint: async (editor) => {
         const filePath = editor.getPath()
+        if (!filePath) { return null }
 
         if (this.disableWhenNoConfigFile === true) {
           const config = await helpers.findAsync(filePath, '.rubocop.yml')
@@ -192,20 +222,37 @@ export default {
           }
         }
 
-        const command = this.command
-                            .split(/\s+/)
-                            .filter(i => i)
-                            .concat(DEFAULT_ARGS, '--stdin', filePath)
-        const stdin = editor.getText()
         const cwd = getProjectDirectory(filePath)
+        const command = this.command
+          .split(/\s+/)
+          .filter(i => i)
+          .concat(DEFAULT_ARGS)
+        command.push(...(await getCopNameArg(command, cwd)))
+        command.push('--stdin', filePath)
+        const stdin = editor.getText()
         const exexOptions = {
           cwd,
           stdin,
           stream: 'both',
-          timeout: this.linterTimeout,
+          timeout: 10000,
           uniqueKey: `linter-rubocop::${filePath}`,
         }
-        const output = await helpers.exec(command[0], command.slice(1), exexOptions)
+
+        let output
+        try {
+          output = await helpers.exec(command[0], command.slice(1), exexOptions)
+        } catch (e) {
+          if (e.message !== 'Process execution timed out') throw e
+          atom.notifications.addInfo(
+            'Linter-Rubocop: Linter timed out',
+            {
+              description: 'Make sure you are not running Rubocop with a slow-starting interpreter like JRuby. ' +
+                           'If you are still seeing timeouts, consider running your linter `on save` and not `on change`, ' +
+                           'or reference https://github.com/AtomLinter/linter-rubocop/issues/202 .',
+            },
+          )
+          return null
+        }
         // Process was canceled by newer process
         if (output === null) { return null }
 

@@ -13,15 +13,17 @@ let getRefactorings = (() => {
     if (editor == null || editor.getPath() == null) {
       return (_refactorActions || _load_refactorActions()).error('get-refactorings', Error('Must be run from a saved file.'));
     }
-    const cursor = editor.getLastCursor();
     const provider = providers.getProviderForEditor(editor);
     if (provider == null) {
       return (_refactorActions || _load_refactorActions()).error('get-refactorings', Error('No providers found.'));
     }
     try {
-      const cursorPosition = cursor.getBufferPosition();
-      const availableRefactorings = yield provider.refactoringsAtPoint(editor, cursorPosition);
-      return (_refactorActions || _load_refactorActions()).gotRefactorings(editor, cursorPosition, provider, availableRefactorings);
+      const selectedRange = editor.getSelectedBufferRange();
+      const availableRefactorings = yield provider.refactorings(editor, selectedRange);
+      availableRefactorings.sort(function (x, y) {
+        return (x.disabled === true ? 1 : 0) - (y.disabled === true ? 1 : 0);
+      });
+      return (_refactorActions || _load_refactorActions()).gotRefactorings(editor, selectedRange, provider, availableRefactorings);
     } catch (e) {
       return (_refactorActions || _load_refactorActions()).error('get-refactorings', e);
     }
@@ -29,6 +31,24 @@ let getRefactorings = (() => {
 
   return function getRefactorings(_x) {
     return _ref.apply(this, arguments);
+  };
+})();
+
+let loadDiffPreview = (() => {
+  var _ref3 = (0, _asyncToGenerator.default)(function* (uri, response) {
+    const file = (0, (_projects || _load_projects()).getFileForPath)(uri);
+    if (file == null) {
+      throw new Error(`Could not read file ${uri}`);
+    }
+    const buffer = new _atom.TextBuffer((yield file.read()));
+    const edits = getEdits(uri, buffer, response);
+    const diffString = (0, (_textEditDiff || _load_textEditDiff()).toUnifiedDiff)((_nuclideUri || _load_nuclideUri()).default.basename(uri), buffer, edits);
+
+    return (_refactorActions || _load_refactorActions()).displayDiffPreview((0, (_diffparser || _load_diffparser()).default)(diffString));
+  });
+
+  return function loadDiffPreview(_x3, _x4) {
+    return _ref3.apply(this, arguments);
   };
 })();
 
@@ -43,10 +63,30 @@ function _load_projects() {
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
+var _atom = require('atom');
+
+var _nuclideUri;
+
+function _load_nuclideUri() {
+  return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
+}
+
+var _diffparser;
+
+function _load_diffparser() {
+  return _diffparser = _interopRequireDefault(require('diffparser'));
+}
+
 var _textEdit;
 
 function _load_textEdit() {
   return _textEdit = require('nuclide-commons-atom/text-edit');
+}
+
+var _textEditDiff;
+
+function _load_textEditDiff() {
+  return _textEditDiff = require('nuclide-commons-atom/text-edit-diff');
 }
 
 var _textEditor;
@@ -100,6 +140,14 @@ function getEpics(providers) {
       }
 
       return applyRefactoring(action).takeUntil(actions.ofType('close'));
+    });
+  }, function loadDiffPreviewEpic(actions) {
+    return actions.ofType('load-diff-preview').switchMap(action => {
+      if (!(action.type === 'load-diff-preview')) {
+        throw new Error('Invariant violation: "action.type === \'load-diff-preview\'"');
+      }
+
+      return _rxjsBundlesRxMinJs.Observable.fromPromise(loadDiffPreview(action.payload.uri, action.payload.response));
     });
   }, function handleErrors(actions) {
     return actions.ofType('error').map(action => {
@@ -194,4 +242,23 @@ function applyRefactoring(action) {
     }
     return _rxjsBundlesRxMinJs.Observable.concat(editStream, _rxjsBundlesRxMinJs.Observable.of((_refactorActions || _load_refactorActions()).close()).do(() => (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nuclide-refactorizer:success')));
   });
+}
+
+function getEdits(uri, buffer, response) {
+  switch (response.type) {
+    case 'edit':
+      return response.edits.get(uri) || [];
+    case 'external-edit':
+      return (response.edits.get(uri) || []).map(e => toTextEdit(buffer, e));
+    default:
+      return [];
+  }
+}
+
+function toTextEdit(buffer, edit) {
+  return {
+    oldRange: new _atom.Range(buffer.positionForCharacterIndex(edit.startOffset), buffer.positionForCharacterIndex(edit.endOffset)),
+    oldText: edit.oldText,
+    newText: edit.newText
+  };
 }

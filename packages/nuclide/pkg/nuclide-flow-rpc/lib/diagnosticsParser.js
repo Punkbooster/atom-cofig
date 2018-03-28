@@ -16,19 +16,29 @@ function _load_simpleTextBuffer() {
 // Flow sometimes reports this as the file path for an error. When this happens, we should simply
 // leave out the location, since it isn't very useful and it's not a well-formed path, which can
 // cause issues down the line.
-const BUILTIN_LOCATION = '(builtins)'; /**
-                                        * Copyright (c) 2015-present, Facebook, Inc.
-                                        * All rights reserved.
-                                        *
-                                        * This source code is licensed under the license found in the LICENSE file in
-                                        * the root directory of this source tree.
-                                        *
-                                        * 
-                                        * @format
-                                        */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const BUILTIN_LOCATION = '(builtins)';
 
 function flowStatusOutputToDiagnostics(statusOutput) {
-  return statusOutput.errors.map(flowMessageToDiagnosticMessage);
+  return statusOutput.errors.map(error => {
+    if (error.classic === undefined || error.classic === true) {
+      return flowClassicMessageToDiagnosticMessage(error);
+    }
+    if (error.classic === false) {
+      return flowFriendlyMessageToDiagnosticMessage(error);
+    }
+    throw new Error('Invalid flow status error type');
+  });
 }
 
 // Exported for testing
@@ -47,7 +57,9 @@ const fixExtractionFunctions = [unusedSuppressionFix, namedImportTypo];
 
 function unusedSuppressionFix(diagnostic) {
   // Automatically remove unused suppressions:
-  if (diagnostic.trace != null && diagnostic.trace.length === 1 && diagnostic.text === 'Error suppressing comment' && diagnostic.trace[0].text === 'Unused suppression') {
+  const isUnusedLegacySuppression = diagnostic.trace != null && diagnostic.trace.length === 1 && diagnostic.text === 'Error suppressing comment' && diagnostic.trace[0].text === 'Unused suppression';
+  const isUnusedSuppresion = diagnostic.text === 'Unused suppression comment.';
+  if (isUnusedSuppresion || isUnusedLegacySuppression) {
     const oldRange = diagnostic.range;
 
     if (!(oldRange != null)) {
@@ -131,30 +143,80 @@ function flowMessageToTrace(message) {
     type: 'Trace',
     text: message.descr,
     filePath: extractPath(message),
-    range: extractRange(message)
+    range: extractRange(message.loc)
   };
 }
 
-function flowMessageToDiagnosticMessage(flowStatusError) {
+function flowFriendlyMessageToDiagnosticMessage(flowStatusError) {
+  const diagnosticMessage = {
+    providerName: 'Flow',
+    type: flowStatusError.level === 'error' ? 'Error' : 'Warning',
+    text: getFriendlyText(flowStatusError.messageMarkup),
+    filePath: flowStatusError.primaryLoc.source,
+    range: extractRange(flowStatusError.primaryLoc),
+    trace: getFriendlyTrace(flowStatusError.referenceLocs)
+  };
+
+  const fix = diagnosticToFix(diagnosticMessage);
+  if (fix != null) {
+    diagnosticMessage.fix = fix;
+  }
+  return diagnosticMessage;
+}
+
+function getFriendlyTrace(referenceLocs) {
+  const diagnostics = [];
+  for (const referenceId in referenceLocs) {
+    const loc = referenceLocs[referenceId];
+    diagnostics.push({
+      type: 'Trace',
+      text: `[${referenceId}]`,
+      filePath: loc.source,
+      range: extractRange(loc)
+    });
+  }
+  return diagnostics;
+}
+
+function getFriendlyText(messageMarkup) {
+  if (Array.isArray(messageMarkup)) {
+    const getText = message => {
+      switch (message.kind) {
+        case 'Text':
+          return message.text;
+        case 'Code':
+          return `\`${message.text}\``;
+        case 'Reference':
+          return message.message.map(getText).join('') + ` [${message.referenceId}]`;
+      }
+    };
+    return messageMarkup.map(getText).join('');
+  }
+
+  const header = getFriendlyText(messageMarkup.message);
+  const items = messageMarkup.items.map(getFriendlyText).map(message => ` - ${message}`).join('\n');
+  return `${header}\n${items}`;
+}
+
+function flowClassicMessageToDiagnosticMessage(flowStatusError) {
   const flowMessageComponents = flowStatusError.message;
 
   const mainMessage = flowMessageComponents[0];
 
   // The Flow type does not capture this, but the first message always has a path, and the
   // diagnostics package requires a FileDiagnosticMessage to have a path.
-  const path = extractPath(mainMessage);
+  const path = flowMessageComponents.map(extractPath).find(extractedPath => extractedPath != null);
 
   if (!(path != null)) {
     throw new Error('Expected path to not be null or undefined');
   }
 
   const diagnosticMessage = {
-    scope: 'file',
     providerName: 'Flow',
     type: flowStatusError.level === 'error' ? 'Error' : 'Warning',
     text: mainMessage.descr,
     filePath: path,
-    range: extractRange(mainMessage),
+    range: extractRange(mainMessage.loc),
     trace: extractTraces(flowStatusError)
   };
 
@@ -189,8 +251,13 @@ function extractTraces(flowStatusError) {
   }
   const extra = flowStatusError.extra;
   if (extra != null) {
-    const flatExtra = [].concat(...extra.map(({ message }) => message));
-    trace.push(...flatExtra.map(flowMessageToTrace));
+    extra.forEach(({ message, children }) => {
+      trace.push(...message.map(flowMessageToTrace));
+      if (children != null) {
+        const childrenTraces = [].concat(...children.map(child => [].concat(child.message.map(flowMessageToTrace))));
+        trace.push(...childrenTraces);
+      }
+    });
   }
 
   if (trace.length > 0) {
@@ -203,12 +270,12 @@ function extractTraces(flowStatusError) {
 // Use `atom$Range | void` rather than `?atom$Range` to exclude `null`, so that the type is
 // compatible with the `range` property, which is an optional property rather than a nullable
 // property.
-function extractRange(message) {
-  if (message.loc == null || message.loc.source === BUILTIN_LOCATION) {
+function extractRange(loc) {
+  if (loc == null || loc.source === BUILTIN_LOCATION) {
     return undefined;
   } else {
     // It's unclear why the 1-based to 0-based indexing works the way that it
     // does, but this has the desired effect in the UI, in practice.
-    return new (_simpleTextBuffer || _load_simpleTextBuffer()).Range([message.loc.start.line - 1, message.loc.start.column - 1], [message.loc.end.line - 1, message.loc.end.column]);
+    return new (_simpleTextBuffer || _load_simpleTextBuffer()).Range([loc.start.line - 1, loc.start.column - 1], [loc.end.line - 1, loc.end.column]);
   }
 }

@@ -10,11 +10,21 @@ function _load_AtomInput() {
   return _AtomInput = require('nuclide-commons-ui/AtomInput');
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _nullthrows;
+
+function _load_nullthrows() {
+  return _nullthrows = _interopRequireDefault(require('nullthrows'));
+}
+
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _ConnectionDetailsForm;
 
@@ -40,19 +50,22 @@ function _load_ButtonGroup() {
   return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
 }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const PROFILE_NAME_LABEL = 'Profile Name'; /**
-                                            * Copyright (c) 2015-present, Facebook, Inc.
-                                            * All rights reserved.
-                                            *
-                                            * This source code is licensed under the license found in the LICENSE file in
-                                            * the root directory of this source tree.
-                                            *
-                                            * 
-                                            * @format
-                                            */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
+const PROFILE_NAME_LABEL = 'Profile Name';
 const DEFAULT_SERVER_COMMAND_PLACEHOLDER = '(DEFAULT)';
 
 const emptyFunction = () => {};
@@ -60,7 +73,7 @@ const emptyFunction = () => {};
 /**
  * A form that is used to create a new connection profile.
  */
-class CreateConnectionProfileForm extends _react.default.Component {
+class CreateConnectionProfileForm extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -68,7 +81,7 @@ class CreateConnectionProfileForm extends _react.default.Component {
     this._clickSave = () => {
       // Validate the form inputs.
       const profileName = this._getProfileName();
-      const connectionDetails = this.refs['connection-details'].getFormFields();
+      const connectionDetails = (0, (_nullthrows || _load_nullthrows()).default)(this._connectionDetails).getFormFields();
       const validationResult = (0, (_formValidationUtils || _load_formValidationUtils()).validateFormInputs)(profileName, connectionDetails, DEFAULT_SERVER_COMMAND_PLACEHOLDER);
       if (typeof validationResult.errorMessage === 'string') {
         atom.notifications.addError(validationResult.errorMessage);
@@ -91,7 +104,7 @@ class CreateConnectionProfileForm extends _react.default.Component {
       this.props.onCancel();
     };
 
-    this.disposables = new _atom.CompositeDisposable();
+    this.disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
   }
 
   componentDidMount() {
@@ -103,7 +116,7 @@ class CreateConnectionProfileForm extends _react.default.Component {
     // Hitting escape when this panel has focus should cancel the dialog.
     // $FlowFixMe
     atom.commands.add(root, 'core:cancel', this._clickCancel));
-    this.refs['profile-name'].focus();
+    (0, (_nullthrows || _load_nullthrows()).default)(this._profileName).focus();
   }
 
   componentWillUnmount() {
@@ -118,25 +131,33 @@ class CreateConnectionProfileForm extends _react.default.Component {
   render() {
     const initialFields = this.props.initialFormFields;
 
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       null,
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { className: 'form-group' },
-        _react.default.createElement(
+        _react.createElement(
           'label',
           null,
           PROFILE_NAME_LABEL,
           ':'
         ),
-        _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, { initialValue: '', ref: 'profile-name', unstyled: true })
+        _react.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+          initialValue: '',
+          ref: input => {
+            this._profileName = input;
+          },
+          unstyled: true
+        })
       ),
-      _react.default.createElement((_ConnectionDetailsForm || _load_ConnectionDetailsForm()).default, {
+      _react.createElement((_ConnectionDetailsForm || _load_ConnectionDetailsForm()).default, {
         initialUsername: initialFields.username,
         initialServer: initialFields.server,
         initialCwd: initialFields.cwd,
-        initialRemoteServerCommand: initialFields.remoteServerCommand || DEFAULT_SERVER_COMMAND_PLACEHOLDER,
+        initialRemoteServerCommand:
+        // flowlint-next-line sketchy-null-string:off
+        initialFields.remoteServerCommand || DEFAULT_SERVER_COMMAND_PLACEHOLDER,
         initialSshPort: initialFields.sshPort,
         initialPathToPrivateKey: initialFields.pathToPrivateKey,
         initialAuthMethod: initialFields.authMethod,
@@ -145,20 +166,22 @@ class CreateConnectionProfileForm extends _react.default.Component {
         onCancel: emptyFunction,
         onConfirm: this._clickSave,
         onDidChange: emptyFunction,
-        ref: 'connection-details'
+        ref: details => {
+          this._connectionDetails = details;
+        }
       }),
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { style: { display: 'flex', justifyContent: 'flex-end' } },
-        _react.default.createElement(
+        _react.createElement(
           (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
           null,
-          _react.default.createElement(
+          _react.createElement(
             (_Button || _load_Button()).Button,
             { onClick: this._clickCancel },
             'Cancel'
           ),
-          _react.default.createElement(
+          _react.createElement(
             (_Button || _load_Button()).Button,
             { buttonType: (_Button || _load_Button()).ButtonTypes.PRIMARY, onClick: this._clickSave },
             'Save'
@@ -169,8 +192,7 @@ class CreateConnectionProfileForm extends _react.default.Component {
   }
 
   _getProfileName() {
-    const fieldName = 'profile-name';
-    return this.refs[fieldName] && this.refs[fieldName].getText().trim() || '';
+    return this._profileName && this._profileName.getText().trim() || '';
   }
 
 }

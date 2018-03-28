@@ -1,9 +1,9 @@
 {
   "name": "nuclide-remote-projects",
-  "repository": "https://github.com/facebook/nuclide",
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Manages remote projects",
+  "author": "Nuclide : Remote",
   "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "configMetadata": {
@@ -69,5 +69,8 @@
         "0.0.0": "consumeWorkingSetsStore"
       }
     }
+  },
+  "deserializers": {
+    "RemoteTextEditorPlaceholder": "deserializeRemoteTextEditorPlaceholder"
   }
 }

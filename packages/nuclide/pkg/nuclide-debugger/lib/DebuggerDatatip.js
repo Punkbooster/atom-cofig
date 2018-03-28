@@ -9,7 +9,7 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 let debuggerDatatip = exports.debuggerDatatip = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (model, editor, position) {
-    if (model.getStore().getDebuggerMode() !== (_DebuggerStore || _load_DebuggerStore()).DebuggerMode.PAUSED) {
+    if (model.getDebuggerMode() !== (_constants || _load_constants()).DebuggerMode.PAUSED) {
       return null;
     }
     const activeEditor = atom.workspace.getActiveTextEditor();
@@ -24,20 +24,12 @@ let debuggerDatatip = exports.debuggerDatatip = (() => {
     if (expression == null) {
       return null;
     }
-    const watchExpressionStore = model.getWatchExpressionStore();
-    const evaluation = watchExpressionStore.evaluateWatchExpression(expression);
-    // Avoid creating a datatip if the evaluation fails
-    const evaluationResult = yield evaluation.take(1).toPromise();
-    if (evaluationResult === null) {
-      return null;
-    }
-    const propStream = evaluation.filter(function (result) {
-      return result != null;
-    }).map(function (result) {
+    const evaluation = model.evaluateWatchExpression(expression);
+    const propStream = evaluation.map(function (result) {
       return {
         expression,
         evaluationResult: result,
-        watchExpressionStore
+        model
       };
     });
     return {
@@ -58,16 +50,16 @@ function _load_bindObservableAsProps() {
   return _bindObservableAsProps = require('nuclide-commons-ui/bindObservableAsProps');
 }
 
-var _EvaluationExpressionProvider;
+var _nuclideDebuggerCommon;
 
-function _load_EvaluationExpressionProvider() {
-  return _EvaluationExpressionProvider = require('../../nuclide-language-service/lib/EvaluationExpressionProvider');
+function _load_nuclideDebuggerCommon() {
+  return _nuclideDebuggerCommon = require('nuclide-debugger-common');
 }
 
-var _DebuggerStore;
+var _constants;
 
-function _load_DebuggerStore() {
-  return _DebuggerStore = require('./DebuggerStore');
+function _load_constants() {
+  return _constants = require('./constants');
 }
 
 var _DebuggerDatatipComponent;
@@ -78,22 +70,9 @@ function _load_DebuggerDatatipComponent() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
-
-const DEFAULT_WORD_REGEX = /\w+/gi;
-
 function getEvaluationExpression(model, editor, position) {
   const { scopeName } = editor.getGrammar();
-  const allProviders = model.getStore().getEvaluationExpressionProviders();
+  const allProviders = model.getEvaluationExpressionProviders();
   let matchingProvider = null;
   for (const provider of allProviders) {
     const providerGrammars = provider.selector.split(/, ?/);
@@ -102,5 +81,14 @@ function getEvaluationExpression(model, editor, position) {
       break;
     }
   }
-  return matchingProvider === null ? Promise.resolve((0, (_EvaluationExpressionProvider || _load_EvaluationExpressionProvider()).getEvaluationExpressionFromRegexp)(editor, position, DEFAULT_WORD_REGEX)) : matchingProvider.getEvaluationExpression(editor, position);
-}
+  return matchingProvider == null ? Promise.resolve((0, (_nuclideDebuggerCommon || _load_nuclideDebuggerCommon()).getDefaultEvaluationExpression)(editor, position)) : matchingProvider.getEvaluationExpression(editor, position);
+} /**
+   * Copyright (c) 2015-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the license found in the LICENSE file in
+   * the root directory of this source tree.
+   *
+   * 
+   * @format
+   */

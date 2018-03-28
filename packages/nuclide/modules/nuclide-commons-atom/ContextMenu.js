@@ -4,7 +4,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * This class represents a collection of context menu items that have been registered with Atom's
@@ -85,7 +91,7 @@ class ContextMenu {
 
     // TODO(mbolin): Ideally, this Disposable should be garbage-collected if this ContextMenu is
     // disposed.
-    return new _atom.Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       const index = this._items.indexOf(value);
       this._items.splice(index, 1);
 
@@ -130,7 +136,7 @@ class ContextMenu {
       return internalItem.item;
     } else if (internalItem.type === 'menu') {
       // Note that due to our own strict renaming rules, this must be a private method instead of a
-      // static function becuase of the access to _menuOptions and _items.
+      // static function because of the access to _menuOptions and _items.
       const menuOptions = internalItem.menu._menuOptions;
 
       if (!(menuOptions.type === 'submenu')) {
@@ -175,7 +181,9 @@ class ContextMenu {
   static isEventFromContextMenu(event) {
     // Context menu commands contain a specific `detail` parameter:
     // https://github.com/atom/atom/blob/v1.15.0/src/main-process/context-menu.coffee#L17
-    return Array.isArray(event.detail) && event.detail[0] && event.detail[0].contextCommand;
+    return Array.isArray(event.detail) &&
+    // flowlint-next-line sketchy-null-mixed:off
+    event.detail[0] && event.detail[0].contextCommand;
   }
 }
 

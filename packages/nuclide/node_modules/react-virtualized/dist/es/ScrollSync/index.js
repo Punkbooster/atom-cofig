@@ -1,4 +1,4 @@
-import _default from './ScrollSync';
-export { _default as default };
-import _ScrollSync from './ScrollSync';
-export { _ScrollSync as ScrollSync };
+import ScrollSync from './ScrollSync';
+
+export default ScrollSync;
+export { ScrollSync };

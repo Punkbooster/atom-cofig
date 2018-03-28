@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _atom = require('atom');
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
 
@@ -16,6 +16,18 @@ function _load_collection() {
   return _collection = require('nuclide-commons/collection');
 }
 
+var _semver;
+
+function _load_semver() {
+  return _semver = _interopRequireDefault(require('semver'));
+}
+
+var _systemInfo;
+
+function _load_systemInfo() {
+  return _systemInfo = require('../commons-node/system-info');
+}
+
 var _blockDecorations;
 
 function _load_blockDecorations() {
@@ -23,6 +35,8 @@ function _load_blockDecorations() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
@@ -35,22 +49,24 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
+const ATOM_VERSION_CHECK_FOR_SET_GRAMMAR = '1.24.0-beta0';
+
 function renderLineOffset(lineCount, lineHeight) {
-  return _react.default.createElement('div', {
+  return _react.createElement('div', {
     className: 'nuclide-diff-view-block-offset',
     style: { minHeight: lineCount * lineHeight }
   });
 }
 
 function renderInlineOffset(offsetElement) {
-  return _react.default.createElement(
+  return _react.createElement(
     'div',
     { style: { position: 'relative', width: '100%' } },
-    _react.default.createElement('div', {
+    _react.createElement('div', {
       className: 'nuclide-diff-view-block-offset',
       style: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }
     }),
-    _react.default.createElement(
+    _react.createElement(
       'div',
       { style: { visibility: 'hidden', pointerEvents: 'none' } },
       offsetElement
@@ -123,7 +139,12 @@ class DiffViewEditor {
       buffer.setText(contents);
     }
     const grammar = atom.grammars.selectGrammar(filePath, contents);
-    this._editor.setGrammar(grammar);
+    const version = (0, (_systemInfo || _load_systemInfo()).getAtomVersion)();
+    if ((_semver || _load_semver()).default.lt(version, ATOM_VERSION_CHECK_FOR_SET_GRAMMAR)) {
+      this._editor.setGrammar(grammar);
+    } else {
+      atom.grammars.assignLanguageMode(buffer, grammar.scopeName);
+    }
   }
 
   getModel() {
@@ -148,7 +169,7 @@ class DiffViewEditor {
   /**
    * @param lineNumber A buffer line number to be highlighted.
    * @param type The type of highlight to be applied to the line.
-  *    Could be a value of: ['insert', 'delete'].
+   *    Could be a value of: ['insert', 'delete'].
    */
   _createLineMarker(lineNumber, type) {
     const range = new _atom.Range([lineNumber, 0], [lineNumber + 1, 0]);

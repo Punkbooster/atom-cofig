@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.DebuggerThreadsComponent = undefined;
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
 
@@ -39,12 +39,21 @@ function _load_debounce() {
   return _debounce = _interopRequireDefault(require('nuclide-commons/debounce'));
 }
 
+var _scrollIntoView;
+
+function _load_scrollIntoView() {
+  return _scrollIntoView = require('nuclide-commons-ui/scrollIntoView');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const activeThreadIndicatorComponent = props => _react.default.createElement(
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+// & 'isSelected';
+const activeThreadIndicatorComponent = props => _react.createElement(
   'div',
   { className: 'nuclide-debugger-thread-list-item-current-indicator' },
-  props.cellData ? _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: 'arrow-right', title: 'Selected Thread' }) : null
+  props.cellData ? _react.createElement((_Icon || _load_Icon()).Icon, { icon: 'arrow-right', title: 'Selected Thread' }) : null
 ); /**
     * Copyright (c) 2015-present, Facebook, Inc.
     * All rights reserved.
@@ -56,13 +65,13 @@ const activeThreadIndicatorComponent = props => _react.default.createElement(
     * @format
     */
 
-class DebuggerThreadsComponent extends _react.default.Component {
+class DebuggerThreadsComponent extends _react.Component {
 
   constructor(props) {
     super(props);
 
     this._handleSelectThread = data => {
-      this.props.bridge.selectThread(data.id);
+      this.props.selectThread(data.id);
     };
 
     this._handleSort = (sortedColumn, sortDescending) => {
@@ -89,12 +98,12 @@ class DebuggerThreadsComponent extends _react.default.Component {
       });
     };
 
-    this._handleThreadStoreChanged = (0, (_debounce || _load_debounce()).default)(this._handleThreadStoreChanged, 150);
+    this._handleThreadsChanged = (0, (_debounce || _load_debounce()).default)(this._handleThreadsChanged, 150);
 
     this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this.state = {
-      threadList: props.threadStore.getThreadList(),
-      selectedThreadId: props.threadStore.getSelectedThreadId(),
+      threadList: props.model.getThreadList(),
+      selectedThreadId: props.model.getSelectedThreadId(),
       sortedColumn: null,
       sortDescending: false,
       threadsLoading: false
@@ -102,8 +111,7 @@ class DebuggerThreadsComponent extends _react.default.Component {
   }
 
   componentDidMount() {
-    const { threadStore } = this.props;
-    this._disposables.add(threadStore.onChange(() => this._handleThreadStoreChanged()));
+    this._disposables.add(this.props.model.onThreadsChanged(() => this._handleThreadsChanged()));
   }
 
   componentWillUnmount() {
@@ -116,24 +124,23 @@ class DebuggerThreadsComponent extends _react.default.Component {
   }
 
   _scrollSelectedThreadIntoView() {
-    const listNode = _reactDom.default.findDOMNode(this.refs.threadTable);
+    const listNode = _reactDom.default.findDOMNode(this._threadTable);
     if (listNode) {
       const selectedRows =
       // $FlowFixMe
       listNode.getElementsByClassName('nuclide-debugger-thread-list-item-selected');
 
       if (selectedRows && selectedRows.length > 0) {
-        // $FlowFixMe
-        selectedRows[0].scrollIntoViewIfNeeded(false);
+        (0, (_scrollIntoView || _load_scrollIntoView()).scrollIntoViewIfNeeded)(selectedRows[0], false);
       }
     }
   }
 
-  _handleThreadStoreChanged() {
+  _handleThreadsChanged() {
     this.setState({
-      threadList: this.props.threadStore.getThreadList(),
-      selectedThreadId: this.props.threadStore.getSelectedThreadId(),
-      threadsLoading: this.props.threadStore.getThreadsReloading()
+      threadList: this.props.model.getThreadList(),
+      selectedThreadId: this.props.model.getSelectedThreadId(),
+      threadsLoading: this.props.model.getThreadsReloading()
     });
   }
 
@@ -161,9 +168,9 @@ class DebuggerThreadsComponent extends _react.default.Component {
     }];
 
     // Individual debuggers can override the displayed columns.
-    const columns = this.props.customThreadColumns.length === 0 ? defaultColumns : [activeThreadCol, ...this.props.customThreadColumns];
+    const columns = defaultColumns;
     const threadName = this.props.threadName.toLowerCase();
-    const emptyComponent = () => _react.default.createElement(
+    const emptyComponent = () => _react.createElement(
       'div',
       { className: 'nuclide-debugger-thread-list-empty' },
       threadList == null ? `(${threadName} unavailable)` : `no ${threadName} to display`
@@ -182,16 +189,16 @@ class DebuggerThreadsComponent extends _react.default.Component {
     });
 
     if (this.state.threadsLoading) {
-      return _react.default.createElement(
+      return _react.createElement(
         'div',
         {
           className: 'nuclide-debugger-thread-loading',
           title: 'Loading threads...' },
-        _react.default.createElement((_LoadingSpinner || _load_LoadingSpinner()).LoadingSpinner, { size: (_LoadingSpinner || _load_LoadingSpinner()).LoadingSpinnerSizes.MEDIUM })
+        _react.createElement((_LoadingSpinner || _load_LoadingSpinner()).LoadingSpinner, { size: (_LoadingSpinner || _load_LoadingSpinner()).LoadingSpinnerSizes.MEDIUM })
       );
     }
 
-    return _react.default.createElement((_Table || _load_Table()).Table, {
+    return _react.createElement((_Table || _load_Table()).Table, {
       columns: columns,
       emptyComponent: emptyComponent,
       rows: this._sortRows(rows, this.state.sortedColumn, this.state.sortDescending),
@@ -202,7 +209,9 @@ class DebuggerThreadsComponent extends _react.default.Component {
       onSort: this._handleSort,
       sortedColumn: this.state.sortedColumn,
       sortDescending: this.state.sortDescending,
-      ref: 'threadTable'
+      ref: table => {
+        this._threadTable = table;
+      }
     });
   }
 }

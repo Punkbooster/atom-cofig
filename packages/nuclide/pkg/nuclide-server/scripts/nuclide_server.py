@@ -83,7 +83,8 @@ class NuclideServer(object):
         if self.is_https():
             server_cert, server_key, ca = self.get_server_certificate_files()
             client_cert, client_key = self.get_client_certificate_files(ca)
-            self._version = utils.http_get('localhost', self.port, method='POST', url='/heartbeat',
+            common_name = NuclideCertificatesGenerator.get_common_name(server_cert)
+            self._version = utils.http_get(common_name, self.port, method='POST', url='/heartbeat',
                                            key_file=client_key, cert_file=client_cert, ca_cert=ca)
         else:
             self._version = utils.http_get('localhost', self.port, method='POST', url='/heartbeat')
@@ -206,11 +207,19 @@ class NuclideServer(object):
                 self.logger.info('Found existing Nuclide process running on port %d.' % self.port)
                 return 1
 
+        node_flags = [
+            # Increase stack trace limit for better debug logs.
+            # For reference, Atom/Electron does not have a stack trace limit.
+            '--stack-trace-limit=50',
+        ]
+
+        avail_mem_kb = self._get_avail_memory()
+        if not avail_mem_kb or avail_mem_kb >= 8192 * 1024:
+            # Increase the default memory limit from ~1.76GB to 4GB.
+            node_flags.append('--max-old-space-size=4096')
+
         # Start Nuclide server.
-        js_cmd = '%s --port %d' % (NuclideServer.script_path, self.port)
-        # Increase stack trace limit for better debug logs.
-        # For reference, Atom/Electron does not have a stack trace limit.
-        js_cmd += ' --stack-trace-limit=50'
+        js_cmd = '%s %s --port %d' % (' '.join(node_flags), NuclideServer.script_path, self.port)
         if cert and key and ca:
             js_cmd += ' --cert %s --key %s --ca %s' % (cert, key, ca)
         if abort_on_uncaught_exception:
@@ -258,3 +267,20 @@ class NuclideServer(object):
         with open(file_name, "r") as f:
             text = f.read()
             return text
+
+    @staticmethod
+    def _get_avail_memory():
+        # /proc/meminfo only exists on Linux.
+        if sys.platform.startswith('linux'):
+            try:
+                with open('/proc/meminfo', 'r') as f:
+                    while True:
+                        parts = f.readline().split()
+                        if len(parts) != 3:
+                            break
+                        if parts[0] == 'MemAvailable:':
+                            # Return value is in kilobytes.
+                            return int(parts[1])
+            except IOError:
+                pass
+        return None

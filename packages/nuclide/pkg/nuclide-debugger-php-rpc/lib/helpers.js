@@ -72,10 +72,10 @@ function _load_nuclideUri() {
   return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
-var _helpers;
+var _main;
 
-function _load_helpers() {
-  return _helpers = require('../../nuclide-debugger-common/lib/helpers');
+function _load_main() {
+  return _main = require('nuclide-debugger-common/main');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -91,8 +91,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
-exports.pathToUri = (_helpers || _load_helpers()).pathToUri;
-exports.uriToPath = (_helpers || _load_helpers()).uriToPath;
+exports.pathToUri = (_main || _load_main()).pathToUri;
+exports.uriToPath = (_main || _load_main()).uriToPath;
 const DUMMY_FRAME_ID = exports.DUMMY_FRAME_ID = 'Frame.0';
 
 function isContinuationCommand(command) {
@@ -129,7 +129,7 @@ function getBreakpointLocation(breakpoint) {
   return {
     // chrome lineNumber is 0-based while xdebug is 1-based.
     lineNumber: lineNumber - 1,
-    scriptId: (0, (_helpers || _load_helpers()).uriToPath)(filename)
+    scriptId: (0, (_main || _load_main()).uriToPath)(filename)
   };
 }
 
@@ -157,6 +157,7 @@ function launchPhpScriptWithXDebugEnabled(scriptPath, sendToOutputWindowAndResol
   const {
     phpRuntimePath,
     phpRuntimeArgs,
+    scriptArguments,
     dummyRequestFilePath,
     launchWrapperCommand
   } = (0, (_config || _load_config()).getConfig)();
@@ -171,7 +172,7 @@ function launchPhpScriptWithXDebugEnabled(scriptPath, sendToOutputWindowAndResol
   }
 
   const scriptArgs = (0, (_string || _load_string()).shellParse)(scriptPath);
-  const args = [...runtimeArgs, ...scriptArgs];
+  const args = [...runtimeArgs, ...scriptArgs, ...scriptArguments];
   const proc = _child_process.default.spawn(processPath, args, processOptions);
   (_utils || _load_utils()).default.debug((_dedent || _load_dedent()).default`
     child_process(${proc.pid}) spawned with xdebug enabled.

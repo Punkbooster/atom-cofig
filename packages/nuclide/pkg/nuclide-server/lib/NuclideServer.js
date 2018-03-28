@@ -3,8 +3,17 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.HEARTBEAT_CHANNEL = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+var _os = _interopRequireDefault(require('os'));
+
+var _log4js;
+
+function _load_log4js() {
+  return _log4js = require('log4js');
+}
 
 var _ws;
 
@@ -18,10 +27,10 @@ function _load_event() {
   return _event = require('nuclide-commons/event');
 }
 
-var _log4js;
+var _UniversalDisposable;
 
-function _load_log4js() {
-  return _log4js = require('log4js');
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _blocked;
@@ -30,16 +39,22 @@ function _load_blocked() {
   return _blocked = _interopRequireDefault(require('./blocked'));
 }
 
-var _config;
+var _QueuedAckTransport;
 
-function _load_config() {
-  return _config = require('./config');
+function _load_QueuedAckTransport() {
+  return _QueuedAckTransport = require('./QueuedAckTransport');
 }
 
 var _utils;
 
 function _load_utils() {
   return _utils = require('./utils');
+}
+
+var _nuclideAnalytics;
+
+function _load_nuclideAnalytics() {
+  return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
 var _nuclideVersion;
@@ -60,12 +75,6 @@ function _load_nuclideRpc() {
   return _nuclideRpc = require('../../nuclide-rpc');
 }
 
-var _QueuedTransport;
-
-function _load_QueuedTransport() {
-  return _QueuedTransport = require('./QueuedTransport');
-}
-
 var _WebSocketTransport;
 
 function _load_WebSocketTransport() {
@@ -80,7 +89,6 @@ function _load_nuclideMarshalersCommon() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// eslint-disable-next-line nuclide-internal/no-commonjs
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -92,10 +100,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
+const HEARTBEAT_CHANNEL = exports.HEARTBEAT_CHANNEL = 'heartbeat';
+
+// eslint-disable-next-line rulesdir/no-commonjs
 const connect = require('connect');
-// eslint-disable-next-line nuclide-internal/no-commonjs
+// eslint-disable-next-line rulesdir/no-commonjs
 const http = require('http');
-// eslint-disable-next-line nuclide-internal/no-commonjs
+// eslint-disable-next-line rulesdir/no-commonjs
 const https = require('https');
 
 const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-server');
@@ -103,6 +114,8 @@ const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-server');
 class NuclideServer {
 
   constructor(options, services) {
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
+
     if (!(NuclideServer._theServer == null)) {
       throw new Error('Invariant violation: "NuclideServer._theServer == null"');
     }
@@ -120,7 +133,8 @@ class NuclideServer {
     this._version = (0, (_nuclideVersion || _load_nuclideVersion()).getVersion)().toString();
     this._app = connect();
     this._attachUtilHandlers();
-    if (serverKey && serverCertificate && certificateAuthorityCertificate) {
+    const isHttps = Boolean(serverKey && serverCertificate && certificateAuthorityCertificate);
+    if (isHttps) {
       const webServerOptions = {
         key: serverKey,
         cert: serverCertificate,
@@ -141,12 +155,18 @@ class NuclideServer {
     this._setupServices(); // Setup 1.0 and 2.0 services.
 
     if (trackEventLoop) {
-      (0, (_blocked || _load_blocked()).default)(ms => {
+      const stallTracker = new (_nuclideAnalytics || _load_nuclideAnalytics()).HistogramTracker('server-event-loop-blocked',
+      /* max */1000,
+      /* buckets */10);
+      this._disposables.add(stallTracker, (0, (_blocked || _load_blocked()).default)(ms => {
+        stallTracker.track(ms);
         logger.info('NuclideServer event loop blocked for ' + ms + 'ms');
-      });
+      }));
     }
 
     this._rpcServiceRegistry = new (_nuclideRpc || _load_nuclideRpc()).ServiceRegistry((_nuclideMarshalersCommon || _load_nuclideMarshalersCommon()).getServerSideMarshalers, services);
+
+    (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('server-created', { port, isHttps, host: _os.default.hostname() });
   }
 
   _attachUtilHandlers() {
@@ -167,7 +187,10 @@ class NuclideServer {
   }
 
   _createWebSocketServer() {
-    const webSocketServer = new (_ws || _load_ws()).default.Server({ server: this._webServer });
+    const webSocketServer = new (_ws || _load_ws()).default.Server({
+      server: this._webServer,
+      perMessageDeflate: true
+    });
     webSocketServer.on('connection', socket => this._onConnection(socket));
     webSocketServer.on('error', error => logger.error('WebSocketServer Error:', error));
     return webSocketServer;
@@ -178,7 +201,6 @@ class NuclideServer {
     // ServiceIntegrationTestHelper.
     this._xhrServiceRegistry = {};
     this._setupHeartbeatHandler();
-    this._setupClientInfoHandler();
 
     // Setup error handler.
     this._app.use((error, request, response, next) => {
@@ -193,24 +215,8 @@ class NuclideServer {
   _setupHeartbeatHandler() {
     var _this = this;
 
-    this._registerService('/' + (_config || _load_config()).HEARTBEAT_CHANNEL, (0, _asyncToGenerator.default)(function* () {
+    this._registerService('/' + HEARTBEAT_CHANNEL, (0, _asyncToGenerator.default)(function* () {
       return _this._version;
-    }), 'post', true);
-  }
-
-  _setupClientInfoHandler() {
-    var _this2 = this;
-
-    this._registerService('/' + (_config || _load_config()).CLIENTINFO_CHANNEL, (0, _asyncToGenerator.default)(function* () {
-      const clients = {};
-      for (const [clientId, client] of _this2._clients) {
-        const transport = client.getTransport();
-        clients[clientId] = {
-          lastStateChangeTime: transport.getLastStateChangeTime(),
-          state: transport.getState()
-        };
-      }
-      return JSON.stringify({ clients });
     }), 'post', true);
   }
 
@@ -279,14 +285,14 @@ class NuclideServer {
   }
 
   _registerHttpService(serviceName, method, isTextResponse) {
-    var _this3 = this;
+    var _this2 = this;
 
     const loweredCaseMethod = method.toLowerCase();
     // $FlowFixMe - Use map instead of computed property.
     this._app[loweredCaseMethod](serviceName, (() => {
-      var _ref3 = (0, _asyncToGenerator.default)(function* (request, response, next) {
+      var _ref2 = (0, _asyncToGenerator.default)(function* (request, response, next) {
         try {
-          const result = yield _this3.callService(serviceName, (0, (_utils || _load_utils()).deserializeArgs)(request.url));
+          const result = yield _this2.callService(serviceName, (0, (_utils || _load_utils()).deserializeArgs)(request.url));
           if (isTextResponse) {
             (0, (_utils || _load_utils()).sendTextResponse)(response, result || '');
           } else {
@@ -299,7 +305,7 @@ class NuclideServer {
       });
 
       return function (_x, _x2, _x3) {
-        return _ref3.apply(this, arguments);
+        return _ref2.apply(this, arguments);
       };
     })());
   }
@@ -316,7 +322,7 @@ class NuclideServer {
       client = this._clients.get(clientId);
       const transport = new (_WebSocketTransport || _load_WebSocketTransport()).WebSocketTransport(clientId, socket);
       if (client == null) {
-        client = (_nuclideRpc || _load_nuclideRpc()).RpcConnection.createServer(this._rpcServiceRegistry, new (_QueuedTransport || _load_QueuedTransport()).QueuedTransport(clientId, transport));
+        client = (_nuclideRpc || _load_nuclideRpc()).RpcConnection.createServer(this._rpcServiceRegistry, new (_QueuedAckTransport || _load_QueuedAckTransport()).QueuedAckTransport(clientId, transport, (_utils || _load_utils()).protocolLogger), {}, clientId, (_utils || _load_utils()).protocolLogger);
         this._clients.set(clientId, client);
       } else {
         if (!(clientId === client.getTransport().id)) {
@@ -335,6 +341,7 @@ class NuclideServer {
 
     NuclideServer._theServer = null;
 
+    this._disposables.dispose();
     this._webSocketServer.close();
     this._webServer.close();
   }

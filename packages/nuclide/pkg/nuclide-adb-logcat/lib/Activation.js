@@ -25,12 +25,16 @@ function _load_createMessageStream() {
 var _LogTailer;
 
 function _load_LogTailer() {
-  return _LogTailer = require('../../nuclide-console/lib/LogTailer');
+  return _LogTailer = require('../../nuclide-console-base/lib/LogTailer');
 }
 
-var _atom = require('atom');
-
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -68,9 +72,9 @@ class Activation {
       }
     });
 
-    this._disposables = new _atom.CompositeDisposable(new _atom.Disposable(() => {
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       this._logTailer.stop();
-    }), atom.commands.add('atom-workspace', {
+    }, atom.commands.add('atom-workspace', {
       'nuclide-adb-logcat:start': () => this._logTailer.start(),
       'nuclide-adb-logcat:stop': () => this._logTailer.stop(),
       'nuclide-adb-logcat:restart': () => this._logTailer.restart()
@@ -96,17 +100,15 @@ class Activation {
   }
 }
 
-exports.default = Activation;
-// eslint-disable-next-line nuclide-internal/no-cross-atom-imports
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
+exports.default = Activation; /**
+                               * Copyright (c) 2015-present, Facebook, Inc.
+                               * All rights reserved.
+                               *
+                               * This source code is licensed under the license found in the LICENSE file in
+                               * the root directory of this source tree.
+                               *
+                               * 
+                               * @format
+                               */
 
 const isNoEntError = err => err.code === 'ENOENT';

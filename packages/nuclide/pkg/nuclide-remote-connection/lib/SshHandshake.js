@@ -47,6 +47,12 @@ function _load_promise() {
   return _promise = require('nuclide-commons/promise');
 }
 
+var _string;
+
+function _load_string() {
+  return _string = require('nuclide-commons/string');
+}
+
 var _lookupPreferIpV;
 
 function _load_lookupPreferIpV() {
@@ -59,8 +65,23 @@ function _load_log4js() {
   return _log4js = require('log4js');
 }
 
+var _RemoteCommand;
+
+function _load_RemoteCommand() {
+  return _RemoteCommand = require('./RemoteCommand');
+}
+
+var _systemInfo;
+
+function _load_systemInfo() {
+  return _systemInfo = require('../../commons-node/system-info');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
+
+// Sync word and regex pattern for parsing command stdout.
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -72,9 +93,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
-const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
-
-// Sync word and regex pattern for parsing command stdout.
 const READY_TIMEOUT_MS = 120 * 1000;
 const SFTP_TIMEOUT_MS = 20 * 1000;
 
@@ -91,6 +109,7 @@ const ErrorType = Object.freeze({
   UNKNOWN: 'UNKNOWN',
   HOST_NOT_FOUND: 'HOST_NOT_FOUND',
   CANT_READ_PRIVATE_KEY: 'CANT_READ_PRIVATE_KEY',
+  CERT_NOT_YET_VALID: 'CERT_NOT_YET_VALID',
   SSH_CONNECT_TIMEOUT: 'SSH_CONNECT_TIMEOUT',
   SSH_CONNECT_FAILED: 'SSH_CONNECT_FAILED',
   SSH_AUTHENTICATION: 'SSH_AUTHENTICATION',
@@ -154,7 +173,8 @@ class SshHandshake {
         echo: true
       }], ([password]) => {
         this._connection.connect({
-          host: config.host,
+          // Use the correctly resolved hostname.
+          host: this._connection.config.host,
           port: config.sshPort,
           username: config.username,
           password,
@@ -178,13 +198,6 @@ class SshHandshake {
       _this._cancelled = false;
       _this._willConnect();
 
-      const existingConnection = (_RemoteConnection || _load_RemoteConnection()).RemoteConnection.getByHostnameAndPath(_this._config.host, _this._config.cwd);
-
-      if (existingConnection) {
-        _this._didConnect(existingConnection);
-        return;
-      }
-
       let lookup;
       try {
         lookup = yield (0, (_lookupPreferIpV || _load_lookupPreferIpV()).default)(config.host);
@@ -195,19 +208,10 @@ class SshHandshake {
       const { address, family } = lookup;
       _this._config.family = family;
 
-      const connection = (yield (_RemoteConnection || _load_RemoteConnection()).RemoteConnection.createConnectionBySavedConfig(_this._config.host, _this._config.cwd, _this._config.displayTitle)) || (
-      // We save connections by their IP address as well, in case a different hostname
-      // was used for the same server.
-      yield (_RemoteConnection || _load_RemoteConnection()).RemoteConnection.createConnectionBySavedConfig(address, _this._config.cwd, _this._config.displayTitle));
-
-      if (connection) {
-        _this._didConnect(connection);
-        return;
-      }
-
       if (config.authMethod === SupportedMethods.SSL_AGENT) {
         // Point to ssh-agent's socket for ssh-agent-based authentication.
         let agent = process.env.SSH_AUTH_SOCK;
+        // flowlint-next-line sketchy-null-string:off
         if (!agent && /^win/.test(process.platform)) {
           // #100: On Windows, fall back to pageant.
           agent = 'pageant';
@@ -264,6 +268,10 @@ class SshHandshake {
   }
 
   _forwardSocket(socket) {
+    if (!(socket.remoteAddress != null)) {
+      throw new Error('Invariant violation: "socket.remoteAddress != null"');
+    }
+
     this._connection.forwardOut(socket.remoteAddress, socket.remotePort, 'localhost', this._remotePort, (err, stream) => {
       if (err) {
         socket.end();
@@ -280,7 +288,7 @@ class SshHandshake {
       throw new Error('Invariant violation: "typeof serverInfo.port === \'number\'"');
     }
 
-    this._remotePort = serverInfo.port;
+    this._remotePort = serverInfo.port || 0;
     this._remoteHost = typeof serverInfo.hostname === 'string' ? serverInfo.hostname : this._config.host;
 
     // Because the value for the Initial Directory that the user supplied may have
@@ -316,98 +324,84 @@ class SshHandshake {
   _startRemoteServer() {
     var _this2 = this;
 
-    let sftpTimer = null;
     return new Promise((resolve, reject) => {
-      let stdOut = '';
+      const command = this._config.remoteServerCommand;
       const remoteTempFile = `/tmp/nuclide-sshhandshake-${Math.random()}`;
-      // TODO: escape any single quotes
-      // TODO: the timeout value shall be configurable using .json file too (t6904691).
-      const cmd = `${this._config.remoteServerCommand} --workspace=${this._config.cwd}` + ` --common-name=${this._config.host} --json-output-file=${remoteTempFile} -t 60`;
+      const flags = [`--workspace=${this._config.cwd}`, `--common-name=${this._config.host}`, `--json-output-file=${remoteTempFile}`, '--timeout=60'];
+      // Append the client version if not already provided.
+      if (!command.includes('--version=')) {
+        flags.push(`--version=${(0, (_systemInfo || _load_systemInfo()).getNuclideVersion)()}`);
+      }
+      // We'll take the user-provided command literally.
+      const cmd = command + ' ' + (0, (_string || _load_string()).shellQuote)(flags);
 
       this._connection.exec(cmd, { pty: { term: 'nuclide' } }, (err, stream) => {
         if (err) {
           this._onSshConnectionError(err);
           return resolve(false);
         }
+
+        let stdOut = '';
+        // $FlowIssue - Problem with function overloads. Maybe related to #4616, #4683, #4685, and #4669
         stream.on('close', (() => {
-          var _ref = (0, _asyncToGenerator.default)(function* (code, signal) {
-            // Note: this code is probably the code from the child shell if one
-            // is in use.
-            if (code === 0) {
-              // Some servers have max channels set to 1, so add a delay to ensure
-              // the old channel has been cleaned up on the server.
-              // TODO(hansonw): Implement a proper retry mechanism.
-              // But first, we have to clean up this callback hell.
-              yield (0, (_promise || _load_promise()).sleep)(100);
-              sftpTimer = setTimeout(function () {
-                _this2._error('Failed to start sftp connection', SshHandshake.ErrorType.SFTP_TIMEOUT, new Error());
-                sftpTimer = null;
-                _this2._connection.end();
-                resolve(false);
-              }, SFTP_TIMEOUT_MS);
-              _this2._connection.sftp((() => {
-                var _ref2 = (0, _asyncToGenerator.default)(function* (error, sftp) {
-                  if (sftpTimer != null) {
-                    // Clear the sftp timer once we get a response.
-                    clearTimeout(sftpTimer);
-                  } else {
-                    // If the timer already triggered, we timed out. Just exit.
-                    return;
-                  }
-                  if (error) {
-                    _this2._error('Failed to start sftp connection', SshHandshake.ErrorType.SERVER_START_FAILED, error);
-                    return resolve(false);
-                  }
-                  const localTempFile = yield (_fsPromise || _load_fsPromise()).default.tempfile();
-                  sftp.fastGet(remoteTempFile, localTempFile, (() => {
-                    var _ref3 = (0, _asyncToGenerator.default)(function* (sftpError) {
-                      sftp.end();
-                      if (sftpError) {
-                        _this2._error('Failed to transfer server start information', SshHandshake.ErrorType.SERVER_START_FAILED, sftpError);
-                        return resolve(false);
-                      }
-
-                      let serverInfo = null;
-                      const serverInfoJson = yield (_fsPromise || _load_fsPromise()).default.readFile(localTempFile, 'utf8');
-                      try {
-                        serverInfo = JSON.parse(serverInfoJson);
-                      } catch (e) {
-                        _this2._error('Malformed server start information', SshHandshake.ErrorType.SERVER_START_FAILED, new Error(serverInfoJson));
-                        return resolve(false);
-                      }
-
-                      if (!serverInfo.success) {
-                        _this2._error('Remote server failed to start', SshHandshake.ErrorType.SERVER_START_FAILED, new Error(serverInfo.logs));
-                        return resolve(false);
-                      }
-
-                      if (!serverInfo.workspace) {
-                        _this2._error('Could not find directory', SshHandshake.ErrorType.DIRECTORY_NOT_FOUND, new Error(serverInfo.logs));
-                        return resolve(false);
-                      }
-
-                      // Update server info that is needed for setting up client.
-                      _this2._updateServerInfo(serverInfo);
-                      return resolve(true);
-                    });
-
-                    return function (_x5) {
-                      return _ref3.apply(this, arguments);
-                    };
-                  })());
-                });
-
-                return function (_x3, _x4) {
-                  return _ref2.apply(this, arguments);
-                };
-              })());
-            } else {
+          var _ref = (0, _asyncToGenerator.default)(function* (exitCode, signal) {
+            if (exitCode !== 0) {
               if (_this2._cancelled) {
                 _this2._error('Cancelled by user', SshHandshake.ErrorType.USER_CANCELLED, new Error(stdOut));
               } else {
                 _this2._error('Remote shell execution failed', SshHandshake.ErrorType.UNKNOWN, new Error(stdOut));
               }
               return resolve(false);
+            }
+
+            // Some servers have max channels set to 1, so add a delay to ensure
+            // the old channel has been cleaned up on the server.
+            // TODO(hansonw): Implement a proper retry mechanism.
+            // But first, we have to clean up this callback hell.
+            yield (0, (_promise || _load_promise()).sleep)(100);
+            const result = yield (0, (_RemoteCommand || _load_RemoteCommand()).readFile)(_this2._connection, SFTP_TIMEOUT_MS, remoteTempFile);
+
+            switch (result.type) {
+              case 'success':
+                {
+                  let serverInfo = null;
+                  try {
+                    serverInfo = JSON.parse(result.data.toString());
+                  } catch (e) {
+                    _this2._error('Malformed server start information', SshHandshake.ErrorType.SERVER_START_FAILED, new Error(result.data));
+                    return resolve(false);
+                  }
+
+                  if (!serverInfo.success) {
+                    _this2._error('Remote server failed to start', SshHandshake.ErrorType.SERVER_START_FAILED, new Error(serverInfo.logs));
+                    return resolve(false);
+                  }
+
+                  if (!serverInfo.workspace) {
+                    _this2._error('Could not find directory', SshHandshake.ErrorType.DIRECTORY_NOT_FOUND, new Error(serverInfo.logs));
+                    return resolve(false);
+                  }
+
+                  // Update server info that is needed for setting up client.
+                  _this2._updateServerInfo(serverInfo);
+                  return resolve(true);
+                }
+
+              case 'timeout':
+                _this2._error('Failed to start sftp connection', SshHandshake.ErrorType.SFTP_TIMEOUT, new Error());
+                _this2._connection.end();
+                return resolve(false);
+
+              case 'fail-to-start-connection':
+                _this2._error('Failed to start sftp connection', SshHandshake.ErrorType.SERVER_START_FAILED, result.error);
+                return resolve(false);
+
+              case 'fail-to-transfer-data':
+                _this2._error('Failed to transfer server start information', SshHandshake.ErrorType.SERVER_START_FAILED, result.error);
+                return resolve(false);
+
+              default:
+                result;
             }
           });
 
@@ -430,12 +424,12 @@ class SshHandshake {
       }
 
       const connect = (() => {
-        var _ref4 = (0, _asyncToGenerator.default)(function* (config) {
+        var _ref2 = (0, _asyncToGenerator.default)(function* (config) {
           let connection = null;
           try {
             connection = yield (_RemoteConnection || _load_RemoteConnection()).RemoteConnection.findOrCreate(config);
           } catch (e) {
-            _this3._error('Connection check failed', SshHandshake.ErrorType.SERVER_CANNOT_CONNECT, e);
+            _this3._error('Connection check failed', e.code === 'CERT_NOT_YET_VALID' ? SshHandshake.ErrorType.CERT_NOT_YET_VALID : SshHandshake.ErrorType.SERVER_CANNOT_CONNECT, e);
           }
           if (connection != null) {
             _this3._didConnect(connection);
@@ -446,19 +440,16 @@ class SshHandshake {
           }
         });
 
-        return function connect(_x6) {
-          return _ref4.apply(this, arguments);
+        return function connect(_x3) {
+          return _ref2.apply(this, arguments);
         };
       })();
 
       // Use an ssh tunnel if server is not secure
       if (_this3._isSecure()) {
+        // flowlint-next-line sketchy-null-string:off
         if (!_this3._remoteHost) {
           throw new Error('Invariant violation: "this._remoteHost"');
-        }
-
-        if (!_this3._remotePort) {
-          throw new Error('Invariant violation: "this._remotePort"');
         }
 
         connect({
@@ -472,11 +463,13 @@ class SshHandshake {
           displayTitle: _this3._config.displayTitle
         });
       } else {
-        /* $FlowIssue t9212378 */
         _this3._forwardingServer = _net.default.createServer(function (sock) {
           _this3._forwardSocket(sock);
-        }).listen(0, 'localhost', function () {
+        })
+        // $FlowFixMe
+        .listen(0, 'localhost', function () {
           const localPort = _this3._getLocalPort();
+          // flowlint-next-line sketchy-null-number:off
 
           if (!localPort) {
             throw new Error('Invariant violation: "localPort"');

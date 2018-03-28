@@ -1,6 +1,6 @@
 'use strict';
 
-var _atom = require('atom');
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _ProviderRegistry;
 
@@ -32,6 +32,12 @@ function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
+var _passesGK;
+
+function _load_passesGK() {
+  return _passesGK = _interopRequireDefault(require('../../commons-node/passesGK'));
+}
+
 var _refactorActions;
 
 function _load_refactorActions() {
@@ -54,22 +60,20 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
+const CONTEXT_MENU_CLASS = 'enable-nuclide-refactorizer'; /**
+                                                           * Copyright (c) 2015-present, Facebook, Inc.
+                                                           * All rights reserved.
+                                                           *
+                                                           * This source code is licensed under the license found in the LICENSE file in
+                                                           * the root directory of this source tree.
+                                                           *
+                                                           * 
+                                                           * @format
+                                                           */
 
 /*
  * WARNING: This package is still experimental and in early development. Use it at your own risk.
  */
-
-const CONTEXT_MENU_CLASS = 'enable-nuclide-refactorizer';
 
 class Activation {
 
@@ -83,7 +87,7 @@ class Activation {
       this._store.dispatch((_refactorActions || _load_refactorActions()).open('generic'));
     }), atom.commands.add('atom-text-editor',
     // We don't actually want people calling this directly.
-    // eslint-disable-next-line nuclide-internal/atom-commands
+    // eslint-disable-next-line rulesdir/atom-commands
     'nuclide-refactorizer:refactorize-from-context-menu', () => {
       const mouseEvent = lastMouseEvent;
       lastMouseEvent = null;
@@ -135,10 +139,50 @@ class Activation {
   consumeRefactorProvider(provider) {
     this._providerRegistry.addProvider(provider);
     this._checkAllEditorContextMenus();
-    return new _atom.Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       this._providerRegistry.removeProvider(provider);
       this._checkAllEditorContextMenus();
     });
+  }
+
+  provideCodeActions() {
+    const store = this._store;
+    const providerRegistry = this._providerRegistry;
+    return {
+      priority: 1,
+      getCodeActions(editor, range, diagnostics) {
+        return (0, _asyncToGenerator.default)(function* () {
+          const provider = providerRegistry.getProviderForEditor(editor);
+          if (provider == null || diagnostics.length > 0 || !(yield (0, (_passesGK || _load_passesGK()).default)('nuclide_refactorizer_code_actions'))) {
+            return [];
+          }
+
+          const refactors = yield provider.refactorings(editor, range);
+
+          return refactors.filter(function (refactor) {
+            return refactor.kind === 'freeform' && !refactor.disabled;
+          }).map(function (refactor) {
+            if (!(refactor.kind === 'freeform')) {
+              throw new Error('Invariant violation: "refactor.kind === \'freeform\'"');
+            }
+
+            return {
+              apply() {
+                return (0, _asyncToGenerator.default)(function* () {
+                  return store.dispatch((_refactorActions || _load_refactorActions()).inlinePickedRefactor(editor, range, provider, refactor));
+                })();
+              },
+              getTitle() {
+                return (0, _asyncToGenerator.default)(function* () {
+                  return refactor.name;
+                })();
+              },
+              dispose() {}
+            };
+          });
+        })();
+      }
+    };
   }
 }
 

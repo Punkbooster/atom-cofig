@@ -1,4 +1,4 @@
-import _default from './Collection';
-export { _default as default };
-import _Collection from './Collection';
-export { _Collection as Collection };
+import Collection from './Collection';
+
+export default Collection;
+export { Collection };

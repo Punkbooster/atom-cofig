@@ -4,7 +4,19 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _atom = require('atom');
+var _lruCache;
+
+function _load_lruCache() {
+  return _lruCache = _interopRequireDefault(require('lru-cache'));
+}
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
@@ -20,16 +32,17 @@ var _atom = require('atom');
 class RecentFilesService {
   // Map uses `Map`'s insertion ordering to keep files in order.
   constructor(state) {
-    this._fileList = new Map();
+    this._fileList = (0, (_lruCache || _load_lruCache()).default)({ max: 100 });
     if (state != null && state.filelist != null) {
       // Serialized state is in reverse chronological order. Reverse it to insert items correctly.
       state.filelist.reduceRight((_, fileItem) => {
         this._fileList.set(fileItem.path, fileItem.timestamp);
       }, null);
     }
-    this._subscriptions = new _atom.CompositeDisposable();
-    this._subscriptions.add(atom.workspace.onDidStopChangingActivePaneItem(item => {
+    this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
+    this._subscriptions.add(atom.workspace.onDidChangeActivePaneItem(item => {
       // Not all `item`s are instances of TextEditor (e.g. the diff view).
+      // flowlint-next-line sketchy-null-mixed:off
       if (!item || typeof item.getPath !== 'function') {
         return;
       }
@@ -41,8 +54,6 @@ class RecentFilesService {
   }
 
   touchFile(path) {
-    // Delete first to force a new insertion.
-    this._fileList.delete(path);
     this._fileList.set(path, Date.now());
   }
 
@@ -50,9 +61,10 @@ class RecentFilesService {
    * Returns a reverse-chronological list of recently opened files.
    */
   getRecentFiles() {
-    return Array.from(this._fileList).reverse().map(pair => ({
-      path: pair[0],
-      timestamp: pair[1]
+    return this._fileList.dump().map(({ k, v }) => ({
+      resultType: 'FILE',
+      path: k,
+      timestamp: v
     }));
   }
 

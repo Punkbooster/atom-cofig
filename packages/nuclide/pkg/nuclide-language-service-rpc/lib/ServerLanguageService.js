@@ -83,20 +83,33 @@ class ServerLanguageService {
   }
 
   findReferences(fileVersion, position) {
-    var _this4 = this;
-
-    return (0, _asyncToGenerator.default)(function* () {
-      const filePath = fileVersion.filePath;
-      const buffer = yield (0, (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).getBufferAtVersion)(fileVersion);
+    const filePath = fileVersion.filePath;
+    return _rxjsBundlesRxMinJs.Observable.fromPromise((0, (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).getBufferAtVersion)(fileVersion)).concatMap(buffer => {
       if (buffer == null) {
-        return null;
+        return _rxjsBundlesRxMinJs.Observable.of(null);
       }
-      return _this4._service.findReferences(filePath, buffer, position);
-    })();
+      return this._service.findReferences(filePath, buffer, position);
+    }).publish();
   }
 
   getCoverage(filePath) {
     return this._service.getCoverage(filePath);
+  }
+
+  getAdditionalLogFiles() {
+    return (0, _asyncToGenerator.default)(function* () {
+      // TODO (if it's ever needed): push this request to the this._service
+      return [];
+    })();
+  }
+
+  getCodeActions(fileVersion, range, diagnostics) {
+    var _this4 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const { filePath } = fileVersion;
+      return _this4._service.getCodeActions(filePath, range, diagnostics);
+    })();
   }
 
   getOutline(fileVersion) {
@@ -213,6 +226,34 @@ class ServerLanguageService {
     })();
   }
 
+  getExpandedSelectionRange(fileVersion, currentSelection) {
+    var _this13 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const filePath = fileVersion.filePath;
+      const buffer = yield (0, (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).getBufferAtVersion)(fileVersion);
+      if (buffer == null) {
+        return null;
+      }
+
+      return _this13._service.getExpandedSelectionRange(filePath, buffer, currentSelection);
+    })();
+  }
+
+  getCollapsedSelectionRange(fileVersion, currentSelection, originalCursorPosition) {
+    var _this14 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const filePath = fileVersion.filePath;
+      const buffer = yield (0, (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).getBufferAtVersion)(fileVersion);
+      if (buffer == null) {
+        return null;
+      }
+
+      return _this14._service.getCollapsedSelectionRange(filePath, buffer, currentSelection, originalCursorPosition);
+    })();
+  }
+
   dispose() {
     this._service.dispose();
   }
@@ -234,10 +275,9 @@ null;
 
 function ensureInvalidations(logger, diagnostics) {
   const filesWithErrors = new Set();
-  const trackedDiagnostics = diagnostics.do(diagnosticArray => {
-    for (const diagnostic of diagnosticArray) {
-      const filePath = diagnostic.filePath;
-      if (diagnostic.messages.length === 0) {
+  const trackedDiagnostics = diagnostics.do(diagnosticMap => {
+    for (const [filePath, messages] of diagnosticMap) {
+      if (messages.length === 0) {
         logger.debug(`Removing ${filePath} from files with errors`);
         filesWithErrors.delete(filePath);
       } else {
@@ -249,13 +289,10 @@ function ensureInvalidations(logger, diagnostics) {
 
   const fileInvalidations = _rxjsBundlesRxMinJs.Observable.defer(() => {
     logger.debug('Clearing errors after stream closed');
-    return _rxjsBundlesRxMinJs.Observable.of(Array.from(filesWithErrors).map(file => {
+    return _rxjsBundlesRxMinJs.Observable.of(new Map(Array.from(filesWithErrors).map(file => {
       logger.debug(`Clearing errors for ${file} after connection closed`);
-      return {
-        filePath: file,
-        messages: []
-      };
-    }));
+      return [file, []];
+    })));
   });
 
   return trackedDiagnostics.concat(fileInvalidations);

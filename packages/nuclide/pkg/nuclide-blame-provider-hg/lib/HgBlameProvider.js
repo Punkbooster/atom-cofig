@@ -9,6 +9,7 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 let doGetBlameForEditor = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (editor) {
     const path = editor.getPath();
+    // flowlint-next-line sketchy-null-string:off
     if (!path) {
       return Promise.resolve([]);
     }
@@ -62,13 +63,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-blame-provider-hg');
 
 function canProvideBlameForEditor(editor) {
-  if (editor.isModified()) {
-    atom.notifications.addInfo('There is Hg blame information for this file, but only for saved changes. ' + 'Save, then try again.');
-    logger.info('nuclide-blame: Could not open Hg blame due to unsaved changes in file: ' + String(editor.getPath()));
-    return false;
-  }
-  const repo = (0, (_common || _load_common()).hgRepositoryForEditor)(editor);
-  return Boolean(repo);
+  return Boolean((0, (_common || _load_common()).hgRepositoryForEditor)(editor));
 }
 
 function getBlameForEditor(editor) {

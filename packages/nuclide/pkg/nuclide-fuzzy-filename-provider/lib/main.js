@@ -75,11 +75,7 @@ class Activation {
   constructor() {
     this._readySearch = this._readySearch.bind(this);
 
-    this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
-      if (this._busySignalService != null) {
-        this._busySignalService.dispose();
-      }
-    });
+    this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._subscriptionsByRoot = new Map();
 
     // Do search preprocessing for all existing and future root directories.
@@ -153,7 +149,7 @@ class Activation {
       const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFuzzyFileSearchServiceByNuclideUri)(projectPath);
       service.disposeFuzzySearch(projectPath);
     } catch (err) {
-      logger.error(`Error disposing fuzzy filename service for ${projectPath}`, err);
+      // Ignore errors here; this is pretty best-effort anyway.
     } finally {
       const disposables = this._subscriptionsByRoot.get(projectPath);
       if (disposables != null) {

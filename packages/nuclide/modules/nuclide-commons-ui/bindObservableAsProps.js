@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.bindObservableAsProps = bindObservableAsProps;
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 /**
  * Injects any key/value pairs from the given Observable value into the component as named props.
@@ -32,17 +32,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function bindObservableAsProps(stream, ComposedComponent) {
   // $FlowIssue The return type is guaranteed to be the same as the type of ComposedComponent.
-  return class extends _react.default.Component {
+  return class extends _react.Component {
 
     constructor(props) {
       super(props);
       this._subscription = null;
       this.state = {};
       this._resolved = false;
-    }
-
-    getWrappedComponent() {
-      return this._wrappedComponent;
     }
 
     componentDidMount() {
@@ -63,9 +59,7 @@ function bindObservableAsProps(stream, ComposedComponent) {
         return null;
       }
       const props = Object.assign({}, this.props, this.state);
-      return _react.default.createElement(ComposedComponent, Object.assign({
-        ref: component => this._wrappedComponent = component
-      }, props));
+      return _react.createElement(ComposedComponent, props);
     }
   };
 }

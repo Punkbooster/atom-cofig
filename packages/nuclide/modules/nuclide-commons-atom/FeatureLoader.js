@@ -16,16 +16,40 @@ function _load_featureConfig() {
   return _featureConfig = _interopRequireDefault(require('./feature-config'));
 }
 
+var _path2 = _interopRequireDefault(require('path'));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// eslint-disable-line rulesdir/prefer-nuclide-uri
+
+/**
+ * Copyright (c) 2017-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * 
+ * @format
+ */
+
+/* global localStorage */
+
+const { devMode } = atom.getLoadSettings();
 
 class FeatureLoader {
 
-  constructor({ config, features, pkgName }) {
+  constructor({ features, path: _path }) {
+    this._path = _path;
     this._features = features;
+
     this._loadDisposable = new (_UniversalDisposable || _load_UniversalDisposable()).default();
-    this._pkgName = pkgName;
+    this._pkgName = packageNameFromPath(this._path);
     this._config = {
       use: {
+        title: 'Enabled Features',
+        description: 'Enable and disable individual features',
         type: 'object',
         collapsed: true,
         properties: {}
@@ -66,7 +90,7 @@ class FeatureLoader {
     //
     this._features.forEach(feature => {
       const featurePkg = feature.pkg;
-      const name = featurePkg.name;
+      const name = packageNameFromPath(feature.path);
 
       // Sample packages are disabled by default. They are meant for development
       // use only, and aren't included in Nuclide builds.
@@ -74,19 +98,23 @@ class FeatureLoader {
 
       // Entry for enabling/disabling the feature
       const setting = {
-        title: `Enable the "${name}" feature`,
+        title: featurePkg.displayName == null ? `Enable the "${name}" feature` : `Enable ${featurePkg.displayName}`,
         description: featurePkg.description || '',
         type: 'boolean',
         default: enabled
       };
-      if (featurePkg.providedServices) {
-        const provides = Object.keys(featurePkg.providedServices).join(', ');
-        setting.description += `<br/>**Provides:** _${provides}_`;
+
+      if (devMode) {
+        if (featurePkg.providedServices) {
+          const provides = Object.keys(featurePkg.providedServices).join(', ');
+          setting.description += `<br/>**Provides:** _${provides}_`;
+        }
+        if (featurePkg.consumedServices) {
+          const consumes = Object.keys(featurePkg.consumedServices).join(', ');
+          setting.description += `<br/>**Consumes:** _${consumes}_`;
+        }
       }
-      if (featurePkg.consumedServices) {
-        const consumes = Object.keys(featurePkg.consumedServices).join(', ');
-        setting.description += `<br/>**Consumes:** _${consumes}_`;
-      }
+
       this._config.use.properties[name] = setting;
 
       // Merge in the feature's config
@@ -95,6 +123,8 @@ class FeatureLoader {
       if (featurePkgConfig) {
         this._config[name] = {
           type: 'object',
+          title: featurePkg.displayName,
+          description: featurePkg.description,
           collapsed: true,
           properties: {}
         };
@@ -125,10 +155,10 @@ class FeatureLoader {
         // this point `atom.config.get` returns the user set value. If it's
         // `undefined`, then the user has not set it.
         const enabled = atom.config.get(this.useKeyPathForFeature(feature));
-        const shouldEnable = enabled == null ? this._config.use.properties[feature.pkg.name].default : enabled;
+        const shouldEnable = enabled == null ? this._config.use.properties[packageNameFromPath(feature.path)].default : enabled;
 
         if (shouldEnable) {
-          atom.packages.loadPackage(feature.dirname);
+          atom.packages.loadPackage(feature.path);
         }
       });
 
@@ -163,14 +193,14 @@ class FeatureLoader {
 
     this._features.forEach(feature => {
       if (atom.config.get(this.useKeyPathForFeature(feature))) {
-        atom.packages.activatePackage(feature.dirname);
+        atom.packages.activatePackage(feature.path);
       }
     });
 
     // Watch the config to manage toggling features
     this._activationDisposable = new (_UniversalDisposable || _load_UniversalDisposable()).default(...this._features.map(feature => atom.config.onDidChange(this.useKeyPathForFeature(feature), event => {
       if (event.newValue === true) {
-        atom.packages.activatePackage(feature.dirname);
+        atom.packages.activatePackage(feature.path);
       } else if (event.newValue === false) {
         safeDeactivate(feature);
       }
@@ -211,26 +241,13 @@ class FeatureLoader {
   }
 
   useKeyPathForFeature(feature) {
-    return `${this._pkgName}.use.${feature.pkg.name}`;
+    return `${this._pkgName}.use.${packageNameFromPath(feature.path)}`;
   }
 }
 
-exports.default = FeatureLoader; /**
-                                  * Copyright (c) 2017-present, Facebook, Inc.
-                                  * All rights reserved.
-                                  *
-                                  * This source code is licensed under the BSD-style license found in the
-                                  * LICENSE file in the root directory of this source tree. An additional grant
-                                  * of patent rights can be found in the PATENTS file in the same directory.
-                                  *
-                                  * 
-                                  * @format
-                                  */
-
-/* global localStorage */
-
+exports.default = FeatureLoader;
 function safeDeactivate(feature, suppressSerialization = false) {
-  const name = feature.pkg.name;
+  const name = packageNameFromPath(feature.path);
   try {
     const pack = atom.packages.getLoadedPackage(name);
     if (pack != null) {
@@ -243,7 +260,7 @@ function safeDeactivate(feature, suppressSerialization = false) {
 }
 
 function safeSerialize(feature) {
-  const name = feature.pkg.name;
+  const name = packageNameFromPath(feature.path);
   try {
     const pack = atom.packages.getActivePackage(name);
     if (pack != null) {
@@ -254,4 +271,10 @@ function safeSerialize(feature) {
     // eslint-disable-next-line no-console
     console.error(`Error serializing "${name}": ${err.message}`);
   }
+}
+
+// this could be inlined into its use above, but this makes the intent more
+// explicit, and unifies it in the case this ever needs to change.
+function packageNameFromPath(pkgPath) {
+  return _path2.default.basename(pkgPath);
 }

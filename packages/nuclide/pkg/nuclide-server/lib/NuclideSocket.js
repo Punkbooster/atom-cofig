@@ -33,16 +33,16 @@ function _load_WebSocketTransport() {
   return _WebSocketTransport = require('./WebSocketTransport');
 }
 
-var _QueuedTransport;
+var _QueuedAckTransport;
 
-function _load_QueuedTransport() {
-  return _QueuedTransport = require('./QueuedTransport');
+function _load_QueuedAckTransport() {
+  return _QueuedAckTransport = require('./QueuedAckTransport');
 }
 
 var _XhrConnectionHeartbeat;
 
 function _load_XhrConnectionHeartbeat() {
-  return _XhrConnectionHeartbeat = require('./XhrConnectionHeartbeat');
+  return _XhrConnectionHeartbeat = require('big-dig/src/client/XhrConnectionHeartbeat');
 }
 
 var _event;
@@ -65,18 +65,16 @@ function _load_log4js() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
-
-const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-server');
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-server'); /**
+                                                                              * Copyright (c) 2015-present, Facebook, Inc.
+                                                                              * All rights reserved.
+                                                                              *
+                                                                              * This source code is licensed under the license found in the LICENSE file in
+                                                                              * the root directory of this source tree.
+                                                                              *
+                                                                              * 
+                                                                              * @format
+                                                                              */
 
 const PING_SEND_INTERVAL = 5000;
 const PING_WAIT_INTERVAL = 5000;
@@ -93,7 +91,7 @@ const MAX_RECONNECT_TIME_MS = 5000;
 // Can be in one of the following states:
 //   - Connected - everything healthy
 //   - Disconnected - Was connected, but connection died. Will attempt to reconnect.
-//   - Closed - No longer connected. May not send/recieve messages. Cannot be resurected.
+//   - Closed - No longer connected. May not send/receive messages. Cannot be resurected.
 //
 // Publishes the following events:
 //   - status(boolean): on connect/disconnect
@@ -103,19 +101,21 @@ const MAX_RECONNECT_TIME_MS = 5000;
 //   - heartbeat: On receipt of successful heartbeat
 //   - heartbeat.error({code, originalCode, message}): On failure of heartbeat
 class NuclideSocket {
-
-  constructor(serverUri, options) {
+  // ID from a setTimeout() call.
+  constructor(serverUri, heartbeatChannel, options, protocolLogger) {
     this._emitter = new (_eventKit || _load_eventKit()).Emitter();
     this._serverUri = serverUri;
     this._options = options;
-    this.id = (_uuid || _load_uuid()).default.v4();
+    this._heartbeatChannel = heartbeatChannel;
+    // TODO: ACK can be removed after the release of 0.282.
+    this.id = 'ACK' + (_uuid || _load_uuid()).default.v4();
     this._pingTimer = null;
     this._reconnectTime = INITIAL_RECONNECT_TIME_MS;
     this._reconnectTimer = null;
     this._previouslyConnected = false;
-    const transport = new (_QueuedTransport || _load_QueuedTransport()).QueuedTransport(this.id);
-    this._transport = transport;
-    transport.onDisconnect(() => {
+    this._transport = new (_QueuedAckTransport || _load_QueuedAckTransport()).QueuedAckTransport(this.id, null, protocolLogger);
+
+    this._transport.onDisconnect(() => {
       if (this.isDisconnected()) {
         this._emitter.emit('status', false);
         this._emitter.emit('disconnect');
@@ -127,7 +127,7 @@ class NuclideSocket {
     // TODO verify that `host` is non-null rather than using maybeToString
     this._websocketUri = `ws${protocol === 'https:' ? 's' : ''}://${(0, (_string || _load_string()).maybeToString)(host)}`;
 
-    this._heartbeat = new (_XhrConnectionHeartbeat || _load_XhrConnectionHeartbeat()).XhrConnectionHeartbeat(serverUri, options);
+    this._heartbeat = new (_XhrConnectionHeartbeat || _load_XhrConnectionHeartbeat()).XhrConnectionHeartbeat(serverUri, this._heartbeatChannel, options);
     this._heartbeat.onConnectionRestored(() => {
       if (this.isDisconnected()) {
         this._scheduleReconnect();
@@ -135,8 +135,11 @@ class NuclideSocket {
     });
 
     this._reconnect();
-  } // ID from a setTimeout() call.
+  }
 
+  getHeartbeat() {
+    return this._heartbeat;
+  }
 
   isConnected() {
     return this._transport != null && this._transport.getState() === 'open';
@@ -170,7 +173,7 @@ class NuclideSocket {
     // in uncaught exceptions. This is due to EventEmitter treating 'error'
     // events specially.
     const onSocketError = error => {
-      logger.error(`WebSocket Error while connecting... ${error.message}`);
+      logger.warn(`WebSocket Error while connecting... ${error.message}`);
       if (this.isDisconnected()) {
         logger.info('WebSocket reconnecting after error.');
         this._scheduleReconnect();
@@ -329,14 +332,6 @@ class NuclideSocket {
 
   isClosed() {
     return this._transport == null;
-  }
-
-  onHeartbeat(callback) {
-    return this._heartbeat.onHeartbeat(callback);
-  }
-
-  onHeartbeatError(callback) {
-    return this._heartbeat.onHeartbeatError(callback);
   }
 
   onMessage() {

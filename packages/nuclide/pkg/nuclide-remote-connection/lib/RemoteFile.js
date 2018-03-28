@@ -7,6 +7,12 @@ exports.RemoteFile = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
 var _passesGK;
 
 function _load_passesGK() {
@@ -33,6 +39,9 @@ var _stream = _interopRequireDefault(require('stream'));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
+
+/* Mostly implements https://atom.io/docs/api/latest/File */
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -44,9 +53,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
-const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
-
-/* Mostly implements https://atom.io/docs/api/latest/File */
 class RemoteFile {
 
   constructor(server, remotePath, symlink = false) {
@@ -70,7 +76,7 @@ class RemoteFile {
 
   onDidRename(callback) {
     // TODO: this is not supported by the Watchman API.
-    return new _atom.Disposable();
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default();
   }
 
   onDidDelete(callback) {
@@ -106,7 +112,10 @@ class RemoteFile {
           return this._handleNativeDeleteEvent();
       }
     }, error => {
-      logger.error('Failed to subscribe RemoteFile:', this._path, error);
+      // In the case of new files, it's normal for the remote file to not exist yet.
+      if (error.code !== 'ENOENT') {
+        logger.error('Failed to subscribe RemoteFile:', this._path, error);
+      }
       this._watchSubscription = null;
     }, () => {
       // Nothing needs to be done if the root directory watch has ended.
@@ -151,7 +160,7 @@ class RemoteFile {
    * When the number of subscriptions reach 0, the file is unwatched.
    */
   _trackUnsubscription(subscription) {
-    return new _atom.Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       subscription.dispose();
       this._didRemoveSubscription();
     });
@@ -192,11 +201,13 @@ class RemoteFile {
   }
 
   getDigestSync() {
+    // flowlint-next-line sketchy-null-string:off
     if (!this._digest) {
       // File's `getDigestSync()` calls `readSync()`, which we don't implement.
       // However, we mimic it's behavior for when a file does not exist.
       this._setDigest('');
     }
+    // flowlint-next-line sketchy-null-string:off
 
     if (!this._digest) {
       throw new Error('Invariant violation: "this._digest"');
@@ -209,10 +220,12 @@ class RemoteFile {
     var _this2 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
+      // flowlint-next-line sketchy-null-string:off
       if (_this2._digest) {
         return _this2._digest;
       }
       yield _this2.read();
+      // flowlint-next-line sketchy-null-string:off
 
       if (!_this2._digest) {
         throw new Error('Invariant violation: "this._digest"');
@@ -255,6 +268,7 @@ class RemoteFile {
   }
 
   getRealPathSync() {
+    // flowlint-next-line sketchy-null-string:off
     return this._realpath || this._path;
   }
 

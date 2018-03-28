@@ -64,7 +64,14 @@ var ScrollSync = function (_PureComponent) {
           scrollTop = _ref.scrollTop,
           scrollWidth = _ref.scrollWidth;
 
-      this.setState({ clientHeight: clientHeight, clientWidth: clientWidth, scrollHeight: scrollHeight, scrollLeft: scrollLeft, scrollTop: scrollTop, scrollWidth: scrollWidth });
+      this.setState({
+        clientHeight: clientHeight,
+        clientWidth: clientWidth,
+        scrollHeight: scrollHeight,
+        scrollLeft: scrollLeft,
+        scrollTop: scrollTop,
+        scrollWidth: scrollWidth
+      });
     }
   }]);
 
@@ -72,11 +79,11 @@ var ScrollSync = function (_PureComponent) {
 }(PureComponent);
 
 export default ScrollSync;
-process.env.NODE_ENV !== "production" ? ScrollSync.propTypes = {
+ScrollSync.propTypes = process.env.NODE_ENV !== "production" ? {
   /**
    * Function responsible for rendering 2 or more virtualized components.
    * This function should implement the following signature:
    * ({ onScroll, scrollLeft, scrollTop }) => PropTypes.element
    */
   children: PropTypes.func.isRequired
-} : void 0;
+} : {};

@@ -8,7 +8,11 @@ exports.consumeTypehintProvider = consumeTypehintProvider;
 exports.consumeDatatipService = consumeDatatipService;
 exports.deactivate = deactivate;
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _TypeHintManager;
 
@@ -34,7 +38,7 @@ const PACKAGE_NAME = 'nuclide-type-hint';
 class Activation {
 
   constructor(state) {
-    this._disposables = new _atom.CompositeDisposable();
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     if (this.typeHintManager == null) {
       this.typeHintManager = new (_TypeHintManager || _load_TypeHintManager()).default();
     }
@@ -46,7 +50,7 @@ class Activation {
     }
 
     this.typeHintManager.addProvider(provider);
-    return new _atom.Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       if (this.typeHintManager != null) {
         this.typeHintManager.removeProvider(provider);
       }

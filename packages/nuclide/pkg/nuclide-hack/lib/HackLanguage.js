@@ -7,22 +7,22 @@ exports.isFileInHackProject = exports.getHackLanguageForUri = exports.hackLangua
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-let getUseLspConnection = (() => {
-  var _ref = (0, _asyncToGenerator.default)(function* () {
-    return (0, (_passesGK || _load_passesGK()).default)('nuclide_hack_use_lsp_connection');
-  });
-
-  return function getUseLspConnection() {
-    return _ref.apply(this, arguments);
-  };
-})();
-
 let getUseFfpAutocomplete = (() => {
-  var _ref2 = (0, _asyncToGenerator.default)(function* () {
+  var _ref = (0, _asyncToGenerator.default)(function* () {
     return (0, (_passesGK || _load_passesGK()).default)('nuclide_hack_use_ffp_autocomplete');
   });
 
   return function getUseFfpAutocomplete() {
+    return _ref.apply(this, arguments);
+  };
+})();
+
+let getUseEnhancedHover = (() => {
+  var _ref2 = (0, _asyncToGenerator.default)(function* () {
+    return (0, (_passesGK || _load_passesGK()).default)('nuclide_hack_use_enhanced_hover');
+  });
+
+  return function getUseEnhancedHover() {
     return _ref2.apply(this, arguments);
   };
 })();
@@ -33,16 +33,18 @@ let connectionToHackService = (() => {
     const config = (0, (_config || _load_config()).getConfig)();
     const fileNotifier = yield (0, (_nuclideOpenFiles || _load_nuclideOpenFiles()).getNotifierByConnection)(connection);
 
-    if (yield getUseLspConnection()) {
+    if (config.legacyHackIde) {
+      return hackService.initialize(config.hhClientPath, config.logLevel, fileNotifier);
+    } else {
       const host = yield (0, (_nuclideLanguageService || _load_nuclideLanguageService()).getHostServices)();
       const autocompleteArg = (yield getUseFfpAutocomplete()) ? ['--ffp-autocomplete'] : [];
-      return hackService.initializeLsp(config.hhClientPath, // command
-      ['lsp', '--from', 'nuclide', ...autocompleteArg], // arguments
-      ['.hhconfig'], // project file
-      ['.php'], // which file-notifications should be sent to LSP
+      const enhancedHoverArg = (yield getUseEnhancedHover()) ? ['--enhanced-hover'] : [];
+      const lspService = yield hackService.initializeLsp(config.hhClientPath, // command
+      ['lsp', '--from', 'nuclide', ...autocompleteArg, ...enhancedHoverArg], // arguments
+      [(_constants || _load_constants()).HACK_CONFIG_FILE_NAME], // project file
+      (_constants || _load_constants()).HACK_FILE_EXTENSIONS, // which file-notifications should be sent to LSP
       config.logLevel, fileNotifier, host);
-    } else {
-      return hackService.initialize(config.hhClientPath, config.logLevel, fileNotifier);
+      return lspService || new (_nuclideLanguageServiceRpc || _load_nuclideLanguageServiceRpc()).NullLanguageService();
     }
   });
 
@@ -53,7 +55,7 @@ let connectionToHackService = (() => {
 
 let createLanguageService = (() => {
   var _ref4 = (0, _asyncToGenerator.default)(function* () {
-    const usingLsp = yield getUseLspConnection();
+    const usingLsp = !(0, (_config || _load_config()).getConfig)().legacyHackIde;
     const atomConfig = {
       name: 'Hack',
       grammars: (_nuclideHackCommon || _load_nuclideHackCommon()).HACK_GRAMMARS,
@@ -100,20 +102,21 @@ let createLanguageService = (() => {
         matcher: { kind: 'custom', matcher: (_evaluationExpression || _load_evaluationExpression()).getEvaluationExpression }
       },
       autocomplete: {
-        version: '2.0.0',
         inclusionPriority: 1,
         // The context-sensitive hack autocompletions are more relevant than snippets.
         suggestionPriority: 3,
         disableForSelector: null,
         excludeLowerPriority: false,
-        analyticsEventName: 'hack.getAutocompleteSuggestions',
+        analytics: {
+          eventName: 'nuclide-hack',
+          shouldLogInsertedSuggestion: true
+        },
         autocompleteCacherConfig: usingLsp ? {
           updateResults: (_nuclideLanguageService || _load_nuclideLanguageService()).updateAutocompleteResults,
           updateFirstResults: (_nuclideLanguageService || _load_nuclideLanguageService()).updateAutocompleteFirstResults
         } : {
           updateResults: hackUpdateAutocompleteResults
-        },
-        onDidInsertSuggestionAnalyticsEventName: 'hack.autocomplete-chosen'
+        }
       },
       diagnostics: {
         version: '0.2.0',
@@ -156,10 +159,22 @@ let isFileInHackProject = exports.isFileInHackProject = (() => {
 
 exports.resetHackLanguageService = resetHackLanguageService;
 
+var _nuclideLanguageServiceRpc;
+
+function _load_nuclideLanguageServiceRpc() {
+  return _nuclideLanguageServiceRpc = require('../../nuclide-language-service-rpc');
+}
+
 var _nuclideRemoteConnection;
 
 function _load_nuclideRemoteConnection() {
   return _nuclideRemoteConnection = require('../../nuclide-remote-connection');
+}
+
+var _constants;
+
+function _load_constants() {
+  return _constants = require('../../nuclide-hack-common/lib/constants');
 }
 
 var _config;

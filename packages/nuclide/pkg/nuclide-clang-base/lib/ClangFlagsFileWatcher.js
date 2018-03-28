@@ -46,7 +46,7 @@ class ClangFlagsFileWatcher {
       dispose: subscription => subscription.unsubscribe()
     });
 
-    this._watchedFilesObservablesCache = new (_SharedObservableCache || _load_SharedObservableCache()).default(buildFile => (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileWatcherServiceByNuclideUri)(host).watchFileWithNode(buildFile).refCount().share().take(1));
+    this._watchedFilesObservablesCache = new (_SharedObservableCache || _load_SharedObservableCache()).default(buildFile => (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getFileWatcherServiceByNuclideUri)(host).watchWithNode(buildFile).refCount().share().take(1));
   }
 
   watch(flagsFile, src, onChange) {

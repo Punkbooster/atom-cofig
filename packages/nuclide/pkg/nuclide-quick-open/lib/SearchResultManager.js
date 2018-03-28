@@ -7,6 +7,12 @@ exports.__test__ = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+var _observable;
+
+function _load_observable() {
+  return _observable = require('nuclide-commons/observable');
+}
+
 var _nuclideAnalytics;
 
 function _load_nuclideAnalytics() {
@@ -19,7 +25,7 @@ function _load_log4js() {
   return _log4js = require('log4js');
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
@@ -61,21 +67,24 @@ function _load_collection() {
   return _collection = require('nuclide-commons/collection');
 }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const MAX_OMNI_RESULTS_PER_SERVICE = 5; /**
-                                         * Copyright (c) 2015-present, Facebook, Inc.
-                                         * All rights reserved.
-                                         *
-                                         * This source code is licensed under the license found in the LICENSE file in
-                                         * the root directory of this source tree.
-                                         *
-                                         * 
-                                         * @format
-                                         */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 /* global performance */
 
+const MAX_OMNI_RESULTS_PER_SERVICE = 5;
 const DEFAULT_QUERY_DEBOUNCE_DELAY = 200;
 const LOADING_EVENT_DELAY = 200;
 const OMNISEARCH_PROVIDER = {
@@ -88,6 +97,8 @@ const OMNISEARCH_PROVIDER = {
 };
 const UPDATE_DIRECTORIES_DEBOUNCE_DELAY = 100;
 const GLOBAL_KEY = 'global';
+// Quick-open generates a *ton* of queries - sample the tracking.
+const TRACK_SOURCE_RATE = 10;
 
 function getQueryDebounceDelay(provider) {
   return provider.debounceDelay != null ? provider.debounceDelay : DEFAULT_QUERY_DEBOUNCE_DELAY;
@@ -116,7 +127,7 @@ class SearchResultManager {
     this._debouncedUpdateDirectories = (0, (_debounce || _load_debounce()).default)(this._updateDirectories.bind(this), UPDATE_DIRECTORIES_DEBOUNCE_DELAY,
     /* immediate */false);
     this._emitter = new _atom.Emitter();
-    this._subscriptions = new _atom.CompositeDisposable();
+    this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._querySubscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._quickOpenProviderRegistry = quickOpenProviderRegistry;
     this._queryStream = new _rxjsBundlesRxMinJs.Subject();
@@ -152,9 +163,14 @@ class SearchResultManager {
     return this._lastRawQuery;
   }
 
-  getRendererForProvider(providerName) {
+  getRendererForProvider(providerName, item) {
     const provider = this._getProviderByName(providerName);
-    return provider.getComponentForItem != null ? provider.getComponentForItem : (_FileResultComponent || _load_FileResultComponent()).default.getComponentForItem;
+    if (provider.getComponentForItem != null) {
+      return provider.getComponentForItem;
+    } else if (item.resultType === 'FILE') {
+      return (_FileResultComponent || _load_FileResultComponent()).default.getComponentForItem;
+    }
+    throw new Error('Unable to get renderer for provider');
   }
 
   dispose() {
@@ -218,13 +234,13 @@ class SearchResultManager {
         _this._querySubscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
         for (const [directory, providers] of _this._directoryEligibleProviders) {
           for (const provider of providers) {
-            _this._querySubscriptions.add(_this._queryStream.debounceTime(getQueryDebounceDelay(provider)).subscribe(function (query) {
+            _this._querySubscriptions.add(_this._queryStream.let((0, (_observable || _load_observable()).fastDebounce)(getQueryDebounceDelay(provider))).subscribe(function (query) {
               return _this._executeDirectoryQuery(directory, provider, query);
             }));
           }
         }
         for (const provider of _this._globalEligibleProviders) {
-          _this._querySubscriptions.add(_this._queryStream.debounceTime(getQueryDebounceDelay(provider)).subscribe(function (query) {
+          _this._querySubscriptions.add(_this._queryStream.let((0, (_observable || _load_observable()).fastDebounce)(getQueryDebounceDelay(provider))).subscribe(function (query) {
             return _this._executeGlobalQuery(provider, query);
           }));
         }
@@ -339,7 +355,7 @@ class SearchResultManager {
         this._emitter.emit('results-changed');
       };
       (0, (_promise || _load_promise()).triggerAfterWait)(globalProvider.executeQuery(query, this._directories), LOADING_EVENT_DELAY, loadingFn).then(result => {
-        (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('quickopen-query-source-provider', {
+        (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackSampled)('quickopen-query-source-provider', TRACK_SOURCE_RATE, {
           'quickopen-source-provider': globalProvider.name,
           'quickopen-query-duration': (performance.now() - startTime).toString(),
           'quickopen-result-count': result.length.toString()
@@ -357,7 +373,7 @@ class SearchResultManager {
       this._emitter.emit('results-changed');
     };
     (0, (_promise || _load_promise()).triggerAfterWait)(provider.executeQuery(query, directory), LOADING_EVENT_DELAY, loadingFn).then(result => {
-      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('quickopen-query-source-provider', {
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackSampled)('quickopen-query-source-provider', TRACK_SOURCE_RATE, {
         'quickopen-source-provider': provider.name,
         'quickopen-query-duration': (performance.now() - startTime).toString(),
         'quickopen-result-count': result.length.toString()
@@ -415,7 +431,9 @@ class SearchResultManager {
         };
         const resultList = cachedResult.results || defaultResult.results;
         results[path] = {
-          results: resultList.map(result => Object.assign({}, result, {
+          results: resultList.map(result =>
+          // $FlowFixMe (v0.54.1 <)
+          Object.assign({}, result, {
             sourceProvider: providerName
           })),
           loading: cachedResult.loading || defaultResult.loading,
@@ -495,6 +513,5 @@ exports.default = SearchResultManager;
 const __test__ = exports.__test__ = {
   _getOmniSearchProviderSpec() {
     return OMNISEARCH_PROVIDER;
-  },
-  UPDATE_DIRECTORIES_DEBOUNCE_DELAY
+  }
 };

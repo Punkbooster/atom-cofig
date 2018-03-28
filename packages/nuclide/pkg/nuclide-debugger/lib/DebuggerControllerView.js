@@ -4,31 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _react = _interopRequireDefault(require('react'));
-
-var _BreakpointStore;
-
-function _load_BreakpointStore() {
-  return _BreakpointStore = _interopRequireDefault(require('./BreakpointStore.js'));
-}
-
-var _DebuggerInspector;
-
-function _load_DebuggerInspector() {
-  return _DebuggerInspector = _interopRequireDefault(require('./DebuggerInspector'));
-}
-
-var _DebuggerStore;
-
-function _load_DebuggerStore() {
-  return _DebuggerStore = require('./DebuggerStore');
-}
-
-var _Bridge;
-
-function _load_Bridge() {
-  return _Bridge = _interopRequireDefault(require('./Bridge'));
-}
+var _react = _interopRequireWildcard(require('react'));
 
 var _LoadingSpinner;
 
@@ -36,18 +12,10 @@ function _load_LoadingSpinner() {
   return _LoadingSpinner = require('nuclide-commons-ui/LoadingSpinner');
 }
 
-var _env;
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-function _load_env() {
-  return _env = require('../../nuclide-node-transpiler/lib/env');
-}
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function getStateFromStore(store) {
-  return {
-    processSocket: store.getProcessSocket()
-  };
+function getStateFromModel(model) {
+  return {};
 } /**
    * Copyright (c) 2015-present, Facebook, Inc.
    * All rights reserved.
@@ -59,68 +27,60 @@ function getStateFromStore(store) {
    * @format
    */
 
-class DebuggerControllerView extends _react.default.Component {
-
+class DebuggerControllerView extends _react.Component {
   constructor(props) {
     super(props);
 
-    this._updateStateFromStore = store => {
-      if (store != null) {
-        this.setState(getStateFromStore(store));
+    this._updateStateFromModel = model => {
+      if (model != null) {
+        this.setState(getStateFromModel(model));
       } else {
-        this.setState(getStateFromStore(this.props.store));
+        this.setState(getStateFromModel(this.props.model));
       }
     };
 
-    this.state = getStateFromStore(props.store);
+    this.state = getStateFromModel(props.model);
   }
 
   componentWillMount() {
     this.setState({
-      debuggerStoreChangeListener: this.props.store.onChange(this._updateStateFromStore)
+      debuggerModelChangeListener: this.props.model.onChange(this._updateStateFromModel)
     });
-    this._updateStateFromStore();
+    this._updateStateFromModel();
   }
 
   componentWillUnmount() {
-    const listener = this.state.debuggerStoreChangeListener;
+    const listener = this.state.debuggerModelChangeListener;
     if (listener != null) {
       listener.dispose();
     }
   }
 
   componentWillReceiveProps(nextProps) {
-    const listener = this.state.debuggerStoreChangeListener;
+    const listener = this.state.debuggerModelChangeListener;
     if (listener != null) {
       listener.dispose();
     }
     this.setState({
-      debuggerStoreChangeListener: nextProps.store.onChange(this._updateStateFromStore)
+      debuggerModelChangeListener: nextProps.model.onChange(this._updateStateFromModel)
     });
-    this._updateStateFromStore(nextProps.store);
+    this._updateStateFromModel(nextProps.model);
   }
 
   render() {
-    if (this.state.processSocket && (_env || _load_env()).__DEV__) {
-      return _react.default.createElement((_DebuggerInspector || _load_DebuggerInspector()).default, {
-        breakpointStore: this.props.breakpointStore,
-        openDevTools: this.props.openDevTools,
-        stopDebugging: this.props.stopDebugging
-      });
-    }
-    if (this.props.store.getDebuggerMode() === 'starting') {
-      return _react.default.createElement(
+    if (this.props.model.getDebuggerMode() === 'starting') {
+      return _react.createElement(
         'div',
         { className: 'nuclide-debugger-starting-message' },
-        _react.default.createElement(
+        _react.createElement(
           'div',
           null,
-          _react.default.createElement(
+          _react.createElement(
             'span',
             { className: 'inline-block' },
             'Starting Debugger...'
           ),
-          _react.default.createElement((_LoadingSpinner || _load_LoadingSpinner()).LoadingSpinner, { className: 'inline-block', size: 'EXTRA_SMALL' })
+          _react.createElement((_LoadingSpinner || _load_LoadingSpinner()).LoadingSpinner, { className: 'inline-block', size: 'EXTRA_SMALL' })
         )
       );
     }

@@ -8,8 +8,8 @@ exports.callHHClient = undefined;
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 /**
-  * Executes hh_client with proper arguments returning the result string or json object.
-  */
+ * Executes hh_client with proper arguments returning the result string or json object.
+ */
 let callHHClient = exports.callHHClient = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (args, errorStream, processInput, filePath) {
     if (!hhPromiseQueue) {

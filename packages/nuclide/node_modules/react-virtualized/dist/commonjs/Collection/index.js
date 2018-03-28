@@ -3,13 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Collection = exports.default = undefined;
+exports.Collection = undefined;
 
-var _Collection2 = require('./Collection');
+var _Collection = require('./Collection');
 
-var _Collection3 = _interopRequireDefault(_Collection2);
+var _Collection2 = _interopRequireDefault(_Collection);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = _Collection3.default;
-exports.Collection = _Collection3.default;
+exports.default = _Collection2.default;
+exports.Collection = _Collection2.default;

@@ -1,9 +1,9 @@
 {
   "name": "nuclide-language-service",
-  "repository": "https://github.com/facebook/nuclide",
   "version": "0.0.0",
   "main": "./lib/main.js",
   "description": "Atom side Language Services",
+  "author": "NEEDS OWNER",
   "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Node",

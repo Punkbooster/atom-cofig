@@ -21,8 +21,7 @@ function getCellMetadata() {
   30, // 5: 50..70
   20, // 6: 70..100
   10, // 7: 80..110
-  30 //  8: 110..110 (max)
-  ];
+  30];
   return (0, _initCellMetadata2.default)({
     cellCount: cellSizes.length,
     size: function size(_ref) {

@@ -54,18 +54,18 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const SUPPORTED_CURSORS = new Set(['VAR_DECL', 'PARM_DECL']);
 
 class RefactoringHelpers {
-  static refactoringsAtPoint(editor, point) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-clang:refactoringsAtPoint', () => RefactoringHelpers._refactoringsAtPoint(editor, point));
+  static refactorings(editor, range) {
+    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-clang:refactoringsAtPoint', () => RefactoringHelpers._refactorings(editor, range));
   }
 
-  static _refactoringsAtPoint(editor, point) {
+  static _refactorings(editor, range) {
     return (0, _asyncToGenerator.default)(function* () {
       const path = editor.getPath();
       if (path == null || !(yield checkDiagnostics(editor))) {
         return [];
       }
 
-      const { row, column } = point;
+      const { row, column } = range.start;
       const declInfo = yield (0, (_libclang || _load_libclang()).getDeclarationInfo)(editor, row, column);
       if (declInfo == null || !SUPPORTED_CURSORS.has(declInfo[0].type)) {
         return [];

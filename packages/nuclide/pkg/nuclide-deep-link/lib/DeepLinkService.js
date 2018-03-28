@@ -22,19 +22,19 @@ function _load_SharedObservableCache() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const { ipcRenderer } = _electron.default; /**
-                                            * Copyright (c) 2015-present, Facebook, Inc.
-                                            * All rights reserved.
-                                            *
-                                            * This source code is licensed under the license found in the LICENSE file in
-                                            * the root directory of this source tree.
-                                            *
-                                            * 
-                                            * @format
-                                            */
+const { ipcRenderer, remote } = _electron.default; /**
+                                                    * Copyright (c) 2015-present, Facebook, Inc.
+                                                    * All rights reserved.
+                                                    *
+                                                    * This source code is licensed under the license found in the LICENSE file in
+                                                    * the root directory of this source tree.
+                                                    *
+                                                    * 
+                                                    * @format
+                                                    */
 
-if (!(ipcRenderer != null)) {
-  throw new Error('Invariant violation: "ipcRenderer != null"');
+if (!(ipcRenderer != null && remote != null)) {
+  throw new Error('Invariant violation: "ipcRenderer != null && remote != null"');
 }
 
 const CHANNEL = 'nuclide-url-open';
@@ -43,6 +43,7 @@ class DeepLinkService {
 
   constructor() {
     this._observers = new Map();
+    this._pendingEvents = new Map();
     this._observables = new (_SharedObservableCache || _load_SharedObservableCache()).default(path => {
       return _rxjsBundlesRxMinJs.Observable.create(observer => {
         this._observers.set(path, observer);
@@ -68,7 +69,9 @@ class DeepLinkService {
   }
 
   subscribeToPath(path, callback) {
-    return new (_UniversalDisposable || _load_UniversalDisposable()).default(this._observables.get(path).subscribe(callback));
+    const result = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._observables.get(path).subscribe(callback));
+
+    return result;
   }
 
   sendDeepLink(browserWindow, path, params) {

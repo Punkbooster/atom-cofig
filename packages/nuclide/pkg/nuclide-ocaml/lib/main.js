@@ -19,7 +19,7 @@ let activate = exports.activate = (() => {
         if (editor) {
           (0, (_DestructureHelpers || _load_DestructureHelpers()).cases)(editor, editor.getCursorScreenPosition());
         }
-      }), atom.packages.serviceHub.provide('outline-view', '0.1.0', provideOutlines()), atom.packages.serviceHub.provide('nuclide-type-hint.provider', '0.0.0', createTypeHintProvider()), atom.packages.serviceHub.provide('autocomplete.provider', '2.0.0', createAutocompleteProvider()), atom.packages.serviceHub.provide('hyperclick', '0.1.0', getHyperclickProvider()), atom.packages.serviceHub.provide('linter', '1.0.0', provideLinter()), atom.packages.serviceHub.provide('code-format.file', '0.1.0', createCodeFormatProvider()));
+      }), atom.packages.serviceHub.provide('outline-view', '0.1.0', provideOutlines()), atom.packages.serviceHub.provide('nuclide-type-hint.provider', '0.0.0', createTypeHintProvider()), atom.packages.serviceHub.provide('nuclide-autocomplete.provider', '0.0.0', createAutocompleteProvider()), atom.packages.serviceHub.provide('hyperclick', '0.1.0', getHyperclickProvider()), atom.packages.serviceHub.provide('linter', '1.0.0', provideLinter()), atom.packages.serviceHub.provide('code-format.file', '0.1.0', createCodeFormatProvider()));
     }
   });
 
@@ -31,7 +31,7 @@ let activate = exports.activate = (() => {
 let deactivate = exports.deactivate = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* () {
     disposables.dispose();
-    disposables = new _atom.CompositeDisposable();
+    disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
   });
 
   return function deactivate() {
@@ -45,12 +45,6 @@ exports.provideLinter = provideLinter;
 exports.provideOutlines = provideOutlines;
 exports.createTypeHintProvider = createTypeHintProvider;
 exports.createCodeFormatProvider = createCodeFormatProvider;
-
-var _nuclideAnalytics;
-
-function _load_nuclideAnalytics() {
-  return _nuclideAnalytics = require('../../nuclide-analytics');
-}
 
 var _HyperclickProvider;
 
@@ -100,7 +94,11 @@ function _load_CodeFormatHelpers() {
   return _CodeFormatHelpers = require('./CodeFormatHelpers');
 }
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _OCamlLanguage;
 
@@ -132,14 +130,15 @@ function getHyperclickProvider() {
 }
 
 function createAutocompleteProvider() {
-  const getSuggestions = request => {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-ocaml:getAutocompleteSuggestions', () => (_AutoComplete || _load_AutoComplete()).default.getAutocompleteSuggestions(request));
-  };
   return {
+    analytics: {
+      eventName: 'nuclide-ocaml',
+      shouldLogInsertedSuggestion: false
+    },
     selector: '.source.ocaml, .source.reason',
     inclusionPriority: 1,
     disableForSelector: '.source.ocaml .comment, .source.reason .comment',
-    getSuggestions
+    getSuggestions: (_AutoComplete || _load_AutoComplete()).default.getAutocompleteSuggestions
   };
 }
 
@@ -177,4 +176,4 @@ function createCodeFormatProvider() {
   };
 }
 
-let disposables = new _atom.CompositeDisposable();
+let disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();

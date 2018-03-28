@@ -66,8 +66,8 @@ class MemoizedFieldsDeriver {
 
     this._isRoot = uri === rootUri;
     this._name = (_FileTreeHelpers || _load_FileTreeHelpers()).default.keyToName(uri);
-    this._isContainer = (_FileTreeHelpers || _load_FileTreeHelpers()).default.isDirKey(uri);
-    this._relativePath = uri.slice(rootUri.length);
+    this._isContainer = (_FileTreeHelpers || _load_FileTreeHelpers()).default.isDirOrArchiveKey(uri);
+    this._relativePath = (_nuclideUri || _load_nuclideUri()).default.relative(rootUri, uri);
     this._localPath = (_FileTreeHelpers || _load_FileTreeHelpers()).default.keyToPath((_nuclideUri || _load_nuclideUri()).default.isRemote(uri) ? (_nuclideUri || _load_nuclideUri()).default.parse(uri).path : uri);
     this._splitPath = (_nuclideUri || _load_nuclideUri()).default.split(uri);
 
@@ -95,8 +95,8 @@ class MemoizedFieldsDeriver {
     if (store.vcsStatuses !== conf.vcsStatuses) {
       store.vcsStatuses = conf.vcsStatuses;
 
-      const rootVcsStatuses = store.vcsStatuses.get(this._rootUri) || {};
-      store.vcsStatusCode = rootVcsStatuses[this._uri] || (_hgConstants || _load_hgConstants()).StatusCodeNumber.CLEAN;
+      const rootVcsStatuses = store.vcsStatuses.get(this._rootUri) || new Map();
+      store.vcsStatusCode = rootVcsStatuses.get(this._uri) || (_hgConstants || _load_hgConstants()).StatusCodeNumber.CLEAN;
     }
 
     return store.vcsStatusCode;

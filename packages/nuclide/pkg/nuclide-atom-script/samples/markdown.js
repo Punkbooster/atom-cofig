@@ -55,7 +55,7 @@ exports.default = (() => {
     const markdownFile = resolvePath(argv._[0]);
 
     // don't want to pull in too many Nuclide dependencies here
-    // eslint-disable-next-line nuclide-internal/atom-apis
+    // eslint-disable-next-line rulesdir/atom-apis
     const textEditor = yield atom.workspace.open(markdownFile);
     yield atom.packages.activatePackage('markdown-preview');
 
@@ -65,10 +65,10 @@ exports.default = (() => {
     if (!markdownPreviewPackage) {
       throw new Error('Invariant violation: "markdownPreviewPackage"');
     }
-    // Apparently copyHtml() is exposed as an export of markdown-preview.
+    // Apparently copyHTML() is exposed as an export of markdown-preview.
 
 
-    markdownPreviewPackage.mainModule.copyHtml();
+    markdownPreviewPackage.mainModule.copyHTML();
     // Note it should be possible to get the HTML via MarkdownPreviewView.getHTML(),
     // but that was causing this script to lock up, for some reason.
     const htmlBody = atom.clipboard.read();
@@ -127,6 +127,7 @@ exports.default = (() => {
 function resolvePath(fileName) {
   if (!(_nuclideUri || _load_nuclideUri()).default.isAbsolute(fileName)) {
     const pwd = process.env.PWD;
+    // flowlint-next-line sketchy-null-string:off
 
     if (!pwd) {
       throw new Error('Invariant violation: "pwd"');

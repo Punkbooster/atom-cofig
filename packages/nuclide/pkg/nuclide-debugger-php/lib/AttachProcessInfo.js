@@ -7,10 +7,10 @@ exports.AttachProcessInfo = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-var _nuclideDebuggerBase;
+var _nuclideDebuggerCommon;
 
-function _load_nuclideDebuggerBase() {
-  return _nuclideDebuggerBase = require('../../nuclide-debugger-base');
+function _load_nuclideDebuggerCommon() {
+  return _nuclideDebuggerCommon = require('nuclide-debugger-common');
 }
 
 var _PhpDebuggerInstance;
@@ -43,6 +43,12 @@ function _load_utils2() {
   return _utils2 = require('./utils');
 }
 
+var _passesGK;
+
+function _load_passesGK() {
+  return _passesGK = _interopRequireDefault(require('../../commons-node/passesGK'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -56,9 +62,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
-class AttachProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).DebuggerProcessInfo {
-  constructor(targetUri) {
+class AttachProcessInfo extends (_nuclideDebuggerCommon || _load_nuclideDebuggerCommon()).DebuggerProcessInfo {
+
+  constructor(targetUri, debugPort) {
     super('hhvm', targetUri);
+    this._debugPort = debugPort;
   }
 
   clone() {
@@ -67,8 +75,10 @@ class AttachProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBa
 
   getDebuggerCapabilities() {
     return Object.assign({}, super.getDebuggerCapabilities(), {
+      completionsRequest: true,
       conditionalBreakpoints: true,
       continueToLocation: true,
+      setVariable: true,
       threads: true
     });
   }
@@ -76,59 +86,81 @@ class AttachProcessInfo extends (_nuclideDebuggerBase || _load_nuclideDebuggerBa
   getDebuggerProps() {
     return Object.assign({}, super.getDebuggerProps(), {
       customControlButtons: this._getCustomControlButtons(),
-      threadColumns: this._getThreadColumns(),
       threadsComponentTitle: 'Requests'
     });
   }
 
   preAttachActions() {
     try {
-      // TODO(t18124539) @nmote This should require FlowFB but when used flow
-      // complains that it is an unused supression.
-      // eslint-disable-next-line nuclide-internal/flow-fb-oss
+      // $FlowFB
       const services = require('./fb/services');
-      return services.startSlog();
-    } catch (_) {
-      return Promise.resolve();
-    }
+      services.startSlog();
+    } catch (_) {}
   }
 
-  debug() {
+  _hhvmDebug() {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      (_utils || _load_utils()).default.info('Connecting to: ' + _this.getTargetUri());
-      yield _this.preAttachActions();
+      const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getHhvmDebuggerServiceByNuclideUri)(_this.getTargetUri());
+      const hhvmDebuggerService = new service.HhvmDebuggerService();
 
-      const rpcService = _this._getRpcService();
-      const sessionConfig = (0, (_utils2 || _load_utils2()).getSessionConfig)((_nuclideUri || _load_nuclideUri()).default.getPath(_this.getTargetUri()), false);
+      // Note: not specifying startup document or debug port here, the backend
+      // will use the default parameters. We can surface these options in the
+      // Attach Dialog if users need to be able to customize them in the future.
+      const config = {
+        targetUri: (_nuclideUri || _load_nuclideUri()).default.getPath(_this.getTargetUri()),
+        action: 'attach'
+      };
+
+      let debugPort = _this._debugPort;
+      if (debugPort == null) {
+        try {
+          // $FlowFB
+          const fetch = require('../../commons-node/fb-sitevar').fetchSitevarOnce;
+          debugPort = yield fetch('NUCLIDE_HHVM_DEBUG_PORT');
+        } catch (e) {}
+      }
+
+      if (debugPort != null) {
+        config.debugPort = debugPort;
+      }
+
+      (_utils || _load_utils()).default.info(`Connection session config: ${JSON.stringify(config)}`);
+      const result = yield hhvmDebuggerService.debug(config);
+      (_utils || _load_utils()).default.info(`Attach process result: ${result}`);
+      return new (_PhpDebuggerInstance || _load_PhpDebuggerInstance()).PhpDebuggerInstance(_this, hhvmDebuggerService);
+    })();
+  }
+
+  debug() {
+    var _this2 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      const useNewDebugger = yield (0, (_passesGK || _load_passesGK()).default)('nuclide_hhvm_debugger_vscode');
+      if (useNewDebugger) {
+        // TODO: Ericblue - this will be cleaned up when the old debugger
+        // is removed. For now we need to leave both in place until the new
+        // one is ready.
+        return _this2._hhvmDebug();
+      }
+
+      (_utils || _load_utils()).default.info('Connecting to: ' + _this2.getTargetUri());
+      _this2.preAttachActions();
+
+      const rpcService = _this2._getRpcService();
+      const sessionConfig = (0, (_utils2 || _load_utils2()).getSessionConfig)((_nuclideUri || _load_nuclideUri()).default.getPath(_this2.getTargetUri()), false);
       (_utils || _load_utils()).default.info(`Connection session config: ${JSON.stringify(sessionConfig)}`);
       const result = yield rpcService.debug(sessionConfig);
-      (_utils || _load_utils()).default.info(`Launch process result: ${result}`);
+      (_utils || _load_utils()).default.info(`Attach process result: ${result}`);
 
-      return new (_PhpDebuggerInstance || _load_PhpDebuggerInstance()).PhpDebuggerInstance(_this, rpcService);
+      return new (_PhpDebuggerInstance || _load_PhpDebuggerInstance()).PhpDebuggerInstance(_this2, rpcService);
     })();
   }
 
   _getRpcService() {
     const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getPhpDebuggerServiceByNuclideUri)(this.getTargetUri());
     return new service.PhpDebuggerService();
-  }
-
-  _getThreadColumns() {
-    return [{
-      key: 'id',
-      title: 'ID',
-      width: 0.15
-    }, {
-      key: 'address',
-      title: 'Location',
-      width: 0.55
-    }, {
-      key: 'stopReason',
-      title: 'Stop Reason',
-      width: 0.25
-    }];
   }
 
   _getCustomControlButtons() {

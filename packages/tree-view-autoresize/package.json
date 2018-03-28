@@ -2,44 +2,45 @@
   "_args": [
     [
       {
-        "raw": "/tmp/d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
+        "raw": "/tmp/d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/tmp/d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
-        "spec": "/tmp/d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
+        "rawSpec": "/tmp/d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
+        "spec": "/tmp/d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
         "type": "local"
       },
-      "/tmp/apm-install-dir-11774-27894-1mpw0z4.a8loe9izfr"
+      "/tmp/apm-install-dir-118018-21389-1jjblhe.bbbs79o1or"
     ]
   ],
-  "_from": "../d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
-  "_id": "tree-view-autoresize@2.1.0",
+  "_from": "../d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
+  "_id": "tree-view-autoresize@2.3.0",
   "_inCache": true,
   "_location": "/tree-view-autoresize",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/tmp/d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
+    "raw": "/tmp/d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/tmp/d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
-    "spec": "/tmp/d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
+    "rawSpec": "/tmp/d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
+    "spec": "/tmp/d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
-  "_shasum": "9990391b9d54361cad4e0621498e93189fc47205",
+  "_resolved": "file:../d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
+  "_shasum": "9d05c123d04baaac76ef4542322fe32e7212812c",
   "_shrinkwrap": null,
-  "_spec": "/tmp/d-11774-27894-ic8ilu.tslf1j1yvi/package.tgz",
-  "_where": "/tmp/apm-install-dir-11774-27894-1mpw0z4.a8loe9izfr",
+  "_spec": "/tmp/d-118018-21389-1imhvq7.qljta10pb9/package.tgz",
+  "_where": "/tmp/apm-install-dir-118018-21389-1jjblhe.bbbs79o1or",
   "bugs": {
     "url": "https://github.com/lexcast/tree-view-autoresize/issues"
   },
   "dependencies": {
-    "atom-utils": "^0.9.2"
+    "atom-utils": "^0.9.2",
+    "scrollbar-width": "^3.1.1"
   },
   "description": "Autoresize the tree view when open/close folders",
   "devDependencies": {},
@@ -55,13 +56,13 @@
   "main": "./lib/tree-view-autoresize",
   "name": "tree-view-autoresize",
   "optionalDependencies": {},
-  "readme": "# Tree View Autoresize\n\n[![apm install tree-view-autoresize](https://apm-badges.herokuapp.com/apm/tree-view-autoresize.svg)](https://atom.io/packages/tree-view-autoresize)\n\nAutoresize the tree view when open/close folders.\n\n![Tree View Autoresize](https://cloud.githubusercontent.com/assets/10590799/14082869/a6132a20-f4cf-11e5-8640-e067730f7098.gif)\n\n~~It also supports [Nuclide](http://nuclide.io) file tree~~\n\n## Install\nWith apm:\n```bash\napm install tree-view-autoresize\n```\nOr Settings ➔ Packages ➔ Search for `tree-view-autoresize`\n",
+  "readme": "# Tree View Autoresize\n\n[![apm install tree-view-autoresize](https://apm-badges.herokuapp.com/apm/tree-view-autoresize.svg)](https://atom.io/packages/tree-view-autoresize)\n\nAutoresize the tree view when open/close folders.\n\n![Tree View Autoresize](https://cloud.githubusercontent.com/assets/10590799/14082869/a6132a20-f4cf-11e5-8640-e067730f7098.gif)\n\n~~It also supports [Nuclide](http://nuclide.io) file tree~~\n\n## Install\nFrom Atom go to Settings ➔ Install or with the command `Settings View:Install Packages and Themes` and then search for `tree-view-autoresize`\n\nOr with apm:\n```bash\napm install tree-view-autoresize\n```\n",
   "readmeFilename": "README.md",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lexcast/tree-view-autoresize.git"
   },
-  "version": "2.1.0",
+  "version": "2.3.0",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [
@@ -82,7 +83,7 @@
       },
       {
         "name": "es5-ext",
-        "version": "0.10.26",
+        "version": "0.10.38",
         "path": "node_modules/es5-ext/index.js"
       },
       {
@@ -92,7 +93,7 @@
       },
       {
         "name": "es6-iterator",
-        "version": "2.0.1",
+        "version": "2.0.3",
         "path": "node_modules/es5-ext/node_modules/es6-iterator/index.js"
       },
       {
@@ -127,12 +128,12 @@
       },
       {
         "name": "grim",
-        "version": "2.0.1",
+        "version": "2.0.2",
         "path": "node_modules/grim/lib/grim.js"
       },
       {
         "name": "event-kit",
-        "version": "2.3.0",
+        "version": "2.4.0",
         "path": "node_modules/grim/node_modules/event-kit/lib/event-kit.js"
       },
       {
@@ -144,6 +145,11 @@
         "name": "property-accessors",
         "version": "1.1.3",
         "path": "node_modules/property-accessors/lib/property-accessors.js"
+      },
+      {
+        "name": "scrollbar-width",
+        "version": "3.1.1",
+        "path": "node_modules/scrollbar-width/scrollbar-width.js"
       },
       {
         "name": "underscore",
@@ -158,7 +164,8 @@
     ],
     "extensions": {
       ".coffee": [
-        "lib/tree-view-autoresize.coffee"
+        "lib/tree-view-autoresize.coffee",
+        "node_modules/scrollbar-width/scrollbar-width.coffee"
       ],
       ".js": [
         "node_modules/atom-utils/lib/atom-utils.js",
@@ -228,6 +235,7 @@
         "node_modules/es5-ext/array/#/indexes-of.js",
         "node_modules/es5-ext/array/#/intersection.js",
         "node_modules/es5-ext/array/#/is-copy.js",
+        "node_modules/es5-ext/array/#/is-empty.js",
         "node_modules/es5-ext/array/#/is-uniq.js",
         "node_modules/es5-ext/array/#/keys/implement.js",
         "node_modules/es5-ext/array/#/keys/index.js",
@@ -280,8 +288,10 @@
         "node_modules/es5-ext/date/#/floor-year.js",
         "node_modules/es5-ext/date/#/format.js",
         "node_modules/es5-ext/date/#/index.js",
+        "node_modules/es5-ext/date/ensure-time-value.js",
         "node_modules/es5-ext/date/index.js",
         "node_modules/es5-ext/date/is-date.js",
+        "node_modules/es5-ext/date/is-time-value.js",
         "node_modules/es5-ext/date/valid-date.js",
         "node_modules/es5-ext/error/#/index.js",
         "node_modules/es5-ext/error/#/throw.js",
@@ -444,6 +454,7 @@
         "node_modules/es5-ext/object/assign/index.js",
         "node_modules/es5-ext/object/assign/is-implemented.js",
         "node_modules/es5-ext/object/assign/shim.js",
+        "node_modules/es5-ext/object/assign-deep.js",
         "node_modules/es5-ext/object/clear.js",
         "node_modules/es5-ext/object/compact.js",
         "node_modules/es5-ext/object/compare.js",
@@ -451,6 +462,8 @@
         "node_modules/es5-ext/object/copy.js",
         "node_modules/es5-ext/object/count.js",
         "node_modules/es5-ext/object/create.js",
+        "node_modules/es5-ext/object/ensure-array.js",
+        "node_modules/es5-ext/object/ensure-finite-number.js",
         "node_modules/es5-ext/object/ensure-natural-number-value.js",
         "node_modules/es5-ext/object/ensure-natural-number.js",
         "node_modules/es5-ext/object/ensure-promise.js",
@@ -469,8 +482,12 @@
         "node_modules/es5-ext/object/is-copy-deep.js",
         "node_modules/es5-ext/object/is-copy.js",
         "node_modules/es5-ext/object/is-empty.js",
+        "node_modules/es5-ext/object/is-finite-number.js",
+        "node_modules/es5-ext/object/is-natural-number-value.js",
+        "node_modules/es5-ext/object/is-natural-number.js",
         "node_modules/es5-ext/object/is-number-value.js",
         "node_modules/es5-ext/object/is-object.js",
+        "node_modules/es5-ext/object/is-plain-function.js",
         "node_modules/es5-ext/object/is-plain-object.js",
         "node_modules/es5-ext/object/is-promise.js",
         "node_modules/es5-ext/object/is-value.js",
@@ -581,10 +598,12 @@
         "node_modules/es5-ext/string/index.js",
         "node_modules/es5-ext/string/is-string.js",
         "node_modules/es5-ext/string/random-uniq.js",
+        "node_modules/es5-ext/string/random.js",
         "node_modules/es5-ext/string/raw/implement.js",
         "node_modules/es5-ext/string/raw/index.js",
         "node_modules/es5-ext/string/raw/is-implemented.js",
         "node_modules/es5-ext/string/raw/shim.js",
+        "node_modules/es5-ext/to-short-string-representation.js",
         "node_modules/es6-iterator/#/chain.js",
         "node_modules/es6-iterator/array.js",
         "node_modules/es6-iterator/for-of.js",
@@ -621,6 +640,8 @@
         "node_modules/grim/node_modules/event-kit/lib/event-kit.js",
         "node_modules/mixto/lib/mixin.js",
         "node_modules/property-accessors/lib/property-accessors.js",
+        "node_modules/scrollbar-width/scrollbar-width.js",
+        "node_modules/scrollbar-width/scrollbar-width.min.js",
         "node_modules/underscore/underscore-min.js",
         "node_modules/underscore/underscore.js",
         "node_modules/underscore-plus/lib/underscore-plus.js"
@@ -644,6 +665,8 @@
         "node_modules/grim/package.json",
         "node_modules/mixto/package.json",
         "node_modules/property-accessors/package.json",
+        "node_modules/scrollbar-width/bower.json",
+        "node_modules/scrollbar-width/package.json",
         "node_modules/underscore/package.json",
         "node_modules/underscore-plus/package.json",
         "package.json"
@@ -656,7 +679,8 @@
           ""
         ],
         "dependencies": {
-          "atom-utils": "^0.9.2"
+          "atom-utils": "^0.9.2",
+          "scrollbar-width": "^3.1.1"
         }
       },
       {
@@ -851,8 +875,8 @@
           "node_modules/es5-ext/test/string/raw"
         ],
         "dependencies": {
-          "es6-iterator": "2",
-          "es6-symbol": "~3.1"
+          "es6-iterator": "~2.0.3",
+          "es6-symbol": "~3.1.1"
         }
       },
       {
@@ -873,8 +897,8 @@
         ],
         "dependencies": {
           "d": "1",
-          "es5-ext": "^0.10.14",
-          "es6-symbol": "^3.1"
+          "es5-ext": "^0.10.35",
+          "es6-symbol": "^3.1.1"
         }
       },
       {

@@ -1,9 +1,9 @@
 {
   "name": "nuclide-python",
-  "repository": "https://github.com/facebook/nuclide",
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Provides support for Python in Nuclide",
+  "author": "Python Foundation",
   "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "configMetadata": {
@@ -69,18 +69,27 @@
     "testRunner": "apm"
   },
   "consumedServices": {
-    "atom-ide-busy-signal": {
+    "linter-indie": {
       "versions": {
-        "0.1.0": "consumeBusySignal"
+        "2.0.0": "consumeLinterIndie"
       }
     },
     "nuclide.buck-platforms": {
       "versions": {
         "0.0.0": "consumePlatformService"
       }
+    },
+    "nuclide.buck-task-runner": {
+      "versions": {
+        "0.0.0": "consumeBuckTaskRunner"
+      }
+    },
+    "nuclide-current-working-directory": {
+      "versions": {
+        "0.0.0": "consumeCwdApi"
+      }
     }
   },
-
   "providedServices": {
     "linter": {
       "versions": {

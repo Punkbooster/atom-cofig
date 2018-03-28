@@ -4,6 +4,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _nullthrows;
+
+function _load_nullthrows() {
+  return _nullthrows = _interopRequireDefault(require('nullthrows'));
+}
+
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 var _AtomInput;
@@ -22,6 +28,12 @@ var _Icon;
 
 function _load_Icon() {
   return _Icon = require('nuclide-commons-ui/Icon');
+}
+
+var _scrollIntoView;
+
+function _load_scrollIntoView() {
+  return _scrollIntoView = require('nuclide-commons-ui/scrollIntoView');
 }
 
 var _Tabs;
@@ -51,7 +63,7 @@ function _load_event() {
 var _humanizeKeystroke;
 
 function _load_humanizeKeystroke() {
-  return _humanizeKeystroke = _interopRequireDefault(require('../../commons-node/humanizeKeystroke'));
+  return _humanizeKeystroke = _interopRequireDefault(require('nuclide-commons/humanizeKeystroke'));
 }
 
 var _observable;
@@ -60,7 +72,7 @@ function _load_observable() {
   return _observable = require('nuclide-commons/observable');
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
 
@@ -81,6 +93,8 @@ var _searchResultHelpers;
 function _load_searchResultHelpers() {
   return _searchResultHelpers = require('./searchResultHelpers');
 }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -106,7 +120,7 @@ function _findKeybindingForAction(action, target) {
    * @format
    */
 
-class QuickSelectionComponent extends _react.default.Component {
+class QuickSelectionComponent extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -161,10 +175,10 @@ class QuickSelectionComponent extends _react.default.Component {
       // If the click did not happen on the modal or on any of its descendants,
       // the click was elsewhere on the document and should close the modal.
       // Otherwise, refocus the input box.
-      if (event.target !== this.refs.modal && !this.refs.modal.contains(event.target)) {
+      if (event.target !== this._modal && !(0, (_nullthrows || _load_nullthrows()).default)(this._modal).contains(event.target)) {
         this.props.onCancellation();
       } else {
-        process.nextTick(() => this._getInputTextEditor().focus());
+        process.nextTick(() => this.focus());
       }
     };
 
@@ -230,7 +244,10 @@ class QuickSelectionComponent extends _react.default.Component {
    * Public API
    */
   focus() {
-    this._getInputTextEditor().focus();
+    const element = this._getInputTextEditor();
+    if (element != null) {
+      element.focus();
+    }
   }
 
   selectAllText() {
@@ -253,19 +270,19 @@ class QuickSelectionComponent extends _react.default.Component {
     const nextProviderName = this.props.searchResultManager.getActiveProviderName();
     if (this.state.activeTab.name === nextProviderName) {
       process.nextTick(() => {
-        const query = this.refs.queryInput.getText();
+        const query = (0, (_nullthrows || _load_nullthrows()).default)(this._queryInput).getText();
         this.props.quickSelectionActions.query(query);
       });
     } else {
       const activeProviderSpec = this.props.searchResultManager.getProviderSpecByName(nextProviderName);
-      const lastResults = this.props.searchResultManager.getResults(this.refs.queryInput.getText(), nextProviderName);
+      const lastResults = this.props.searchResultManager.getResults((0, (_nullthrows || _load_nullthrows()).default)(this._queryInput).getText(), nextProviderName);
       this._getTextEditor().setPlaceholderText(activeProviderSpec.prompt);
       this.setState({
         activeTab: activeProviderSpec,
         resultsByService: lastResults
       }, () => {
         process.nextTick(() => {
-          const query = this.refs.queryInput.getText();
+          const query = (0, (_nullthrows || _load_nullthrows()).default)(this._queryInput).getText();
           this.props.quickSelectionActions.query(query);
         });
         if (this.props.onItemsChanged != null) {
@@ -306,14 +323,12 @@ class QuickSelectionComponent extends _react.default.Component {
       this.props.onCancellation();
     }), _rxjsBundlesRxMinJs.Observable.fromEvent(document, 'mousedown').subscribe(this._handleDocumentMouseDown),
     // The text editor often changes during dispatches, so wait until the next tick.
-    (0, (_observable || _load_observable()).throttle)((0, (_event || _load_event()).observableFromSubscribeFunction)(cb => this._getTextEditor().onDidChange(cb)), (_observable || _load_observable()).microtask, { leading: false }).subscribe(this._handleTextInputChange), (0, (_event || _load_event()).observableFromSubscribeFunction)(cb => this.props.searchResultManager.onProvidersChanged(cb)).debounceTime(0, _rxjsBundlesRxMinJs.Scheduler.animationFrame).subscribe(this._handleProvidersChange), (0, (_event || _load_event()).observableFromSubscribeFunction)(cb => this.props.searchResultManager.onResultsChanged(cb)).debounceTime(50)
+    (0, (_event || _load_event()).observableFromSubscribeFunction)(cb => (0, (_nullthrows || _load_nullthrows()).default)(this._queryInput).onDidChange(cb)).startWith(null).let((0, (_observable || _load_observable()).throttle)((_observable || _load_observable()).microtask, { leading: false })).subscribe(this._handleTextInputChange), (0, (_event || _load_event()).observableFromSubscribeFunction)(cb => this.props.searchResultManager.onProvidersChanged(cb)).debounceTime(0, _rxjsBundlesRxMinJs.Scheduler.animationFrame).subscribe(this._handleProvidersChange), (0, (_event || _load_event()).observableFromSubscribeFunction)(cb => this.props.searchResultManager.onResultsChanged(cb)).let((0, (_observable || _load_observable()).fastDebounce)(50))
     // debounceTime seems to have issues canceling scheduled work. So
     // schedule it after we've debounced the events. See
     // https://github.com/ReactiveX/rxjs/pull/2135
     .debounceTime(0, _rxjsBundlesRxMinJs.Scheduler.animationFrame).subscribe(this._handleResultsChange));
 
-    // TODO: Find a better way to trigger an update.
-    this._getTextEditor().setText(this.refs.queryInput.getText());
     this._getTextEditor().selectAll();
   }
 
@@ -323,7 +338,7 @@ class QuickSelectionComponent extends _react.default.Component {
 
   _updateResults() {
     const activeProviderName = this.props.searchResultManager.getActiveProviderName();
-    const updatedResults = this.props.searchResultManager.getResults(this.refs.queryInput.getText(), activeProviderName);
+    const updatedResults = this.props.searchResultManager.getResults((0, (_nullthrows || _load_nullthrows()).default)(this._queryInput).getText(), activeProviderName);
     const [topProviderName] = Object.keys(updatedResults);
     const renderableProviders = this.props.searchResultManager.getRenderableProviders();
     this.setState({
@@ -433,18 +448,16 @@ class QuickSelectionComponent extends _react.default.Component {
 
   // Update the scroll position of the list view to ensure the selected item is visible.
   _updateScrollPosition() {
-    if (!(this.refs && this.refs.selectionList)) {
+    if (this._selectionList == null) {
       return;
     }
-    const listNode = _reactDom.default.findDOMNode(this.refs.selectionList);
-    // $FlowFixMe
+    const listNode = (0, (_nullthrows || _load_nullthrows()).default)(this._selectionList);
     const selectedNode = listNode.getElementsByClassName('selected')[0];
     // false is passed for @centerIfNeeded parameter, which defaults to true.
     // Passing false causes the minimum necessary scroll to occur, so the selection sticks to the
     // top/bottom.
     if (selectedNode) {
-      // $FlowFixMe
-      selectedNode.scrollIntoViewIfNeeded(false);
+      (0, (_scrollIntoView || _load_scrollIntoView()).scrollIntoViewIfNeeded)(selectedNode, false);
     }
   }
 
@@ -472,7 +485,11 @@ class QuickSelectionComponent extends _react.default.Component {
   }
 
   _componentForItem(item, serviceName, dirName) {
-    return this.props.searchResultManager.getRendererForProvider(serviceName)(item, serviceName, dirName);
+    if (item.resultType === 'FILE') {
+      item;
+      return this.props.searchResultManager.getRendererForProvider(serviceName, item)(item, serviceName, dirName);
+    }
+    return this.props.searchResultManager.getRendererForProvider(serviceName, item)(item, serviceName, dirName);
   }
 
   _getSelectedIndex() {
@@ -501,12 +518,14 @@ class QuickSelectionComponent extends _react.default.Component {
   }
 
   _getInputTextEditor() {
-    // $FlowFixMe
-    return _reactDom.default.findDOMNode(this.refs.queryInput);
+    if (this._queryInput != null) {
+      return this._queryInput.getTextEditor().getElement();
+    }
+    return null;
   }
 
   _getTextEditor() {
-    return this.refs.queryInput.getTextEditor();
+    return (0, (_nullthrows || _load_nullthrows()).default)(this._queryInput).getTextEditor();
   }
 
   /**
@@ -521,7 +540,7 @@ class QuickSelectionComponent extends _react.default.Component {
       let keyBinding = null; // TODO
       const humanizedKeybinding = tab.action ? _findKeybindingForAction(tab.action, workspace) : '';
       if (humanizedKeybinding !== '') {
-        keyBinding = _react.default.createElement(
+        keyBinding = _react.createElement(
           'kbd',
           { className: 'key-binding' },
           humanizedKeybinding
@@ -529,7 +548,7 @@ class QuickSelectionComponent extends _react.default.Component {
       }
       return {
         name: tab.name,
-        tabContent: _react.default.createElement(
+        tabContent: _react.createElement(
           'span',
           null,
           tab.title,
@@ -537,10 +556,10 @@ class QuickSelectionComponent extends _react.default.Component {
         )
       };
     });
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       { className: 'omnisearch-tabs' },
-      _react.default.createElement((_Tabs || _load_Tabs()).default, {
+      _react.createElement((_Tabs || _load_Tabs()).default, {
         tabs: tabs,
         activeTabName: this.state.activeTab.name,
         onActiveTabChange: this._handleTabChange
@@ -572,30 +591,30 @@ class QuickSelectionComponent extends _react.default.Component {
           numQueriesOutstanding++;
           if (!isOmniSearchActive) {
             numTotalResultsRendered++;
-            message = _react.default.createElement(
+            message = _react.createElement(
               'span',
               null,
-              _react.default.createElement('span', { className: 'loading loading-spinner-tiny inline-block' }),
+              _react.createElement('span', { className: 'loading loading-spinner-tiny inline-block' }),
               'Loading...'
             );
           }
         } else if (resultsForDirectory.error && !isOmniSearchActive) {
-          message = _react.default.createElement(
+          message = _react.createElement(
             'span',
             null,
-            _react.default.createElement('span', { className: 'icon icon-circle-slash' }),
+            _react.createElement('span', { className: 'icon icon-circle-slash' }),
             'Error: ',
-            _react.default.createElement(
+            _react.createElement(
               'pre',
               null,
               resultsForDirectory.error
             )
           );
         } else if (resultsForDirectory.results.length === 0 && !isOmniSearchActive) {
-          message = _react.default.createElement(
+          message = _react.createElement(
             'span',
             null,
-            _react.default.createElement('span', { className: 'icon icon-x' }),
+            _react.createElement('span', { className: 'icon icon-x' }),
             'No results'
           );
         }
@@ -603,7 +622,7 @@ class QuickSelectionComponent extends _react.default.Component {
           numResultsForService++;
           numTotalResultsRendered++;
           const isSelected = serviceName === this.state.selectedService && dirName === this.state.selectedDirectory && itemIndex === this.state.selectedItemIndex;
-          return _react.default.createElement(
+          return _react.createElement(
             'li',
             {
               className: (0, (_classnames || _load_classnames()).default)({
@@ -622,24 +641,24 @@ class QuickSelectionComponent extends _react.default.Component {
         // hide folders if only 1 level would be shown, or if no results were found
         const showDirectories = directoryNames.length > 1 && (!isOmniSearchActive || resultsForDirectory.results.length > 0);
         if (showDirectories) {
-          directoryLabel = _react.default.createElement(
+          directoryLabel = _react.createElement(
             'div',
             { className: 'list-item' },
-            _react.default.createElement(
+            _react.createElement(
               'span',
               { className: 'icon icon-file-directory' },
               (_nuclideUri || _load_nuclideUri()).default.nuclideUriToDisplayString(dirName)
             )
           );
         }
-        return _react.default.createElement(
+        return _react.createElement(
           'li',
           {
             className: (0, (_classnames || _load_classnames()).default)({ 'list-nested-item': showDirectories }),
             key: dirName },
           directoryLabel,
           message,
-          _react.default.createElement(
+          _react.createElement(
             'ul',
             { className: 'list-tree' },
             itemComponents
@@ -648,23 +667,23 @@ class QuickSelectionComponent extends _react.default.Component {
       });
       let serviceLabel = null;
       if (isOmniSearchActive && numResultsForService > 0) {
-        serviceLabel = _react.default.createElement(
+        serviceLabel = _react.createElement(
           'div',
           {
             className: 'quick-open-provider-item list-item',
             onClick: () => this.props.quickSelectionActions.changeActiveProvider(serviceName) },
-          _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: 'gear', children: serviceTitle }),
-          _react.default.createElement((_Badge || _load_Badge()).Badge, {
+          _react.createElement((_Icon || _load_Icon()).Icon, { icon: 'gear', children: serviceTitle }),
+          _react.createElement((_Badge || _load_Badge()).Badge, {
             size: (_Badge || _load_Badge()).BadgeSizes.small,
             className: 'quick-open-provider-count-badge',
             value: totalResults
           })
         );
-        return _react.default.createElement(
+        return _react.createElement(
           'li',
           { className: 'list-nested-item', key: serviceName },
           serviceLabel,
-          _react.default.createElement(
+          _react.createElement(
             'ul',
             { className: 'list-tree' },
             directoriesForService
@@ -676,41 +695,45 @@ class QuickSelectionComponent extends _react.default.Component {
     const hasSearchResult = numTotalResultsRendered > 0;
     let omniSearchStatus = null;
     if (isOmniSearchActive && numQueriesOutstanding > 0) {
-      omniSearchStatus = _react.default.createElement(
+      omniSearchStatus = _react.createElement(
         'span',
         null,
-        _react.default.createElement('span', { className: 'loading loading-spinner-tiny inline-block' }),
+        _react.createElement('span', { className: 'loading loading-spinner-tiny inline-block' }),
         'Loading...'
       );
     } else if (isOmniSearchActive && !hasSearchResult) {
-      omniSearchStatus = _react.default.createElement(
+      omniSearchStatus = _react.createElement(
         'li',
         null,
-        _react.default.createElement(
+        _react.createElement(
           'span',
           null,
-          _react.default.createElement('span', { className: 'icon icon-x' }),
+          _react.createElement('span', { className: 'icon icon-x' }),
           'No results'
         )
       );
     }
     const disableOpenAll = !hasSearchResult || !this.state.activeTab.canOpenAll;
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       {
         className: 'select-list omnisearch-modal',
-        ref: 'modal',
+        ref: el => {
+          this._modal = el;
+        },
         onKeyPress: this._handleKeyPress },
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { className: 'omnisearch-search-bar' },
-        _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+        _react.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
           className: 'omnisearch-pane',
-          ref: 'queryInput',
+          ref: input => {
+            this._queryInput = input;
+          },
           initialValue: this.state.initialQuery,
           placeholderText: this.state.activeTab.prompt
         }),
-        _react.default.createElement(
+        _react.createElement(
           (_Button || _load_Button()).Button,
           {
             className: 'omnisearch-open-all',
@@ -720,15 +743,19 @@ class QuickSelectionComponent extends _react.default.Component {
         )
       ),
       this._renderTabs(),
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { className: 'omnisearch-results' },
-        _react.default.createElement(
+        _react.createElement(
           'div',
           { className: 'omnisearch-pane' },
-          _react.default.createElement(
+          _react.createElement(
             'ul',
-            { className: 'list-tree', ref: 'selectionList' },
+            {
+              className: 'list-tree',
+              ref: el => {
+                this._selectionList = el;
+              } },
             services,
             omniSearchStatus
           )

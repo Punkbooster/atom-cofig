@@ -8,13 +8,8 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 let getRealPath = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (entityPath, isFile) {
-    let stat;
-    try {
-      stat = yield (_fsPromise || _load_fsPromise()).default.stat(entityPath);
-    } catch (e) {
-      // Atom watcher behavior compatibility.
-      throw new Error(`Can't watch a non-existing entity: ${entityPath}`);
-    }
+    // NOTE: this will throw when trying to watch non-existent entities.
+    const stat = yield (_fsPromise || _load_fsPromise()).default.stat(entityPath);
     if (stat.isFile() !== isFile) {
       (0, (_log4js || _load_log4js()).getLogger)('nuclide-filewatcher-rpc').warn(`FileWatcherService: expected ${entityPath} to be a ${isFile ? 'file' : 'directory'}`);
     }
@@ -37,7 +32,7 @@ let unwatchDirectoryRecursive = (() => {
 })();
 
 exports.watchFile = watchFile;
-exports.watchFileWithNode = watchFileWithNode;
+exports.watchWithNode = watchWithNode;
 exports.watchDirectory = watchDirectory;
 exports.watchDirectoryRecursive = watchDirectoryRecursive;
 
@@ -72,7 +67,7 @@ function _load_log4js() {
 var _nuclideWatchmanHelpers;
 
 function _load_nuclideWatchmanHelpers() {
-  return _nuclideWatchmanHelpers = require('../../nuclide-watchman-helpers');
+  return _nuclideWatchmanHelpers = require('nuclide-watchman-helpers');
 }
 
 var _debounceDeletes;
@@ -85,6 +80,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // Cache an observable for each watched entity (file or directory).
 // Multiple watches for the same entity can share the same observable.
+const entityWatches = new (_SharedObservableCache || _load_SharedObservableCache()).default(registerWatch);
+
+// In addition, expose the observer behind each observable so we can
+// dispatch events from the root subscription.
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -96,10 +95,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
-const entityWatches = new (_SharedObservableCache || _load_SharedObservableCache()).default(registerWatch);
-
-// In addition, expose the observer behind each observable so we can
-// dispatch events from the root subscription.
 const entityObserver = new Map();
 
 let watchmanClient = null;
@@ -114,13 +109,14 @@ function watchFile(filePath) {
   return watchEntity(filePath, true).publish();
 }
 
-function watchFileWithNode(filePath) {
+function watchWithNode(watchedPath, isDirectory) {
   return _rxjsBundlesRxMinJs.Observable.create(observer => {
-    const watcher = _fs.default.watch(filePath, { persistent: false }, eventType => {
+    const watcher = _fs.default.watch(watchedPath, { persistent: false }, (eventType, fileName) => {
+      const path = isDirectory ? (_nuclideUri || _load_nuclideUri()).default.join(watchedPath, fileName) : watchedPath;
       if (eventType === 'rename') {
-        observer.next({ path: filePath, type: 'delete' });
+        observer.next({ path, type: 'delete' });
       } else {
-        observer.next({ path: filePath, type: 'change' });
+        observer.next({ path, type: 'change' });
       }
     });
     return () => watcher.close();

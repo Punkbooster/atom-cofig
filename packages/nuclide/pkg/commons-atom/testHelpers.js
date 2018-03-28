@@ -16,6 +16,12 @@ function _load_nuclideUri() {
   return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
+var _react = _interopRequireWildcard(require('react'));
+
+var _reactDom = _interopRequireDefault(require('react-dom'));
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -153,35 +159,33 @@ function waitsForFilePosition(filename, row, column, timeoutMs = 10000) {
 }
 
 /**
- * Reaches into React's internals to look for components that have not been
+ * Patches React's internals to keep record of components that are never
  * unmounted. Having mounted React components after the creator has been
  * disposed is a sign that there are problems in the cleanup logic.
- *
- * If ReactComponentTreeHook ever goes missing, make sure we're not testing
- * with the bundled version of React. If it's still missing, then retire this
- * test.
- *
- * If the displayNames are not helpful in identifying the unmounted component,
- * open Atom with `atom --dev` and inspect the components with:
- *
- *    ReactComponentTreeHook = require.cache[
- *      Object.keys(require.cache).find(x => x.endsWith('/ReactComponentTreeHook.js'))
- *    ].exports;
- *
- *    ReactComponentTreeHook.getRootIDs().map(rootID => {
- *      console.log(ReactComponentTreeHook.getElement(rootID));
- *    });
  */
+const mountedRootComponents = new Map();
+
+const oldReactRender = _reactDom.default.render.bind(_reactDom.default);
+_reactDom.default.render = function render(element, container, callback) {
+  mountedRootComponents.set(container, element);
+  return oldReactRender(element, container, callback);
+};
+
+const oldReactUnmountComponentAtNode = _reactDom.default.unmountComponentAtNode.bind(_reactDom.default);
+_reactDom.default.unmountComponentAtNode = function unmountComponentAtNode(container) {
+  mountedRootComponents.delete(container);
+  return oldReactUnmountComponentAtNode(container);
+};
+
 function getMountedReactRootNames() {
-  const ReactComponentTreeHookPath = Object.keys(require.cache).find(x => x.endsWith('react/lib/ReactComponentTreeHook.js'));
-
-  if (!(ReactComponentTreeHookPath != null)) {
-    throw new Error('ReactComponentTreeHook could not be found in the module cache.');
-  }
-
-  const ReactComponentTreeHook = require.cache[ReactComponentTreeHookPath].exports;
-  const reactRootNames = ReactComponentTreeHook.getRootIDs().map(rootID => {
-    return ReactComponentTreeHook.getDisplayName(rootID);
+  return Array.from(mountedRootComponents).map(([element, container]) => element).map(element => {
+    const constructor = element.constructor;
+    if (typeof constructor.displayName === 'string') {
+      return constructor.displayName;
+    } else if (typeof constructor.name === 'string') {
+      return constructor.name;
+    } else {
+      return 'Unknown';
+    }
   });
-  return reactRootNames;
 }

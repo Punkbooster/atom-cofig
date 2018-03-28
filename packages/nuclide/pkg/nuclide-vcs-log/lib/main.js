@@ -8,8 +8,6 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 exports.addItemsToFileTreeContextMenu = addItemsToFileTreeContextMenu;
 
-var _atom = require('atom');
-
 var _featureConfig;
 
 function _load_featureConfig() {
@@ -68,15 +66,23 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
 var _url = _interopRequireDefault(require('url'));
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _viewableFromReactElement;
 
 function _load_viewableFromReactElement() {
   return _viewableFromReactElement = require('../../commons-atom/viewableFromReactElement');
 }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -102,7 +108,7 @@ const VCS_LOG_URI_PATHS_QUERY_PARAM = 'path';
 class Activation {
 
   constructor() {
-    this._subscriptions = new _atom.CompositeDisposable();
+    this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._registerOpener();
   }
 
@@ -184,7 +190,7 @@ class Activation {
     // We don't need to dispose of the contextDisposable when the provider is disabled -
     // it needs to be handled by the provider itself. We only should remove it from the list
     // of the disposables we maintain.
-    return new _atom.Disposable(() => this._subscriptions.remove(contextDisposable));
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => this._subscriptions.remove(contextDisposable));
   }
 
   dispose() {
@@ -227,7 +233,7 @@ function openLogPaneForURI(uri) {
     [VCS_LOG_URI_PATHS_QUERY_PARAM]: uri
   });
   // Not a file URI
-  // eslint-disable-next-line nuclide-internal/atom-apis
+  // eslint-disable-next-line rulesdir/atom-apis
   atom.workspace.open(openerURI);
 }
 
@@ -285,7 +291,7 @@ function createLogPaneForPath(path) {
   });
 
   const component = (0, (_bindObservableAsProps || _load_bindObservableAsProps()).bindObservableAsProps)(props, (_VcsLogComponent || _load_VcsLogComponent()).default);
-  return _react.default.createElement((_VcsLogGadget || _load_VcsLogGadget()).default, { iconName: 'repo', title: title, component: component });
+  return _react.createElement((_VcsLogGadget || _load_VcsLogGadget()).default, { iconName: 'repo', title: title, component: component });
 }
 
 let activation;

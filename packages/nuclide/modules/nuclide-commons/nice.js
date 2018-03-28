@@ -22,8 +22,8 @@ let niceSafeSpawn = exports.niceSafeSpawn = (() => {
 })();
 
 /**
-* Takes the arguments that you would normally pass to `spawn()` and returns an array of new
-* arguments to use to run the command under `nice`.
+ * Takes the arguments that you would normally pass to `spawn()` and returns an array of new
+ * arguments to use to run the command under `nice`.
  *
  * Example:
  *
@@ -59,21 +59,6 @@ let nicifyCommand = (() => {
 
   return function nicifyCommand(_x4, _x5, _x6) {
     return _ref2.apply(this, arguments);
-  };
-})();
-
-let hasCommand = (() => {
-  var _ref3 = (0, _asyncToGenerator.default)(function* (command) {
-    let result = commandAvailabilityCache.get(command);
-    if (result == null) {
-      result = (yield (0, (_which || _load_which()).default)(command)) != null;
-      commandAvailabilityCache.set(command, result);
-    }
-    return result;
-  });
-
-  return function hasCommand(_x7) {
-    return _ref3.apply(this, arguments);
   };
 })();
 
@@ -121,7 +106,8 @@ const commandAvailabilityCache = (0, (_lruCache || _load_lruCache()).default)({
   // Realistically this will not change very often so we can cache for long periods of time. We
   // probably could just check at startup and get away with it, but maybe someone will install
   // `ionice` and it would be nice to pick that up.
-  maxAge: 1000 * 60 * 5 });
+  maxAge: 1000 * 60 * 5 // 5 minutes
+});
 
 function hasNiceCommand() {
   return hasCommand(NICE_COMMAND);
@@ -129,6 +115,15 @@ function hasNiceCommand() {
 
 function hasIoniceCommand() {
   return hasCommand(IONICE_COMMAND);
+}
+
+function hasCommand(command) {
+  let result = commandAvailabilityCache.get(command);
+  if (result == null) {
+    result = (0, (_which || _load_which()).default)(command).then(x => x != null);
+    commandAvailabilityCache.set(command, result);
+  }
+  return result;
 }
 
 function niceObserveProcess(command, args, options) {

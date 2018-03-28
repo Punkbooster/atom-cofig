@@ -12,9 +12,9 @@ module.exports = _client => {
         kind: "named",
         name: "NuclideUri"
       }
-    }]).then(args => {
+    }])).switchMap(args => {
       return _client.callRemoteFunction("FileWatcherService/watchFile", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "named",
         name: "WatchResult"
@@ -22,16 +22,24 @@ module.exports = _client => {
     }).publish();
   };
 
-  remoteModule.watchFileWithNode = function (arg0) {
+  remoteModule.watchWithNode = function (arg0, arg1) {
     return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
-      name: "filePath",
+      name: "watchedPath",
       type: {
         kind: "named",
         name: "NuclideUri"
       }
-    }]).then(args => {
-      return _client.callRemoteFunction("FileWatcherService/watchFileWithNode", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }, {
+      name: "isDirectory",
+      type: {
+        kind: "nullable",
+        type: {
+          kind: "boolean"
+        }
+      }
+    }])).switchMap(args => {
+      return _client.callRemoteFunction("FileWatcherService/watchWithNode", "observable", args);
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "named",
         name: "WatchResult"
@@ -46,9 +54,9 @@ module.exports = _client => {
         kind: "named",
         name: "NuclideUri"
       }
-    }]).then(args => {
+    }])).switchMap(args => {
       return _client.callRemoteFunction("FileWatcherService/watchDirectory", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "named",
         name: "WatchResult"
@@ -63,9 +71,9 @@ module.exports = _client => {
         kind: "named",
         name: "NuclideUri"
       }
-    }]).then(args => {
+    }])).switchMap(args => {
       return _client.callRemoteFunction("FileWatcherService/watchDirectoryRecursive", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "string"
       });
@@ -143,7 +151,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "FileWatcherService.js",
-        line: 26
+        line: 25
       },
       name: "WatchResult",
       definition: {
@@ -170,13 +178,13 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "FileWatcherService.js",
-        line: 49
+        line: 48
       },
       type: {
         location: {
           type: "source",
           fileName: "FileWatcherService.js",
-          line: 49
+          line: 48
         },
         kind: "function",
         argumentTypes: [{
@@ -195,26 +203,34 @@ Object.defineProperty(module.exports, "defs", {
         }
       }
     },
-    watchFileWithNode: {
+    watchWithNode: {
       kind: "function",
-      name: "watchFileWithNode",
+      name: "watchWithNode",
       location: {
         type: "source",
         fileName: "FileWatcherService.js",
-        line: 55
+        line: 54
       },
       type: {
         location: {
           type: "source",
           fileName: "FileWatcherService.js",
-          line: 55
+          line: 54
         },
         kind: "function",
         argumentTypes: [{
-          name: "filePath",
+          name: "watchedPath",
           type: {
             kind: "named",
             name: "NuclideUri"
+          }
+        }, {
+          name: "isDirectory",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "boolean"
+            }
           }
         }],
         returnType: {
@@ -232,13 +248,13 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "FileWatcherService.js",
-        line: 70
+        line: 77
       },
       type: {
         location: {
           type: "source",
           fileName: "FileWatcherService.js",
-          line: 70
+          line: 77
         },
         kind: "function",
         argumentTypes: [{
@@ -263,13 +279,13 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "FileWatcherService.js",
-        line: 116
+        line: 118
       },
       type: {
         location: {
           type: "source",
           fileName: "FileWatcherService.js",
-          line: 116
+          line: 118
         },
         kind: "function",
         argumentTypes: [{

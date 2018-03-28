@@ -20,12 +20,6 @@ function _load_BridgeAdapter() {
   return _BridgeAdapter = _interopRequireDefault(require('./Protocol/BridgeAdapter'));
 }
 
-var _NewProtocolChannelChecker;
-
-function _load_NewProtocolChannelChecker() {
-  return _NewProtocolChannelChecker = require('../../nuclide-debugger-common/lib/NewProtocolChannelChecker');
-}
-
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
@@ -40,81 +34,42 @@ function _load_EventReporter() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// eslint-disable-next-line nuclide-internal/no-commonjs
-require('./Protocol/Object'); /**
-                               * Copyright (c) 2015-present, Facebook, Inc.
-                               * All rights reserved.
-                               *
-                               * This source code is licensed under the license found in the LICENSE file in
-                               * the root directory of this source tree.
-                               *
-                               * 
-                               * @format
-                               */
+// eslint-disable-next-line rulesdir/no-commonjs
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+require('./Protocol/Object');
+
 
 /**
-  * Class that dispatches Nuclide commands to debugger engine.
-  * This is used to abstract away the underlying implementation for command dispatching
-  * and allows us to switch between chrome IPC and new non-chrome channel.
-  */
+ * Class that dispatches Nuclide commands to debugger engine.
+ * This is used to abstract away the underlying implementation for command dispatching
+ * and allows us to switch between chrome IPC and new non-chrome channel.
+ */
 class CommandDispatcher {
 
-  constructor(getIsReadonlyTarget) {
-    this._useNewChannel = false;
+  constructor(getIsReadonlyTarget, shouldFilterBreak) {
     this._getIsReadonlyTarget = getIsReadonlyTarget;
+    this._shouldFilterBreak = shouldFilterBreak;
   }
 
-  isNewChannel() {
-    return this._useNewChannel;
-  }
-
-  setupChromeChannel(url) {
+  setupChromeChannel() {
     this._ensureSessionCreated();
     // Do not bother setup load if new channel is enabled.
-    if (this._useNewChannel) {
-      if (!(this._bridgeAdapter != null)) {
-        throw new Error('Invariant violation: "this._bridgeAdapter != null"');
-      }
 
-      this._bridgeAdapter.enable();
-      return;
+    if (!(this._bridgeAdapter != null)) {
+      throw new Error('Invariant violation: "this._bridgeAdapter != null"');
     }
-    if (this._webview == null) {
-      // Cast from HTMLElement down to WebviewElement without instanceof
-      // checking, as WebviewElement constructor is not exposed.
-      const webview = document.createElement('webview');
-      webview.src = url;
-      webview.nodeintegration = true;
-      webview.disablewebsecurity = true;
-      webview.classList.add('native-key-bindings'); // required to pass through certain key events
-      webview.classList.add('nuclide-debugger-webview');
 
-      // The webview is actually only used for its state; it's really more of a model that just has
-      // to live in the DOM. We render it into the body to keep it separate from our view, which may
-      // be detached. If the webview were a child, it would cause the webview to reload when
-      // reattached, and we'd lose our state.
-
-      if (!(document.body != null)) {
-        throw new Error('Invariant violation: "document.body != null"');
-      }
-
-      document.body.appendChild(webview);
-
-      this._webview = webview;
-
-      if (!(this._sessionSubscriptions != null)) {
-        throw new Error('Invariant violation: "this._sessionSubscriptions != null"');
-      }
-
-      this._sessionSubscriptions.add(() => {
-        webview.remove();
-        this._webview = null;
-        this._webviewUrl = null;
-      });
-    } else if (url !== this._webviewUrl) {
-      this._webview.src = url;
-    }
-    this._webviewUrl = url;
+    this._bridgeAdapter.enable();
   }
 
   setupNuclideChannel(debuggerInstance) {
@@ -122,22 +77,19 @@ class CommandDispatcher {
 
     return (0, _asyncToGenerator.default)(function* () {
       _this._ensureSessionCreated();
-      _this._useNewChannel = yield (0, (_NewProtocolChannelChecker || _load_NewProtocolChannelChecker()).isNewProtocolChannelEnabled)(debuggerInstance.getProviderName());
-      if (_this._useNewChannel) {
-        const dispatchers = yield (_NuclideProtocolParser || _load_NuclideProtocolParser()).default.bootstrap(debuggerInstance);
-        _this._bridgeAdapter = new (_BridgeAdapter || _load_BridgeAdapter()).default(dispatchers, _this._getIsReadonlyTarget);
+      const dispatchers = yield (_NuclideProtocolParser || _load_NuclideProtocolParser()).default.bootstrap(debuggerInstance);
+      _this._bridgeAdapter = new (_BridgeAdapter || _load_BridgeAdapter()).default(dispatchers, _this._getIsReadonlyTarget, _this._shouldFilterBreak);
 
-        if (!(_this._sessionSubscriptions != null)) {
-          throw new Error('Invariant violation: "this._sessionSubscriptions != null"');
-        }
-
-        _this._sessionSubscriptions.add(function () {
-          if (_this._bridgeAdapter != null) {
-            _this._bridgeAdapter.dispose();
-            _this._bridgeAdapter = null;
-          }
-        });
+      if (!(_this._sessionSubscriptions != null)) {
+        throw new Error('Invariant violation: "this._sessionSubscriptions != null"');
       }
+
+      _this._sessionSubscriptions.add(function () {
+        if (_this._bridgeAdapter != null) {
+          _this._bridgeAdapter.dispose();
+          _this._bridgeAdapter = null;
+        }
+      });
     })();
   }
 
@@ -155,34 +107,15 @@ class CommandDispatcher {
   }
 
   send(...args) {
-    if (this._useNewChannel) {
-      this._sendViaNuclideChannel(...args);
-    } else {
-      this._sendViaChromeChannel(...args);
-    }
-  }
-
-  openDevTools() {
-    if (this._webview == null) {
-      return;
-    }
-    this._webview.openDevTools();
+    this._sendViaNuclideChannel(...args);
   }
 
   getEventObservable() {
-    if (this._useNewChannel) {
-      if (!(this._bridgeAdapter != null)) {
-        throw new Error('Invariant violation: "this._bridgeAdapter != null"');
-      }
-
-      return this._bridgeAdapter.getEventObservable();
-    } else {
-      if (!(this._webview != null)) {
-        throw new Error('Invariant violation: "this._webview != null"');
-      }
-
-      return _rxjsBundlesRxMinJs.Observable.fromEvent(this._webview, 'ipc-message');
+    if (!(this._bridgeAdapter != null)) {
+      throw new Error('Invariant violation: "this._bridgeAdapter != null"');
     }
+
+    return this._bridgeAdapter.getEventObservable();
   }
 
   _sendViaNuclideChannel(...args) {
@@ -206,7 +139,7 @@ class CommandDispatcher {
         this._bridgeAdapter.stepOut();
         break;
       case 'RunToLocation':
-        this._bridgeAdapter.runToLocation(args[1], args[2]);
+        this._bridgeAdapter.runToLocation(args[1], args[2], args[3]);
         break;
       case 'triggerDebuggerAction':
         this._triggerDebuggerAction(args[1]);
@@ -232,6 +165,12 @@ class CommandDispatcher {
       case 'runtimeEvaluate':
         this._bridgeAdapter.evaluateExpression(args[1], args[2], 'console');
         break;
+      case 'setVariable':
+        this._bridgeAdapter.setVariable(args[1], args[2], args[3], args[4]);
+        break;
+      case 'completions':
+        this._bridgeAdapter.completions(args[1], args[2], args[3]);
+        break;
       case 'getProperties':
         this._bridgeAdapter.getProperties(args[1], args[2]);
         break;
@@ -244,8 +183,8 @@ class CommandDispatcher {
       case 'setPauseOnCaughtException':
         this._bridgeAdapter.setPauseOnCaughtException(args[1]);
         break;
-      case 'setSingleThreadStepping':
-        this._bridgeAdapter.setSingleThreadStepping(args[1]);
+      case 'setShowDisassembly':
+        this._bridgeAdapter.setShowDisassembly(args[1]);
         break;
       default:
         (0, (_EventReporter || _load_EventReporter()).reportError)(`Command ${args[0]} is not implemented yet.`);
@@ -262,7 +201,7 @@ class CommandDispatcher {
       case 'debugger.toggle-pause':
         // TODO[jetan]: 'debugger.toggle-pause' needs to implement state management which
         // I haven't think well yet so forward to chrome for now.
-        this._sendViaChromeChannel('triggerDebuggerAction', 'debugger.toggle-pause');
+        (0, (_EventReporter || _load_EventReporter()).reportError)('toggle-pause is not implemented yet.');
         break;
       case 'debugger.step-over':
         this._bridgeAdapter.stepOver();
@@ -281,13 +220,8 @@ class CommandDispatcher {
     }
   }
 
-  _sendViaChromeChannel(...args) {
-    const webview = this._webview;
-    if (webview != null) {
-      webview.send('command', ...args);
-    } else {
-      // TODO: log and throw error.
-    }
+  getBridgeAdapter() {
+    return this._bridgeAdapter;
   }
 }
 exports.default = CommandDispatcher;

@@ -4,6 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
 var _FileTreeConstants;
 
 function _load_FileTreeConstants() {
@@ -43,13 +45,19 @@ function _load_FileTreeStore() {
 var _immutable;
 
 function _load_immutable() {
-  return _immutable = _interopRequireDefault(require('immutable'));
+  return _immutable = _interopRequireWildcard(require('immutable'));
 }
 
 var _nuclideAnalytics;
 
 function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
+}
+
+var _nullthrows;
+
+function _load_nullthrows() {
+  return _nullthrows = _interopRequireDefault(require('nullthrows'));
 }
 
 var _nuclideUri;
@@ -70,6 +78,18 @@ function _load_getElementFilePath() {
   return _getElementFilePath = _interopRequireDefault(require('../../commons-atom/getElementFilePath'));
 }
 
+var _removeProjectPath;
+
+function _load_removeProjectPath() {
+  return _removeProjectPath = _interopRequireDefault(require('../../commons-atom/removeProjectPath'));
+}
+
+var _systemInfo;
+
+function _load_systemInfo() {
+  return _systemInfo = require('../../commons-node/system-info');
+}
+
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
@@ -82,24 +102,31 @@ function _load_Constants() {
   return _Constants = require('./Constants');
 }
 
-var _atom = require('atom');
+var _log4js;
+
+function _load_log4js() {
+  return _log4js = require('log4js');
+}
 
 var _os = _interopRequireDefault(require('os'));
 
 var _electron = require('electron');
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
+// $FlowFixMe(>=0.53.0) Flow suppress
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-file-tree'); /**
+                                                                                 * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                 * All rights reserved.
+                                                                                 *
+                                                                                 * This source code is licensed under the license found in the LICENSE file in
+                                                                                 * the root directory of this source tree.
+                                                                                 *
+                                                                                 * 
+                                                                                 * @format
+                                                                                 */
 
 const VALID_FILTER_CHARS = '!#./0123456789-:;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ' + '_abcdefghijklmnopqrstuvwxyz~';
 
@@ -112,7 +139,7 @@ class ProjectSelectionManager {
 
   addExtraContent(content) {
     this._actions.addExtraProjectSelectionContent(content);
-    return new _atom.Disposable(() => this._actions.removeExtraProjectSelectionContent(content));
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => this._actions.removeExtraProjectSelectionContent(content));
   }
 
   getExtraContent() {
@@ -126,8 +153,8 @@ class FileTreeController {
     this._actions = (_FileTreeActions || _load_FileTreeActions()).default.getInstance();
     this._store = (_FileTreeStore || _load_FileTreeStore()).FileTreeStore.getInstance();
     this._projectSelectionManager = new ProjectSelectionManager();
-    this._repositories = new (_immutable || _load_immutable()).default.Set();
-    this._disposableForRepository = new (_immutable || _load_immutable()).default.Map();
+    this._repositories = (_immutable || _load_immutable()).Set();
+    this._disposableForRepository = (_immutable || _load_immutable()).Map();
     this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       if (this._cwdApiSubscription != null) {
         this._cwdApiSubscription.dispose();
@@ -151,7 +178,7 @@ class FileTreeController {
       const char = String.fromCharCode(c);
       letterKeyBindings[`nuclide-file-tree:go-to-letter-${char}`] = this._handlePrefixKeypress.bind(this, char);
     }
-    this._disposables.add(atom.commands.add((_FileTreeConstants || _load_FileTreeConstants()).EVENT_HANDLER_SELECTOR, Object.assign({
+    this._disposables.add(atom.commands.add((_FileTreeConstants || _load_FileTreeConstants()).COMMANDS_SELECTOR, Object.assign({
       'core:move-down': this._moveDown.bind(this),
       'core:move-up': this._moveUp.bind(this),
       'core:move-to-top': this._moveToTop.bind(this),
@@ -176,17 +203,20 @@ class FileTreeController {
       'nuclide-file-tree:open-selected-entry-left': this._openSelectedEntrySplitLeft.bind(this),
       'nuclide-file-tree:open-selected-entry-right': this._openSelectedEntrySplitRight.bind(this),
       'nuclide-file-tree:remove': this._deleteSelection.bind(this),
+      'core:delete': this._deleteSelection.bind(this),
       'nuclide-file-tree:remove-project-folder-selection': this._removeRootFolderSelection.bind(this),
       'nuclide-file-tree:rename-selection': () => (_FileSystemActions || _load_FileSystemActions()).default.openRenameDialog(),
       'nuclide-file-tree:duplicate-selection': () => {
-        (_FileSystemActions || _load_FileSystemActions()).default.openDuplicateDialog(this._openAndRevealFilePath.bind(this));
+        (_FileSystemActions || _load_FileSystemActions()).default.openDuplicateDialog(this._openAndRevealFilePaths.bind(this));
       },
+      'nuclide-file-tree:copy-selection': this._copyFilenamesWithDir.bind(this),
+      'nuclide-file-tree:paste-selection': () => (_FileSystemActions || _load_FileSystemActions()).default.openPasteDialog(),
       'nuclide-file-tree:search-in-directory': this._searchInDirectory.bind(this),
       'nuclide-file-tree:set-current-working-root': this._setCwdToSelection.bind(this)
     }, letterKeyBindings)), atom.commands.add('atom-workspace', {
-      // eslint-disable-next-line nuclide-internal/atom-apis
+      // eslint-disable-next-line rulesdir/atom-apis
       'file:copy-full-path': this._copyFullPath.bind(this),
-      // eslint-disable-next-line nuclide-internal/atom-apis
+      // eslint-disable-next-line rulesdir/atom-apis
       'file:show-in-file-manager': this._showInFileManager.bind(this)
     }));
     if (state != null) {
@@ -253,6 +283,15 @@ class FileTreeController {
     }
   }
 
+  _openAndRevealFilePaths(filePaths) {
+    for (let i = 0; i < filePaths.length; i++) {
+      (0, (_goToLocation || _load_goToLocation()).goToLocation)(filePaths[i]);
+    }
+    if (filePaths.length !== 0) {
+      this.revealNodeKey(filePaths[filePaths.length - 1]);
+    }
+  }
+
   _openAndRevealDirectoryPath(path) {
     if (path != null) {
       this.revealNodeKey((_FileTreeHelpers || _load_FileTreeHelpers()).default.dirPathToKey(path));
@@ -286,11 +325,12 @@ class FileTreeController {
     if (showIfHidden) {
       // Ensure the file tree is visible before trying to reveal a file in it. Even if the currently
       // active pane is not an ordinary editor, we still at least want to show the tree.
-      // eslint-disable-next-line nuclide-internal/atom-apis
-      atom.workspace.open((_Constants || _load_Constants()).WORKSPACE_VIEW_URI);
+      // eslint-disable-next-line rulesdir/atom-apis
+      atom.workspace.open((_Constants || _load_Constants()).WORKSPACE_VIEW_URI, { searchAllPanes: true });
       this._actions.setFoldersExpanded(true);
     }
 
+    // flowlint-next-line sketchy-null-string:off
     if (!filePath) {
       return;
     }
@@ -328,6 +368,7 @@ class FileTreeController {
 
       this._cwdApiSubscription = cwdApi.observeCwd(directory => {
         const path = directory == null ? null : directory.getPath();
+        // flowlint-next-line sketchy-null-string:off
         const rootKey = path && (_FileTreeHelpers || _load_FileTreeHelpers()).default.dirPathToKey(path);
         this._actions.setCwd(rootKey);
       });
@@ -378,6 +419,10 @@ class FileTreeController {
     this._store._setAutoExpandSingleChild(autoExpandSingleChild);
   }
 
+  setFocusEditorOnFileSelection(focusEditorOnFileSelection) {
+    this._actions.setFocusEditorOnFileSelection(focusEditorOnFileSelection);
+  }
+
   updateWorkingSet(workingSet) {
     this._actions.updateWorkingSet(workingSet);
   }
@@ -390,13 +435,17 @@ class FileTreeController {
     this._actions.updateOpenFilesWorkingSet(openFilesWorkingSet);
   }
 
+  collectDebugState() {
+    return this._store.collectDebugState();
+  }
+
   /**
    * Collapses all selected directory nodes. If the selection is a single file or a single collapsed
    * directory, the selection is set to the directory's parent.
    */
   _collapseSelection(deep = false) {
     const selectedNodes = this._store.getSelectedNodes();
-    const firstSelectedNode = selectedNodes.first();
+    const firstSelectedNode = (0, (_nullthrows || _load_nullthrows()).default)(selectedNodes.first());
     if (selectedNodes.size === 1 && !firstSelectedNode.isRoot && !(firstSelectedNode.isContainer && firstSelectedNode.isExpanded)) {
       /*
        * Select the parent of the selection if the following criteria are met:
@@ -405,7 +454,7 @@ class FileTreeController {
        *   * The node is not an expanded directory
       */
 
-      const parent = firstSelectedNode.parent;
+      const parent = (0, (_nullthrows || _load_nullthrows()).default)(firstSelectedNode.parent);
       this._selectAndTrackNode(parent);
     } else {
       selectedNodes.forEach(node => {
@@ -433,7 +482,7 @@ class FileTreeController {
   }
 
   _deleteSelection() {
-    const nodes = this._store.getSelectedNodes();
+    const nodes = this._store.getTargetNodes();
     if (nodes.size === 0) {
       return;
     }
@@ -444,7 +493,8 @@ class FileTreeController {
         const nodePath = (_FileTreeHelpers || _load_FileTreeHelpers()).default.keyToPath(node.uri);
         const parentOfRoot = (_nuclideUri || _load_nuclideUri()).default.dirname(node.rootUri);
 
-        return (_nuclideUri || _load_nuclideUri()).default.relative(parentOfRoot, nodePath);
+        // Fix Windows paths to avoid end of filename truncation
+        return (0, (_systemInfo || _load_systemInfo()).isRunningInWindows)() ? (_nuclideUri || _load_nuclideUri()).default.relative(parentOfRoot, nodePath).replace(/\//g, '\\') : (_nuclideUri || _load_nuclideUri()).default.relative(parentOfRoot, nodePath);
       });
       const message = 'Are you sure you want to delete the following ' + (nodes.size > 1 ? 'items?' : 'item?');
       atom.confirm({
@@ -460,9 +510,9 @@ class FileTreeController {
     } else {
       let message;
       if (rootPaths.size === 1) {
-        message = `The root directory '${rootPaths.first().nodeName}' can't be removed.`;
+        message = `The root directory '${(0, (_nullthrows || _load_nullthrows()).default)(rootPaths.first()).name}' can't be removed.`;
       } else {
-        const rootPathNames = rootPaths.map(node => `'${node.nodeName}'`).join(', ');
+        const rootPathNames = rootPaths.map(node => `'${node.name}'`).join(', ');
         message = `The root directories ${rootPathNames} can't be removed.`;
       }
 
@@ -517,7 +567,7 @@ class FileTreeController {
   }
 
   _openSelectedEntrySplit(orientation, side) {
-    const singleSelectedNode = this._store.getSingleSelectedNode();
+    const singleSelectedNode = this._store.getSingleTargetNode();
     // Only perform the default action if a single node is selected.
     if (singleSelectedNode != null && !singleSelectedNode.isContainer) {
       // for: is this feature used enough to justify uncollapsing?
@@ -546,28 +596,15 @@ class FileTreeController {
   }
 
   _removeRootFolderSelection() {
-    const rootNode = this._store.getSingleSelectedNode();
-    if (rootNode != null && rootNode.isRoot) {
-      // close all the files associated with the project before closing
-      const projectEditors = atom.workspace.getTextEditors();
-      const roots = this._store.getRootKeys();
-      const canceled = projectEditors.some(editor => {
-        const path = editor.getPath();
-        // if the path of the editor is not null AND
-        // is part of the currently selected root that would be removed AND
-        // is not part of any other open root, then close the file.
-        if (path != null && path.startsWith(rootNode.uri) && roots.filter(root => path.startsWith(root)).length === 1) {
-          return !atom.workspace.paneForURI(path).destroyItem(editor);
-        }
+    var _this = this;
 
-        return false;
-      });
-
-      if (!canceled) {
-        // actually close the project
-        atom.project.removePath((_FileTreeHelpers || _load_FileTreeHelpers()).default.keyToPath(rootNode.uri));
+    return (0, _asyncToGenerator.default)(function* () {
+      const rootNode = _this._store.getSingleSelectedNode();
+      if (rootNode != null && rootNode.isRoot) {
+        logger.info('Removing project path via file tree', rootNode);
+        yield (0, (_removeProjectPath || _load_removeProjectPath()).default)(rootNode.uri);
       }
-    }
+    })();
   }
 
   _searchInDirectory(event) {
@@ -621,6 +658,41 @@ class FileTreeController {
       return;
     }
     _electron.shell.showItemInFolder(path);
+  }
+
+  _copyFilenamesWithDir(event) {
+    const nodes = this._store.getSelectedNodes();
+    const dirs = [];
+    const files = [];
+    for (const node of nodes) {
+      const file = (_FileTreeHelpers || _load_FileTreeHelpers()).default.getFileByKey(node.uri);
+      if (file != null) {
+        files.push(file);
+      }
+      const dir = (_FileTreeHelpers || _load_FileTreeHelpers()).default.getDirectoryByKey(node.uri);
+      if (dir != null) {
+        dirs.push(dir);
+      }
+    }
+    const entries = dirs.concat(files);
+    if (entries.length === 0) {
+      // no valid files or directories found
+      return;
+    }
+    const dirPath = entries[0].getParent().getPath();
+    if (!entries.every(e => e.getParent().getPath() === dirPath)) {
+      // only copy if all selected files are in the same directory
+      return;
+    }
+
+    // copy this text in case user pastes into a text area
+    const copyNames = entries.map(e => encodeURIComponent(e.getBaseName())).join();
+
+    atom.clipboard.write(copyNames, {
+      directory: (_FileTreeHelpers || _load_FileTreeHelpers()).default.dirPathToKey(dirPath),
+      filenames: files.map(f => f.getBaseName()),
+      dirnames: dirs.map(f => f.getBaseName())
+    });
   }
 
   _copyFullPath(event) {

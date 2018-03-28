@@ -3,18 +3,59 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
+
+let getAllHgAdditionalLogFiles = (() => {
+  var _ref = (0, _asyncToGenerator.default)(function* (deadline) {
+    // Atom provides one repository object per project.
+    const repositories = atom.project.getRepositories();
+    // We want to avoid duplication in the case where two different projects both
+    // are served by the same repository path.
+    // Start by transforming into an array of [path, HgRepositoryClient] pairs.
+    const hgRepositories = (0, (_collection || _load_collection()).arrayCompact)(repositories.map(function (r) {
+      return r != null && r.getType() === 'hg' ? [r.getWorkingDirectory(), r] : null;
+    }));
+    // For each repository path, arbitrarily pick just the first of the
+    // HgRepositoryClients that serves that path.
+    const uniqueRepositories = Array.from((0, (_collection || _load_collection()).mapTransform)((0, (_collection || _load_collection()).collect)(hgRepositories), function (clients, dir) {
+      return clients[0];
+    }).values());
+
+    const results = yield Promise.all(uniqueRepositories.map(function (r) {
+      return r.getAdditionalLogFiles(deadline);
+    }));
+    return (0, (_collection || _load_collection()).arrayFlatten)(results);
+  });
+
+  return function getAllHgAdditionalLogFiles(_x) {
+    return _ref.apply(this, arguments);
+  };
+})();
+
 exports.activate = activate;
 exports.addItemsToFileTreeContextMenu = addItemsToFileTreeContextMenu;
 exports.deactivate = deactivate;
 exports.createHgRepositoryProvider = createHgRepositoryProvider;
+exports.createHgAdditionalLogFilesProvider = createHgAdditionalLogFilesProvider;
+
+var _collection;
+
+function _load_collection() {
+  return _collection = require('nuclide-commons/collection');
+}
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _registerGrammar;
 
 function _load_registerGrammar() {
   return _registerGrammar = _interopRequireDefault(require('../../commons-atom/register-grammar'));
 }
-
-var _atom = require('atom');
 
 var _nuclideVcsBase;
 
@@ -50,15 +91,22 @@ let subscriptions = null;
 // A file is addable if it's untracked.
 // A directory is revertable if it contains changed files.
 function shouldDisplayActionTreeItem(contextMenu, action) {
-  const node = contextMenu.getSingleSelectedNode();
-  if (node == null || node.repo == null || node.repo.getType() !== 'hg') {
-    return false;
-  }
-  const hgRepository = node.repo;
   if (action === 'Revert') {
-    return hgRepository.isStatusModified(node.vcsStatusCode) || hgRepository.isStatusAdded(node.vcsStatusCode);
+    const node = contextMenu.getSingleSelectedNode();
+    if (node == null || node.repo == null || node.repo.getType() !== 'hg') {
+      return false;
+    } else {
+      const hgRepository = node.repo;
+      return hgRepository.isStatusModified(node.vcsStatusCode) || hgRepository.isStatusAdded(node.vcsStatusCode);
+    }
   } else if (action === 'Add') {
-    return hgRepository.isStatusUntracked(node.vcsStatusCode);
+    const nodes = contextMenu.getSelectedNodes();
+    return nodes.every(node => {
+      if (node.repo == null || node.repo.getType() !== 'hg' || typeof node.repo.isStatusUntracked !== 'function') {
+        return false;
+      }
+      return node.repo.isStatusUntracked(node.vcsStatusCode);
+    });
   } else {
     return false;
   }
@@ -100,12 +148,7 @@ function isActivePathAddable() {
 }
 
 function activate(state) {
-  subscriptions = new _atom.CompositeDisposable();
-
-  subscriptions.add(atom.commands.add('atom-text-editor', 'nuclide-hg-repository:revert', event => {
-    const editorElement = event.currentTarget;
-    (0, (_nuclideVcsBase || _load_nuclideVcsBase()).revertPath)(editorElement.getModel().getPath());
-  }));
+  subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
 
   subscriptions.add(atom.commands.add('atom-text-editor', 'nuclide-hg-repository:confirm-and-revert', event => {
     const editorElement = event.currentTarget;
@@ -164,9 +207,10 @@ function addItemsToFileTreeContextMenu(contextMenu) {
   const addContextDisposable = contextMenu.addItemToSourceControlMenu({
     label: 'Add to Mercurial',
     callback() {
-      // TODO(most): support adding multiple nodes at once.
-      const addNode = contextMenu.getSingleSelectedNode();
-      (0, (_nuclideVcsBase || _load_nuclideVcsBase()).addPath)(addNode == null ? null : addNode.uri);
+      const nodes = contextMenu.getSelectedNodes();
+      for (const addNode of nodes) {
+        (0, (_nuclideVcsBase || _load_nuclideVcsBase()).addPath)(addNode == null ? null : addNode.uri);
+      }
     },
     shouldDisplay() {
       return shouldDisplayActionTreeItem(contextMenu, 'Add');
@@ -174,7 +218,7 @@ function addItemsToFileTreeContextMenu(contextMenu) {
   }, HG_ADD_TREE_CONTEXT_MENU_PRIORITY);
   subscriptions.add(addContextDisposable);
 
-  return new _atom.Disposable(() => {
+  return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
     if (subscriptions != null) {
       subscriptions.remove(revertContextDisposable);
       subscriptions.remove(addContextDisposable);
@@ -191,4 +235,11 @@ function deactivate(state) {
 
 function createHgRepositoryProvider() {
   return new (_HgRepositoryProvider || _load_HgRepositoryProvider()).default();
+}
+
+function createHgAdditionalLogFilesProvider() {
+  return {
+    id: 'hg',
+    getAdditionalLogFiles: getAllHgAdditionalLogFiles
+  };
 }

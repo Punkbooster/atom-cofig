@@ -24,7 +24,7 @@ var ColumnSizer = function (_PureComponent) {
 
   _createClass(ColumnSizer, [{
     key: 'componentDidUpdate',
-    value: function componentDidUpdate(prevProps, prevState) {
+    value: function componentDidUpdate(prevProps) {
       var _props = this.props,
           columnMaxWidth = _props.columnMaxWidth,
           columnMinWidth = _props.columnMinWidth,
@@ -88,7 +88,7 @@ var ColumnSizer = function (_PureComponent) {
 }(PureComponent);
 
 export default ColumnSizer;
-process.env.NODE_ENV !== "production" ? ColumnSizer.propTypes = {
+ColumnSizer.propTypes = process.env.NODE_ENV !== "production" ? {
   /**
    * Function responsible for rendering a virtualized Grid.
    * This function should implement the following signature:
@@ -111,4 +111,4 @@ process.env.NODE_ENV !== "production" ? ColumnSizer.propTypes = {
 
   /** Width of Grid or Table child */
   width: PropTypes.number.isRequired
-} : void 0;
+} : {};

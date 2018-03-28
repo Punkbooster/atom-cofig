@@ -1,9 +1,9 @@
 {
   "name": "nuclide-swift",
-  "repository": "https://github.com/facebook/nuclide",
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Swift package manager integration for Nuclide.",
+  "author": "NEEDS OWNER",
   "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
@@ -15,6 +15,12 @@
       ]
     },
     "config": {
+      "sourceKittenDisabled": {
+        "title": "Disable SourceKitten",
+        "type": "boolean",
+        "default": false,
+        "description": "Whether to disable integration with SourceKitten."
+      },
       "swiftToolchainPath": {
         "title": "Swift Toolchain Path",
         "type": "string",
@@ -37,9 +43,9 @@
     }
   },
   "providedServices": {
-    "autocomplete.provider": {
+    "nuclide-autocomplete.provider": {
       "versions": {
-        "2.0.0": "createAutocompleteProvider"
+        "0.0.0": "createAutocompleteProvider"
       }
     }
   },

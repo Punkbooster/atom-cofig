@@ -9,26 +9,31 @@ exports.consumeTaskRunnerServiceApi = consumeTaskRunnerServiceApi;
 exports.serialize = serialize;
 exports.createAutocompleteProvider = createAutocompleteProvider;
 
-var _atom = require('atom');
-
 var _SwiftPMTaskRunner;
 
 function _load_SwiftPMTaskRunner() {
   return _SwiftPMTaskRunner = require('./taskrunner/SwiftPMTaskRunner');
 }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
+var _UniversalDisposable;
 
-let _disposables = null;
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+let _disposables = null; /**
+                          * Copyright (c) 2015-present, Facebook, Inc.
+                          * All rights reserved.
+                          *
+                          * This source code is licensed under the license found in the LICENSE file in
+                          * the root directory of this source tree.
+                          *
+                          * 
+                          * @format
+                          */
+
 let _taskRunner = null;
 let _initialState = null;
 
@@ -38,11 +43,11 @@ function activate(rawState) {
   }
 
   _initialState = rawState;
-  _disposables = new _atom.CompositeDisposable(new _atom.Disposable(() => {
+  _disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
     _taskRunner = null;
-  }), new _atom.Disposable(() => {
+  }, () => {
     _initialState = null;
-  }));
+  });
 }
 
 function deactivate() {
@@ -70,6 +75,10 @@ function serialize() {
 
 function createAutocompleteProvider() {
   return {
+    analytics: {
+      eventName: 'nuclide-swift',
+      shouldLogInsertedSuggestion: false
+    },
     selector: '.source.swift',
     inclusionPriority: 1,
     disableForSelector: '.source.swift .comment',

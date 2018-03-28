@@ -7,12 +7,22 @@ exports.BufferSubscription = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _log4js;
 
 function _load_log4js() {
   return _log4js = require('log4js');
+}
+
+var _semver;
+
+function _load_semver() {
+  return _semver = _interopRequireDefault(require('semver'));
 }
 
 var _nuclideOpenFilesRpc;
@@ -23,18 +33,22 @@ function _load_nuclideOpenFilesRpc() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-open-files'); /**
-                                                                                  * Copyright (c) 2015-present, Facebook, Inc.
-                                                                                  * All rights reserved.
-                                                                                  *
-                                                                                  * This source code is licensed under the license found in the LICENSE file in
-                                                                                  * the root directory of this source tree.
-                                                                                  *
-                                                                                  * 
-                                                                                  * @format
-                                                                                  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-open-files');
 
 const RESYNC_TIMEOUT_MS = 2000;
+
+const ATOM_VERSION_CHECK_FOR_LANGUAGE_ID = '1.24.0-beta0';
 
 // Watches a TextBuffer for change/rename/destroy events and then sends
 // those events to the FileNotifier or NotifiersByConnection as appropriate.
@@ -61,11 +75,13 @@ class BufferSubscription {
     this._changeCount = 1;
     this._sentOpen = false;
 
-    const subscriptions = new _atom.CompositeDisposable();
+    const subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
 
-    subscriptions.add(buffer.onDidChange((() => {
+    subscriptions.add(buffer.onDidChangeText((() => {
       var _ref = (0, _asyncToGenerator.default)(function* (event) {
-        _this._changeCount++;
+        // It's important that we increment the change count *before* waiting on the notifier.
+        // This makes sure that any users who use `getVersion` in between obtain the correct version.
+        _this._changeCount += event.changes.length;
         if (_this._notifier == null) {
           return;
         }
@@ -86,18 +102,23 @@ class BufferSubscription {
 
         const notifier = yield _this._notifier;
         if (_this._sentOpen) {
-          _this.sendEvent({
-            kind: (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).FileEventKind.EDIT,
-            fileVersion: {
-              notifier,
-              filePath,
-              version
-            },
-            oldRange: event.oldRange,
-            newRange: event.newRange,
-            oldText: event.oldText,
-            newText: event.newText
-          });
+          // Changes must be sent in reverse order to ensure that they are applied cleanly.
+          // (Atom ensures that they are sent over in increasing lexicographic order).
+          for (let i = event.changes.length - 1; i >= 0; i--) {
+            const edit = event.changes[i];
+            _this.sendEvent({
+              kind: (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).FileEventKind.EDIT,
+              fileVersion: {
+                notifier,
+                filePath,
+                version: version - i
+              },
+              oldRange: edit.oldRange,
+              newRange: edit.newRange,
+              oldText: edit.oldText,
+              newText: edit.newText
+            });
+          }
         } else {
           _this._sendOpenByNotifier(notifier, version);
         }
@@ -107,6 +128,37 @@ class BufferSubscription {
         return _ref.apply(this, arguments);
       };
     })()));
+
+    subscriptions.add(buffer.onDidSave((0, _asyncToGenerator.default)(function* () {
+      if (_this._notifier == null) {
+        return;
+      }
+
+      const filePath = _this._buffer.getPath();
+
+      if (!(filePath != null)) {
+        throw new Error('Invariant violation: "filePath != null"');
+      }
+
+      if (!(_this._notifier != null)) {
+        throw new Error('Invariant violation: "this._notifier != null"');
+      }
+
+      const notifier = yield _this._notifier;
+      const version = _this._changeCount;
+      if (_this._sentOpen) {
+        _this.sendEvent({
+          kind: (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).FileEventKind.SAVE,
+          fileVersion: {
+            notifier,
+            filePath,
+            version
+          }
+        });
+      } else {
+        _this._sendOpenByNotifier(notifier, version);
+      }
+    })));
 
     this._subscriptions = subscriptions;
 
@@ -129,6 +181,8 @@ class BufferSubscription {
       throw new Error('Invariant violation: "filePath != null"');
     }
 
+    const contents = this._buffer.getText();
+    const languageId = this._getLanguageId(filePath, contents);
     this._sentOpen = true;
     this.sendEvent({
       kind: (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).FileEventKind.OPEN,
@@ -137,8 +191,18 @@ class BufferSubscription {
         filePath,
         version
       },
-      contents: this._buffer.getText()
+      contents,
+      languageId
     });
+  }
+
+  /** TODO(hansonw): remove version check after Atom 1.24 drops. */
+  _getLanguageId(filePath, contents) {
+    if ((_semver || _load_semver()).default.gte(atom.getVersion(), ATOM_VERSION_CHECK_FOR_LANGUAGE_ID)) {
+      return this._buffer.getLanguageMode().getLanguageId();
+    }
+
+    return atom.grammars.selectGrammar(filePath, contents).scopeName;
   }
 
   getVersion() {
@@ -190,7 +254,7 @@ class BufferSubscription {
       this._lastAttemptedSync = resyncVersion;
 
       const sendResync = (() => {
-        var _ref2 = (0, _asyncToGenerator.default)(function* () {
+        var _ref3 = (0, _asyncToGenerator.default)(function* () {
           if (_this3._notifier == null) {
             logger.error('Resync preempted by remote connection closed');
             return;
@@ -210,6 +274,9 @@ class BufferSubscription {
           } else if (resyncVersion !== _this3._changeCount) {
             logger.error('Resync preempted by later edit');
           } else {
+            const contents = _this3._buffer.getText();
+            const languageId = _this3._getLanguageId(filePath, contents);
+
             const syncEvent = {
               kind: (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).FileEventKind.SYNC,
               fileVersion: {
@@ -217,7 +284,8 @@ class BufferSubscription {
                 filePath,
                 version: resyncVersion
               },
-              contents: _this3._buffer.getText()
+              contents,
+              languageId
             };
             try {
               yield notifier.onFileEvent(syncEvent);
@@ -236,7 +304,7 @@ class BufferSubscription {
         });
 
         return function sendResync() {
-          return _ref2.apply(this, arguments);
+          return _ref3.apply(this, arguments);
         };
       })();
 

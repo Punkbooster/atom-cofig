@@ -38,7 +38,7 @@ class NullLanguageService {
   }
 
   findReferences(fileVersion, position) {
-    return Promise.resolve(null);
+    return _rxjsBundlesRxMinJs.Observable.of(null).publish();
   }
 
   getCoverage(filePath) {
@@ -47,6 +47,14 @@ class NullLanguageService {
 
   getOutline(fileVersion) {
     return Promise.resolve(null);
+  }
+
+  getAdditionalLogFiles(deadline) {
+    return Promise.resolve([]);
+  }
+
+  getCodeActions(fileVersion, range, diagnostics) {
+    return Promise.resolve([]);
   }
 
   typeHint(fileVersion, position) {
@@ -87,6 +95,14 @@ class NullLanguageService {
 
   isFileInProject(fileUri) {
     return Promise.resolve(false);
+  }
+
+  getExpandedSelectionRange(fileVersion, currentSelection) {
+    return Promise.resolve(null);
+  }
+
+  getCollapsedSelectionRange(fileVersion, currentSelection, originalCursorPosition) {
+    return Promise.resolve(null);
   }
 
   dispose() {}

@@ -3,12 +3,55 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.__test__ = exports.clearConnectionConfig = undefined;
+exports.__test__ = exports.clearConnectionConfig = exports.setConnectionConfig = exports.getConnectionConfig = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-let clearConnectionConfig = exports.clearConnectionConfig = (() => {
+let getConnectionConfig = exports.getConnectionConfig = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (host) {
+    const storedConfig = localStorage.getItem(getStorageKey(host));
+    if (storedConfig == null) {
+      return null;
+    }
+    try {
+      return yield decryptConfig(JSON.parse(storedConfig));
+    } catch (e) {
+      logger.error(`The configuration file for ${host} is corrupted.`, e);
+      return null;
+    }
+  });
+
+  return function getConnectionConfig(_x) {
+    return _ref.apply(this, arguments);
+  };
+})();
+
+let setConnectionConfig = exports.setConnectionConfig = (() => {
+  var _ref2 = (0, _asyncToGenerator.default)(function* (config, ipAddress) {
+    // Don't attempt to store insecure connections.
+    // Insecure connections are used for testing and will fail the encryption call below.
+    if (isInsecure(config)) {
+      return;
+    }
+
+    try {
+      const encrypted = JSON.stringify((yield encryptConfig(config)));
+      localStorage.setItem(getStorageKey(config.host), encrypted);
+      // Store configurations by their IP address as well.
+      // This way, multiple aliases for the same hostname can reuse a single connection.
+      localStorage.setItem(getStorageKey(ipAddress), encrypted);
+    } catch (e) {
+      logger.error(`Failed to store configuration file for ${config.host}.`, e);
+    }
+  });
+
+  return function setConnectionConfig(_x2, _x3) {
+    return _ref2.apply(this, arguments);
+  };
+})();
+
+let clearConnectionConfig = exports.clearConnectionConfig = (() => {
+  var _ref3 = (0, _asyncToGenerator.default)(function* (host) {
     try {
       localStorage.removeItem(getStorageKey(host));
     } catch (e) {
@@ -16,8 +59,8 @@ let clearConnectionConfig = exports.clearConnectionConfig = (() => {
     }
   });
 
-  return function clearConnectionConfig(_x) {
-    return _ref.apply(this, arguments);
+  return function clearConnectionConfig(_x4) {
+    return _ref3.apply(this, arguments);
   };
 })();
 
@@ -28,8 +71,122 @@ let clearConnectionConfig = exports.clearConnectionConfig = (() => {
  */
 
 
-exports.getConnectionConfig = getConnectionConfig;
-exports.setConnectionConfig = setConnectionConfig;
+let encryptConfig = (() => {
+  var _ref4 = (0, _asyncToGenerator.default)(function* (remoteProjectConfig) {
+    const sha1 = _crypto.default.createHash('sha1');
+    sha1.update(`${remoteProjectConfig.host}:${remoteProjectConfig.port}`);
+    const sha1sum = sha1.digest('hex');
+
+    const {
+      certificateAuthorityCertificate,
+      clientCertificate,
+      clientKey
+    } = remoteProjectConfig;
+
+    if (!clientKey) {
+      throw new Error('Invariant violation: "clientKey"');
+    }
+
+    const realClientKey = clientKey.toString(); // Convert from Buffer to string.
+    const { salt, password, encryptedString } = encryptString(realClientKey);
+    yield (_keytarWrapper || _load_keytarWrapper()).default.replacePassword('nuclide.remoteProjectConfig', sha1sum, password);
+
+    const clientKeyWithSalt = encryptedString + '.' + salt;
+
+    if (!certificateAuthorityCertificate) {
+      throw new Error('Invariant violation: "certificateAuthorityCertificate"');
+    }
+
+    if (!clientCertificate) {
+      throw new Error('Invariant violation: "clientCertificate"');
+    }
+
+    return {
+      host: remoteProjectConfig.host,
+      port: remoteProjectConfig.port,
+      family: remoteProjectConfig.family,
+      certificateAuthorityCertificate: certificateAuthorityCertificate.toString(),
+      clientCertificate: clientCertificate.toString(),
+      clientKey: clientKeyWithSalt,
+      version: remoteProjectConfig.version
+    };
+  });
+
+  return function encryptConfig(_x5) {
+    return _ref4.apply(this, arguments);
+  };
+})();
+
+/**
+ * Decrypts the clientKey of a SerializableServerConnectionConfiguration.
+ * @param remoteProjectConfig - The config with the clientKey we want encrypted.
+ * @return returns the passed in config with the clientKey encrypted.
+ */
+
+
+let decryptConfig = (() => {
+  var _ref5 = (0, _asyncToGenerator.default)(function* (remoteProjectConfig) {
+    const sha1 = _crypto.default.createHash('sha1');
+    sha1.update(`${remoteProjectConfig.host}:${remoteProjectConfig.port}`);
+    const sha1sum = sha1.digest('hex');
+
+    const password = yield (_keytarWrapper || _load_keytarWrapper()).default.getPassword('nuclide.remoteProjectConfig', sha1sum);
+
+    if (password == null) {
+      throw new Error('Cannot find password for encrypted client key');
+    }
+
+    const {
+      certificateAuthorityCertificate,
+      clientCertificate,
+      clientKey
+    } = remoteProjectConfig;
+    // flowlint-next-line sketchy-null-string:off
+
+    if (!clientKey) {
+      throw new Error('Invariant violation: "clientKey"');
+    }
+
+    const [encryptedString, salt] = clientKey.split('.');
+
+    if (!encryptedString || !salt) {
+      throw new Error('Cannot decrypt client key');
+    }
+
+    const restoredClientKey = decryptString(encryptedString, password, salt);
+    // "nolint" is to suppress ArcanistPrivateKeyLinter errors
+    if (!restoredClientKey.startsWith('-----BEGIN RSA PRIVATE KEY-----') // nolint
+    ) {
+        (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection').error(`decrypted client key did not start with expected header: ${restoredClientKey}`);
+      }
+
+    // flowlint-next-line sketchy-null-string:off
+
+    if (!certificateAuthorityCertificate) {
+      throw new Error('Invariant violation: "certificateAuthorityCertificate"');
+    }
+    // flowlint-next-line sketchy-null-string:off
+
+
+    if (!clientCertificate) {
+      throw new Error('Invariant violation: "clientCertificate"');
+    }
+
+    return {
+      host: remoteProjectConfig.host,
+      port: remoteProjectConfig.port,
+      family: remoteProjectConfig.family,
+      certificateAuthorityCertificate: new Buffer(certificateAuthorityCertificate),
+      clientCertificate: new Buffer(clientCertificate),
+      clientKey: new Buffer(restoredClientKey),
+      version: remoteProjectConfig.version
+    };
+  });
+
+  return function decryptConfig(_x6) {
+    return _ref5.apply(this, arguments);
+  };
+})();
 
 var _crypto = _interopRequireDefault(require('crypto'));
 
@@ -42,7 +199,7 @@ function _load_log4js() {
 var _keytarWrapper;
 
 function _load_keytarWrapper() {
-  return _keytarWrapper = _interopRequireDefault(require('../../commons-atom/keytarWrapper'));
+  return _keytarWrapper = _interopRequireDefault(require('../../commons-node/keytarWrapper'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -77,133 +234,6 @@ function isInsecure(config) {
 
 function getStorageKey(host) {
   return `${CONFIG_DIR}:${host}`;
-}
-
-function getConnectionConfig(host) {
-  const storedConfig = localStorage.getItem(getStorageKey(host));
-  if (storedConfig == null) {
-    return null;
-  }
-  try {
-    return decryptConfig(JSON.parse(storedConfig));
-  } catch (e) {
-    logger.error(`The configuration file for ${host} is corrupted.`, e);
-    return null;
-  }
-}
-
-function setConnectionConfig(config, ipAddress) {
-  // Don't attempt to store insecure connections.
-  // Insecure connections are used for testing and will fail the encryption call below.
-  if (isInsecure(config)) {
-    return;
-  }
-
-  try {
-    const encrypted = JSON.stringify(encryptConfig(config));
-    localStorage.setItem(getStorageKey(config.host), encrypted);
-    // Store configurations by their IP address as well.
-    // This way, multiple aliases for the same hostname can reuse a single connection.
-    localStorage.setItem(getStorageKey(ipAddress), encrypted);
-  } catch (e) {
-    logger.error(`Failed to store configuration file for ${config.host}.`, e);
-  }
-}
-
-function encryptConfig(remoteProjectConfig) {
-  const sha1 = _crypto.default.createHash('sha1');
-  sha1.update(`${remoteProjectConfig.host}:${remoteProjectConfig.port}`);
-  const sha1sum = sha1.digest('hex');
-
-  const {
-    certificateAuthorityCertificate,
-    clientCertificate,
-    clientKey
-  } = remoteProjectConfig;
-
-  if (!clientKey) {
-    throw new Error('Invariant violation: "clientKey"');
-  }
-
-  const realClientKey = clientKey.toString(); // Convert from Buffer to string.
-  const { salt, password, encryptedString } = encryptString(realClientKey);
-  (_keytarWrapper || _load_keytarWrapper()).default.replacePassword('nuclide.remoteProjectConfig', sha1sum, password);
-
-  const clientKeyWithSalt = encryptedString + '.' + salt;
-
-  if (!certificateAuthorityCertificate) {
-    throw new Error('Invariant violation: "certificateAuthorityCertificate"');
-  }
-
-  if (!clientCertificate) {
-    throw new Error('Invariant violation: "clientCertificate"');
-  }
-
-  return {
-    host: remoteProjectConfig.host,
-    port: remoteProjectConfig.port,
-    family: remoteProjectConfig.family,
-    certificateAuthorityCertificate: certificateAuthorityCertificate.toString(),
-    clientCertificate: clientCertificate.toString(),
-    clientKey: clientKeyWithSalt
-  };
-}
-
-/**
- * Decrypts the clientKey of a SerializableServerConnectionConfiguration.
- * @param remoteProjectConfig - The config with the clientKey we want encrypted.
- * @return returns the passed in config with the clientKey encrypted.
- */
-function decryptConfig(remoteProjectConfig) {
-  const sha1 = _crypto.default.createHash('sha1');
-  sha1.update(`${remoteProjectConfig.host}:${remoteProjectConfig.port}`);
-  const sha1sum = sha1.digest('hex');
-
-  const password = (_keytarWrapper || _load_keytarWrapper()).default.getPassword('nuclide.remoteProjectConfig', sha1sum);
-
-  if (!password) {
-    throw new Error('Cannot find password for encrypted client key');
-  }
-
-  const {
-    certificateAuthorityCertificate,
-    clientCertificate,
-    clientKey
-  } = remoteProjectConfig;
-
-  if (!clientKey) {
-    throw new Error('Invariant violation: "clientKey"');
-  }
-
-  const [encryptedString, salt] = clientKey.split('.');
-
-  if (!encryptedString || !salt) {
-    throw new Error('Cannot decrypt client key');
-  }
-
-  const restoredClientKey = decryptString(encryptedString, password, salt);
-  // "nolint" is to suppress ArcanistPrivateKeyLinter errors
-  if (!restoredClientKey.startsWith('-----BEGIN RSA PRIVATE KEY-----') // nolint
-  ) {
-      (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection').error(`decrypted client key did not start with expected header: ${restoredClientKey}`);
-    }
-
-  if (!certificateAuthorityCertificate) {
-    throw new Error('Invariant violation: "certificateAuthorityCertificate"');
-  }
-
-  if (!clientCertificate) {
-    throw new Error('Invariant violation: "clientCertificate"');
-  }
-
-  return {
-    host: remoteProjectConfig.host,
-    port: remoteProjectConfig.port,
-    family: remoteProjectConfig.family,
-    certificateAuthorityCertificate: new Buffer(certificateAuthorityCertificate),
-    clientCertificate: new Buffer(clientCertificate),
-    clientKey: new Buffer(restoredClientKey)
-  };
 }
 
 function decryptString(text, password, salt) {

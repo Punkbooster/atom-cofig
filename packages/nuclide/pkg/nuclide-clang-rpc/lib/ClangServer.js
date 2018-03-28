@@ -108,7 +108,9 @@ function spawnClangProcess(src, serverArgsPromise, flagsPromise) {
     const pathToLibClangServer = (_nuclideUri || _load_nuclideUri()).default.join(__dirname, '../python/clang_server.py');
     const argsFd = 3;
     const args = [pathToLibClangServer, '--flags-from-pipe', `${argsFd}`];
-    const libClangLibraryFile = libClangFromFlags || serverArgs.libClangLibraryFile;
+    const libClangLibraryFile =
+    // flowlint-next-line sketchy-null-string:off
+    libClangFromFlags || serverArgs.libClangLibraryFile;
     if (libClangLibraryFile != null) {
       args.push('--libclang-file', libClangLibraryFile);
     }
@@ -149,12 +151,13 @@ class ClangServer {
       this._usesDefaultFlags = flagsData.usesDefaultFlags;
     }).switchMap(flagsData => {
       if (flagsData != null && flagsData.flagsFile != null) {
-        return (0, (_nuclideFilewatcherRpc || _load_nuclideFilewatcherRpc()).watchFileWithNode)(flagsData.flagsFile).refCount().take(1);
+        return (0, (_nuclideFilewatcherRpc || _load_nuclideFilewatcherRpc()).watchWithNode)(flagsData.flagsFile).refCount().take(1);
       }
       return _rxjsBundlesRxMinJs.Observable.empty();
     }).subscribe(x => {
       this._flagsChanged = true;
-    }, () => {});
+    }, () => {} // ignore errors
+    );
     this._rpcProcess = new (_nuclideRpc || _load_nuclideRpc()).RpcProcess(`ClangServer-${src}`, getServiceRegistry(), spawnClangProcess(src, serverArgsPromise, flagsPromise));
     // Kick off an initial compilation to provide an accurate server state.
     // This will automatically reject if any kind of disposals/errors happen.
@@ -175,26 +178,12 @@ class ClangServer {
     return this._rpcProcess.getService('ClangProcessService');
   }
 
-  /**
-   * Returns RSS of the child process in bytes.
-   * Works on Unix and Mac OS X.
-   */
-  getMemoryUsage() {
-    var _this = this;
-
-    return (0, _asyncToGenerator.default)(function* () {
-      const { _process } = _this._rpcProcess;
-      if (_process == null) {
-        return 0;
-      }
-      let stdout;
-      try {
-        stdout = yield (0, (_process2 || _load_process()).runCommand)('ps', ['-p', _process.pid.toString(), '-o', 'rss=']).toPromise();
-      } catch (err) {
-        return 0;
-      }
-      return parseInt(stdout, 10) * 1024; // ps returns KB
-    })();
+  getPID() {
+    const { _process } = this._rpcProcess;
+    if (_process == null) {
+      return null;
+    }
+    return _process.pid;
   }
 
   getFlagsChanged() {
@@ -204,22 +193,22 @@ class ClangServer {
   // Call this instead of using the RPC layer directly.
   // This way, we can track when the server is busy compiling.
   compile(contents) {
-    var _this2 = this;
+    var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const service = yield _this2.getService();
-      if (_this2._pendingCompileRequests++ === 0) {
-        _this2._serverStatus.next(ClangServer.Status.COMPILING);
+      const service = yield _this.getService();
+      if (_this._pendingCompileRequests++ === 0) {
+        _this._serverStatus.next(ClangServer.Status.COMPILING);
       }
       try {
         return yield service.compile(contents).then(function (result) {
           return Object.assign({}, result, {
-            accurateFlags: !_this2._usesDefaultFlags
+            accurateFlags: !_this._usesDefaultFlags
           });
         });
       } finally {
-        if (--_this2._pendingCompileRequests === 0 && !_this2.isDisposed()) {
-          _this2._serverStatus.next(ClangServer.Status.READY);
+        if (--_this._pendingCompileRequests === 0 && !_this.isDisposed()) {
+          _this._serverStatus.next(ClangServer.Status.READY);
         }
       }
     })();

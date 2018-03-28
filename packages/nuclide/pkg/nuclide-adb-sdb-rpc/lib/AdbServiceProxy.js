@@ -67,11 +67,12 @@ module.exports = _client => {
     return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
-    }]).then(args => {
+    }])).switchMap(args => {
       return _client.callRemoteFunction("AdbService/getDeviceInfo", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "map",
         keyType: {
@@ -84,15 +85,21 @@ module.exports = _client => {
     }).publish();
   };
 
-  remoteModule.getProcesses = function (arg0) {
+  remoteModule.getProcesses = function (arg0, arg1) {
     return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
-    }]).then(args => {
+    }, {
+      name: "timeout",
+      type: {
+        kind: "number"
+      }
+    }])).switchMap(args => {
       return _client.callRemoteFunction("AdbService/getProcesses", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "array",
         type: {
@@ -103,19 +110,25 @@ module.exports = _client => {
     }).publish();
   };
 
-  remoteModule.stopPackage = function (arg0, arg1) {
+  remoteModule.stopProcess = function (arg0, arg1, arg2) {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "packageName",
       type: {
         kind: "string"
       }
+    }, {
+      name: "pid",
+      type: {
+        kind: "number"
+      }
     }]).then(args => {
-      return _client.callRemoteFunction("AdbService/stopPackage", "promise", args);
+      return _client.callRemoteFunction("AdbService/stopProcess", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
         kind: "void"
@@ -123,10 +136,19 @@ module.exports = _client => {
     });
   };
 
-  remoteModule.getDeviceList = function () {
-    return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), []).then(args => {
+  remoteModule.getDeviceList = function (arg0) {
+    return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
+      name: "options",
+      type: {
+        kind: "nullable",
+        type: {
+          kind: "named",
+          name: "getDevicesOptions"
+        }
+      }
+    }])).switchMap(args => {
       return _client.callRemoteFunction("AdbService/getDeviceList", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "array",
         type: {
@@ -141,7 +163,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "packageName",
@@ -161,7 +184,8 @@ module.exports = _client => {
     return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "packagePath",
@@ -169,9 +193,9 @@ module.exports = _client => {
         kind: "named",
         name: "NuclideUri"
       }
-    }]).then(args => {
+    }])).switchMap(args => {
       return _client.callRemoteFunction("AdbService/installPackage", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "named",
         name: "LegacyProcessMessage"
@@ -183,16 +207,17 @@ module.exports = _client => {
     return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "packageName",
       type: {
         kind: "string"
       }
-    }]).then(args => {
+    }])).switchMap(args => {
       return _client.callRemoteFunction("AdbService/uninstallPackage", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "named",
         name: "LegacyProcessMessage"
@@ -204,7 +229,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "tcpPort",
@@ -220,6 +246,33 @@ module.exports = _client => {
       return _client.callRemoteFunction("AdbService/forwardJdwpPortToPid", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
+        kind: "nullable",
+        type: {
+          kind: "string"
+        }
+      });
+    });
+  };
+
+  remoteModule.removeJdwpForwardSpec = function (arg0, arg1) {
+    return _client.marshalArguments(Array.from(arguments), [{
+      name: "device",
+      type: {
+        kind: "named",
+        name: "DeviceId"
+      }
+    }, {
+      name: "spec",
+      type: {
+        kind: "nullable",
+        type: {
+          kind: "string"
+        }
+      }
+    }]).then(args => {
+      return _client.callRemoteFunction("AdbService/removeJdwpForwardSpec", "promise", args);
+    }).then(value => {
+      return _client.unmarshal(value, {
         kind: "string"
       });
     });
@@ -229,7 +282,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "packageName",
@@ -277,11 +331,12 @@ module.exports = _client => {
     });
   };
 
-  remoteModule.launchMainActivity = function (arg0, arg1, arg2, arg3) {
+  remoteModule.launchMainActivity = function (arg0, arg1, arg2) {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "packageName",
@@ -293,22 +348,39 @@ module.exports = _client => {
       type: {
         kind: "boolean"
       }
-    }, {
-      name: "parameters",
-      type: {
-        kind: "nullable",
-        type: {
-          kind: "map",
-          keyType: {
-            kind: "string"
-          },
-          valueType: {
-            kind: "string"
-          }
-        }
-      }
     }]).then(args => {
       return _client.callRemoteFunction("AdbService/launchMainActivity", "promise", args);
+    }).then(value => {
+      return _client.unmarshal(value, {
+        kind: "string"
+      });
+    });
+  };
+
+  remoteModule.launchService = function (arg0, arg1, arg2, arg3) {
+    return _client.marshalArguments(Array.from(arguments), [{
+      name: "device",
+      type: {
+        kind: "named",
+        name: "DeviceId"
+      }
+    }, {
+      name: "packageName",
+      type: {
+        kind: "string"
+      }
+    }, {
+      name: "serviceName",
+      type: {
+        kind: "string"
+      }
+    }, {
+      name: "debug",
+      type: {
+        kind: "boolean"
+      }
+    }]).then(args => {
+      return _client.callRemoteFunction("AdbService/launchService", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
         kind: "string"
@@ -320,7 +392,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "packageName",
@@ -345,11 +418,12 @@ module.exports = _client => {
     return Observable.fromPromise(_client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
-    }]).then(args => {
+    }])).switchMap(args => {
       return _client.callRemoteFunction("AdbService/getJavaProcesses", "observable", args);
-    })).concatMap(id => id).concatMap(value => {
+    }).concatMap(value => {
       return _client.unmarshal(value, {
         kind: "array",
         type: {
@@ -364,7 +438,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "identifier",
@@ -387,7 +462,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "path",
@@ -407,7 +483,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }, {
       name: "path",
@@ -427,7 +504,8 @@ module.exports = _client => {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "device",
       type: {
-        kind: "string"
+        kind: "named",
+        name: "DeviceId"
       }
     }]).then(args => {
       return _client.callRemoteFunction("AdbService/getInstalledPackages", "promise", args);
@@ -441,29 +519,60 @@ module.exports = _client => {
     });
   };
 
-  remoteModule.setAdbPort = function (arg0) {
+  remoteModule.addAdbPort = function (arg0) {
     return _client.marshalArguments(Array.from(arguments), [{
       name: "port",
       type: {
-        kind: "nullable",
-        type: {
-          kind: "number"
-        }
+        kind: "number"
       }
     }]).then(args => {
-      return _client.callRemoteFunction("AdbService/setAdbPort", "void", args);
+      return _client.callRemoteFunction("AdbService/addAdbPort", "void", args);
     });
   };
 
-  remoteModule.getAdbPort = function () {
+  remoteModule.removeAdbPort = function (arg0) {
+    return _client.marshalArguments(Array.from(arguments), [{
+      name: "port",
+      type: {
+        kind: "number"
+      }
+    }]).then(args => {
+      return _client.callRemoteFunction("AdbService/removeAdbPort", "void", args);
+    });
+  };
+
+  remoteModule.getAdbPorts = function () {
     return _client.marshalArguments(Array.from(arguments), []).then(args => {
-      return _client.callRemoteFunction("AdbService/getAdbPort", "promise", args);
+      return _client.callRemoteFunction("AdbService/getAdbPorts", "promise", args);
     }).then(value => {
       return _client.unmarshal(value, {
-        kind: "nullable",
+        kind: "array",
         type: {
           kind: "number"
         }
+      });
+    });
+  };
+
+  remoteModule.getApkManifest = function (arg0, arg1) {
+    return _client.marshalArguments(Array.from(arguments), [{
+      name: "apkPath",
+      type: {
+        kind: "string"
+      }
+    }, {
+      name: "buildToolsVersion",
+      type: {
+        kind: "nullable",
+        type: {
+          kind: "string"
+        }
+      }
+    }]).then(args => {
+      return _client.callRemoteFunction("AdbService/getApkManifest", "promise", args);
+    }).then(value => {
+      return _client.unmarshal(value, {
+        kind: "string"
       });
     });
   };
@@ -540,13 +649,13 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 29
+        line: 34
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 29
+          line: 34
         },
         kind: "function",
         argumentTypes: [{
@@ -582,7 +691,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "types.js",
-        line: 40
+        line: 43
       },
       name: "DebugBridgeFullConfig",
       definition: {
@@ -606,9 +715,9 @@ Object.defineProperty(module.exports, "defs", {
           },
           optional: false
         }, {
-          name: "port",
+          name: "ports",
           type: {
-            kind: "nullable",
+            kind: "array",
             type: {
               kind: "number"
             }
@@ -623,13 +732,13 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 37
+        line: 42
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 37
+          line: 42
         },
         kind: "function",
         argumentTypes: [],
@@ -648,13 +757,13 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 41
+        line: 46
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 41
+          line: 46
         },
         kind: "function",
         argumentTypes: [{
@@ -674,25 +783,51 @@ Object.defineProperty(module.exports, "defs", {
         }
       }
     },
+    DeviceId: {
+      kind: "alias",
+      location: {
+        type: "source",
+        fileName: "types.js",
+        line: 22
+      },
+      name: "DeviceId",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "name",
+          type: {
+            kind: "string"
+          },
+          optional: false
+        }, {
+          name: "port",
+          type: {
+            kind: "number"
+          },
+          optional: false
+        }]
+      }
+    },
     getDeviceInfo: {
       kind: "function",
       name: "getDeviceInfo",
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 45
+        line: 50
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 45
+          line: 50
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }],
         returnType: {
@@ -714,7 +849,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "types.js",
-        line: 29
+        line: 32
       },
       name: "Process",
       definition: {
@@ -770,19 +905,25 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 51
+        line: 56
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 51
+          line: 56
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
+          }
+        }, {
+          name: "timeout",
+          type: {
+            kind: "number"
           }
         }],
         returnType: {
@@ -797,30 +938,36 @@ Object.defineProperty(module.exports, "defs", {
         }
       }
     },
-    stopPackage: {
+    stopProcess: {
       kind: "function",
-      name: "stopPackage",
+      name: "stopProcess",
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 57
+        line: 63
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 57
+          line: 63
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "packageName",
           type: {
             kind: "string"
+          }
+        }, {
+          name: "pid",
+          type: {
+            kind: "number"
           }
         }],
         returnType: {
@@ -836,7 +983,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "types.js",
-        line: 22
+        line: 24
       },
       name: "DeviceDescription",
       definition: {
@@ -845,6 +992,12 @@ Object.defineProperty(module.exports, "defs", {
           name: "name",
           type: {
             kind: "string"
+          },
+          optional: false
+        }, {
+          name: "port",
+          type: {
+            kind: "number"
           },
           optional: false
         }, {
@@ -868,22 +1021,50 @@ Object.defineProperty(module.exports, "defs", {
         }]
       }
     },
+    getDevicesOptions: {
+      kind: "alias",
+      location: {
+        type: "source",
+        fileName: "DebugBridge.js",
+        line: 20
+      },
+      name: "getDevicesOptions",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "port",
+          type: {
+            kind: "number"
+          },
+          optional: true
+        }]
+      }
+    },
     getDeviceList: {
       kind: "function",
       name: "getDeviceList",
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 64
+        line: 71
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 64
+          line: 71
         },
         kind: "function",
-        argumentTypes: [],
+        argumentTypes: [{
+          name: "options",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "named",
+              name: "getDevicesOptions"
+            }
+          }
+        }],
         returnType: {
           kind: "observable",
           type: {
@@ -902,19 +1083,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 70
+        line: 77
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 70
+          line: 77
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "packageName",
@@ -935,7 +1117,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "process.js",
-        line: 584
+        line: 600
       },
       name: "ProcessExitMessage",
       definition: {
@@ -973,7 +1155,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "process.js",
-        line: 590
+        line: 606
       },
       name: "ProcessMessage",
       definition: {
@@ -1047,7 +1229,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "process.js",
-        line: 603
+        line: 619
       },
       name: "LegacyProcessMessage",
       definition: {
@@ -1139,19 +1321,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 77
+        line: 84
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 77
+          line: 84
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "packagePath",
@@ -1175,19 +1358,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 85
+        line: 92
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 85
+          line: 92
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "packageName",
@@ -1210,19 +1394,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 93
+        line: 100
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 93
+          line: 100
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "tcpPort",
@@ -1233,6 +1418,47 @@ Object.defineProperty(module.exports, "defs", {
           name: "pid",
           type: {
             kind: "number"
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "string"
+            }
+          }
+        }
+      }
+    },
+    removeJdwpForwardSpec: {
+      kind: "function",
+      name: "removeJdwpForwardSpec",
+      location: {
+        type: "source",
+        fileName: "AdbService.js",
+        line: 108
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "AdbService.js",
+          line: 108
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "device",
+          type: {
+            kind: "named",
+            name: "DeviceId"
+          }
+        }, {
+          name: "spec",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "string"
+            }
           }
         }],
         returnType: {
@@ -1249,19 +1475,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 101
+        line: 115
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 101
+          line: 115
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "packageName",
@@ -1315,19 +1542,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 118
+        line: 132
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 118
+          line: 132
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "packageName",
@@ -1339,19 +1567,50 @@ Object.defineProperty(module.exports, "defs", {
           type: {
             kind: "boolean"
           }
-        }, {
-          name: "parameters",
+        }],
+        returnType: {
+          kind: "promise",
           type: {
-            kind: "nullable",
-            type: {
-              kind: "map",
-              keyType: {
-                kind: "string"
-              },
-              valueType: {
-                kind: "string"
-              }
-            }
+            kind: "string"
+          }
+        }
+      }
+    },
+    launchService: {
+      kind: "function",
+      name: "launchService",
+      location: {
+        type: "source",
+        fileName: "AdbService.js",
+        line: 140
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "AdbService.js",
+          line: 140
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "device",
+          type: {
+            kind: "named",
+            name: "DeviceId"
+          }
+        }, {
+          name: "packageName",
+          type: {
+            kind: "string"
+          }
+        }, {
+          name: "serviceName",
+          type: {
+            kind: "string"
+          }
+        }, {
+          name: "debug",
+          type: {
+            kind: "boolean"
           }
         }],
         returnType: {
@@ -1368,19 +1627,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 127
+        line: 149
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 127
+          line: 149
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "packageName",
@@ -1451,19 +1711,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 135
+        line: 157
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 135
+          line: 157
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }],
         returnType: {
@@ -1484,19 +1745,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 141
+        line: 163
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 141
+          line: 163
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "identifier",
@@ -1521,19 +1783,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 148
+        line: 170
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 148
+          line: 170
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "path",
@@ -1555,19 +1818,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 152
+        line: 177
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 152
+          line: 177
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }, {
           name: "path",
@@ -1589,19 +1853,20 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 159
+        line: 184
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 159
+          line: 184
         },
         kind: "function",
         argumentTypes: [{
           name: "device",
           type: {
-            kind: "string"
+            kind: "named",
+            name: "DeviceId"
           }
         }],
         returnType: {
@@ -1615,28 +1880,25 @@ Object.defineProperty(module.exports, "defs", {
         }
       }
     },
-    setAdbPort: {
+    addAdbPort: {
       kind: "function",
-      name: "setAdbPort",
+      name: "addAdbPort",
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 165
+        line: 190
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 165
+          line: 190
         },
         kind: "function",
         argumentTypes: [{
           name: "port",
           type: {
-            kind: "nullable",
-            type: {
-              kind: "number"
-            }
+            kind: "number"
           }
         }],
         returnType: {
@@ -1644,29 +1906,92 @@ Object.defineProperty(module.exports, "defs", {
         }
       }
     },
-    getAdbPort: {
+    removeAdbPort: {
       kind: "function",
-      name: "getAdbPort",
+      name: "removeAdbPort",
       location: {
         type: "source",
         fileName: "AdbService.js",
-        line: 169
+        line: 194
       },
       type: {
         location: {
           type: "source",
           fileName: "AdbService.js",
-          line: 169
+          line: 194
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "port",
+          type: {
+            kind: "number"
+          }
+        }],
+        returnType: {
+          kind: "void"
+        }
+      }
+    },
+    getAdbPorts: {
+      kind: "function",
+      name: "getAdbPorts",
+      location: {
+        type: "source",
+        fileName: "AdbService.js",
+        line: 198
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "AdbService.js",
+          line: 198
         },
         kind: "function",
         argumentTypes: [],
         returnType: {
           kind: "promise",
           type: {
-            kind: "nullable",
+            kind: "array",
             type: {
               kind: "number"
             }
+          }
+        }
+      }
+    },
+    getApkManifest: {
+      kind: "function",
+      name: "getApkManifest",
+      location: {
+        type: "source",
+        fileName: "AdbService.js",
+        line: 223
+      },
+      type: {
+        location: {
+          type: "source",
+          fileName: "AdbService.js",
+          line: 223
+        },
+        kind: "function",
+        argumentTypes: [{
+          name: "apkPath",
+          type: {
+            kind: "string"
+          }
+        }, {
+          name: "buildToolsVersion",
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "string"
+            }
+          }
+        }],
+        returnType: {
+          kind: "promise",
+          type: {
+            kind: "string"
           }
         }
       }

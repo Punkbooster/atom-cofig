@@ -23,12 +23,20 @@ function refactorReducers(state_, action) {
       return gotRefactorings(state, action);
     case 'close':
       return close(state);
+    case 'back-from-diff-preview':
+      return backFromDiffPreview(state, action);
     case 'picked-refactor':
       return pickedRefactor(state, action);
+    case 'inline-picked-refactor':
+      return inlinePickedRefactor(state, action);
     case 'execute':
       return executeRefactor(state, action);
     case 'confirm':
       return confirmRefactor(state, action);
+    case 'load-diff-preview':
+      return loadDiffPreview(state, action);
+    case 'display-diff-preview':
+      return displayDiffPreview(state, action);
     case 'progress':
       return progress(state, action);
     default:
@@ -68,7 +76,7 @@ function gotRefactorings(state, action) {
     throw new Error('Invariant violation: "state.phase.type === \'get-refactorings\'"');
   }
 
-  const { editor, originalPoint } = action.payload;
+  const { editor, originalRange } = action.payload;
 
   return {
     type: 'open',
@@ -77,7 +85,7 @@ function gotRefactorings(state, action) {
       type: 'pick',
       provider: action.payload.provider,
       editor,
-      originalPoint,
+      originalRange,
       availableRefactorings: action.payload.availableRefactorings
     }
   };
@@ -93,6 +101,16 @@ function close(state) {
   };
 }
 
+function backFromDiffPreview(state, action) {
+  if (!(state.type === 'open')) {
+    throw new Error('Invariant violation: "state.type === \'open\'"');
+  }
+
+  return Object.assign({}, state, {
+    phase: action.payload.phase
+  });
+}
+
 function pickedRefactor(state, action) {
   if (!(state.type === 'open')) {
     throw new Error('Invariant violation: "state.type === \'open\'"');
@@ -102,21 +120,42 @@ function pickedRefactor(state, action) {
     throw new Error('Invariant violation: "state.phase.type === \'pick\'"');
   }
 
+  const { refactoring } = action.payload;
+  const { provider, editor, originalRange } = state.phase;
+
   return {
     type: 'open',
     ui: state.ui,
-    phase: getRefactoringPhase(action.payload.refactoring, state.phase)
+    phase: getRefactoringPhase(refactoring, provider, editor, originalRange)
   };
 }
 
-function getRefactoringPhase(refactoring, { provider, editor, originalPoint }) {
+function inlinePickedRefactor(state, action) {
+  const { provider, editor, originalRange, refactoring } = action.payload;
+
+  if (!(state.type === 'closed')) {
+    throw new Error('Invariant violation: "state.type === \'closed\'"');
+  }
+
+  if (!(refactoring.kind === 'freeform')) {
+    throw new Error('Invariant violation: "refactoring.kind === \'freeform\'"');
+  }
+
+  return {
+    type: 'open',
+    ui: 'generic',
+    phase: getRefactoringPhase(refactoring, provider, editor, originalRange)
+  };
+}
+
+function getRefactoringPhase(refactoring, provider, editor, originalRange) {
   switch (refactoring.kind) {
     case 'rename':
       return {
         type: 'rename',
         provider,
         editor,
-        originalPoint,
+        originalPoint: originalRange.start,
         symbolAtPoint: refactoring.symbolAtPoint
       };
     case 'freeform':
@@ -124,7 +163,7 @@ function getRefactoringPhase(refactoring, { provider, editor, originalPoint }) {
         type: 'freeform',
         provider,
         editor,
-        originalPoint,
+        originalRange,
         refactoring
       };
     default:
@@ -162,6 +201,38 @@ function confirmRefactor(state, action) {
       response: action.payload.response
     }
   };
+}
+
+function loadDiffPreview(state, action) {
+  if (!(state.type === 'open')) {
+    throw new Error('Invariant violation: "state.type === \'open\'"');
+  }
+
+  return Object.assign({}, state, {
+    phase: {
+      type: 'diff-preview',
+      loading: true,
+      diffs: [],
+      previousPhase: action.payload.previousPhase
+    }
+  });
+}
+
+function displayDiffPreview(state, action) {
+  if (!(state.type === 'open')) {
+    throw new Error('Invariant violation: "state.type === \'open\'"');
+  }
+
+  if (!(state.phase.type === 'diff-preview')) {
+    throw new Error('Invariant violation: "state.phase.type === \'diff-preview\'"');
+  }
+
+  return Object.assign({}, state, {
+    phase: Object.assign({}, state.phase, {
+      loading: false,
+      diffs: action.payload.diffs
+    })
+  });
 }
 
 function progress(state, action) {

@@ -6,12 +6,6 @@ Object.defineProperty(exports, "__esModule", {
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-var _Constants;
-
-function _load_Constants() {
-  return _Constants = require('./Constants');
-}
-
 var _FileTreeDispatcher;
 
 function _load_FileTreeDispatcher() {
@@ -39,7 +33,13 @@ function _load_FileTreeStore() {
 var _immutable;
 
 function _load_immutable() {
-  return _immutable = _interopRequireDefault(require('immutable'));
+  return _immutable = _interopRequireWildcard(require('immutable'));
+}
+
+var _nuclideAnalytics;
+
+function _load_nuclideAnalytics() {
+  return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
 var _nuclideVcsBase;
@@ -58,6 +58,12 @@ var _log4js;
 
 function _load_log4js() {
   return _log4js = require('log4js');
+}
+
+var _nullthrows;
+
+function _load_nullthrows() {
+  return _nullthrows = _interopRequireDefault(require('nullthrows'));
 }
 
 var _nuclideUri;
@@ -80,14 +86,23 @@ function _load_collection() {
   return _collection = require('nuclide-commons/collection');
 }
 
+var _observable;
+
+function _load_observable() {
+  return _observable = require('nuclide-commons/observable');
+}
+
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// $FlowFixMe(>=0.53.0) Flow suppress
 let instance;
 
 /**
@@ -118,7 +133,7 @@ class FileTreeActions {
   constructor() {
     this._dispatcher = (_FileTreeDispatcher || _load_FileTreeDispatcher()).default.getInstance();
     this._store = (_FileTreeStore || _load_FileTreeStore()).FileTreeStore.getInstance();
-    this._disposableForRepository = new (_immutable || _load_immutable()).default.Map();
+    this._disposableForRepository = (_immutable || _load_immutable()).Map();
   }
 
   setCwd(rootKey) {
@@ -129,15 +144,10 @@ class FileTreeActions {
   }
 
   setRootKeys(rootKeys) {
-    const existingRootKeySet = new (_immutable || _load_immutable()).default.Set(this._store.getRootKeys());
-    const addedRootKeys = new (_immutable || _load_immutable()).default.Set(rootKeys).subtract(existingRootKeySet);
     this._dispatcher.dispatch({
       actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_ROOT_KEYS,
       rootKeys
     });
-    for (const rootKey of addedRootKeys) {
-      this.expandNode(rootKey, rootKey);
-    }
   }
 
   clearFilter() {
@@ -254,6 +264,32 @@ class FileTreeActions {
     });
   }
 
+  startReorderDrag(draggedRootKey) {
+    this._dispatcher.dispatch({
+      actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.START_REORDER_DRAG,
+      draggedRootKey
+    });
+  }
+
+  endReorderDrag() {
+    this._dispatcher.dispatch({
+      actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.END_REORDER_DRAG
+    });
+  }
+
+  reorderDragInto(dragTargetNodeKey) {
+    this._dispatcher.dispatch({
+      actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.REORDER_DRAG_INTO,
+      dragTargetNodeKey
+    });
+  }
+
+  reorderRoots() {
+    this._dispatcher.dispatch({
+      actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.REORDER_ROOTS
+    });
+  }
+
   moveToNode(rootKey, nodeKey) {
     this._dispatcher.dispatch({
       actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.MOVE_TO_NODE,
@@ -266,6 +302,13 @@ class FileTreeActions {
     this._dispatcher.dispatch({
       actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_USE_PREVIEW_TABS,
       usePreviewTabs
+    });
+  }
+
+  setFocusEditorOnFileSelection(focusEditorOnFileSelection) {
+    this._dispatcher.dispatch({
+      actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_FOCUS_EDITOR_ON_FILE_SELECTION,
+      focusEditorOnFileSelection
     });
   }
 
@@ -303,12 +346,13 @@ class FileTreeActions {
         });
       }
     } else {
+      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('file-tree-open-file', { uri: nodeKey });
       // goToLocation doesn't support pending panes
-      // eslint-disable-next-line nuclide-internal/atom-apis
+      // eslint-disable-next-line rulesdir/atom-apis
       atom.workspace.open((_FileTreeHelpers || _load_FileTreeHelpers()).default.keyToPath(nodeKey), {
-        activatePane: true,
+        activatePane: pending && node.conf.focusEditorOnFileSelection || !pending,
         searchAllPanes: true,
-        pending: true
+        pending
       });
     }
   }
@@ -349,6 +393,7 @@ class FileTreeActions {
       const rootKeys = rootDirectories.map(function (directory) {
         return (_FileTreeHelpers || _load_FileTreeHelpers()).default.dirPathToKey(directory.getPath());
       });
+      // $FlowFixMe
       const rootRepos = yield Promise.all(rootDirectories.map(function (directory) {
         return (0, (_nuclideVcsBase || _load_nuclideVcsBase()).repositoryForPath)(directory.getPath());
       }));
@@ -360,18 +405,16 @@ class FileTreeActions {
 
       // Group all of the root keys by their repository, excluding any that don't belong to a
       // repository.
-      const rootKeysForRepository = (_immutable || _load_immutable()).default.List(rootKeys).groupBy(function (rootKey, index) {
+      const rootKeysForRepository = (_immutable || _load_immutable()).Map(omitNullKeys((_immutable || _load_immutable()).List(rootKeys).groupBy(function (rootKey, index) {
         return rootRepos[index];
-      }).filter(function (v, k) {
-        return k != null;
-      }).map(function (v) {
-        return new (_immutable || _load_immutable()).default.Set(v);
-      });
+      })).map(function (v) {
+        return (_immutable || _load_immutable()).Set(v);
+      }));
 
       const prevRepos = _this._store.getRepositories();
 
       // Let the store know we have some new repos!
-      const nextRepos = new (_immutable || _load_immutable()).default.Set(rootKeysForRepository.keys());
+      const nextRepos = (_immutable || _load_immutable()).Set(rootKeysForRepository.keys());
       _this._dispatcher.dispatch({
         actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_REPOSITORIES,
         repositories: nextRepos
@@ -562,6 +605,14 @@ class FileTreeActions {
     });
   }
 
+  setTargetNode(rootKey, nodeKey) {
+    this._dispatcher.dispatch({
+      actionType: (_FileTreeDispatcher2 || _load_FileTreeDispatcher2()).ActionTypes.SET_TARGET_NODE,
+      rootKey,
+      nodeKey
+    });
+  }
+
   _repositoryAdded(repo, rootKeysForRepository) {
     var _this2 = this;
 
@@ -575,11 +626,11 @@ class FileTreeActions {
 
       if (repo.isDestroyed()) {
         // Don't observe anything on a destroyed repo.
-      } else if (repo.getType() === 'git' || !(yield (_FileTreeHelpers || _load_FileTreeHelpers()).default.areStackChangesEnabled())) {
+      } else if (repo.getType() === 'git') {
         // Different repo types emit different events at individual and refresh updates.
         // Hence, the need to debounce and listen to both change types.
-        vcsChanges = _rxjsBundlesRxMinJs.Observable.merge((0, (_event || _load_event()).observableFromSubscribeFunction)(repo.onDidChangeStatus.bind(repo)), (0, (_event || _load_event()).observableFromSubscribeFunction)(repo.onDidChangeStatuses.bind(repo))).debounceTime(1000).startWith(null).map(function (_) {
-          return _this2._getCachedPathStatuses(repo);
+        vcsChanges = _rxjsBundlesRxMinJs.Observable.merge((0, (_event || _load_event()).observableFromSubscribeFunction)(repo.onDidChangeStatus.bind(repo)), (0, (_event || _load_event()).observableFromSubscribeFunction)(repo.onDidChangeStatuses.bind(repo))).let((0, (_observable || _load_observable()).fastDebounce)(1000)).startWith(null).map(function () {
+          return _this2._getCachedPathStatusesForGitRepo(repo);
         });
       } else if (repo.getType() === 'hg') {
         // We special-case the HgRepository because it offers up the
@@ -588,13 +639,14 @@ class FileTreeActions {
 
         const hgChanges = (_FileTreeHelpers || _load_FileTreeHelpers()).default.observeUncommittedChangesKindConfigKey().map(function (kind) {
           switch (kind) {
-            case (_Constants || _load_Constants()).ShowUncommittedChangesKind.UNCOMMITTED:
+            case 'Uncommitted changes':
               return hgRepo.observeUncommittedStatusChanges();
-            case (_Constants || _load_Constants()).ShowUncommittedChangesKind.HEAD:
+            case 'Head changes':
               return hgRepo.observeHeadStatusChanges();
-            case (_Constants || _load_Constants()).ShowUncommittedChangesKind.STACK:
+            case 'Stack changes':
               return hgRepo.observeStackStatusChanges();
             default:
+              kind;
               const error = _rxjsBundlesRxMinJs.Observable.throw(new Error('Unrecognized ShowUncommittedChangesKind config'));
               return { statusChanges: error, isCalculatingChanges: error };
           }
@@ -602,14 +654,14 @@ class FileTreeActions {
 
         vcsChanges = hgChanges.switchMap(function (c) {
           return c.statusChanges;
-        }).map((_collection || _load_collection()).objectFromMap);
+        }).distinctUntilChanged((_collection || _load_collection()).mapEqual);
         vcsCalculating = hgChanges.switchMap(function (c) {
           return c.isCalculatingChanges;
         });
       }
 
       const subscription = vcsChanges.subscribe(function (statusCodeForPath) {
-        for (const rootKeyForRepo of rootKeysForRepository.get(repo)) {
+        for (const rootKeyForRepo of (0, (_nullthrows || _load_nullthrows()).default)(rootKeysForRepository.get(repo))) {
           _this2.setVcsStatuses(rootKeyForRepo, statusCodeForPath);
         }
       });
@@ -626,48 +678,35 @@ class FileTreeActions {
    * Fetches a consistent object map from absolute file paths to
    * their corresponding `StatusCodeNumber` for easy representation with the file tree.
    */
-  _getCachedPathStatuses(repo) {
-    let relativeCodePaths;
-    if (repo.getType() === 'hg') {
-      const hgRepo = repo;
-      // `hg` already comes from `HgRepositoryClient` in `StatusCodeNumber` format.
-      relativeCodePaths = hgRepo.getCachedPathStatuses();
-    } else if (repo.getType() === 'git') {
-      const gitRepo = repo;
-      const { statuses } = gitRepo;
-      const internalGitRepo = gitRepo.getRepo();
-      relativeCodePaths = {};
-      // Transform `git` bit numbers to `StatusCodeNumber` format.
-      const { StatusCodeNumber } = (_nuclideHgRpc || _load_nuclideHgRpc()).hgConstants;
-      for (const relativePath in statuses) {
-        const gitStatusNumber = statuses[relativePath];
-        let statusCode;
-        if (internalGitRepo.isStatusNew(gitStatusNumber)) {
-          statusCode = StatusCodeNumber.UNTRACKED;
-        } else if (internalGitRepo.isStatusStaged(gitStatusNumber)) {
-          statusCode = StatusCodeNumber.ADDED;
-        } else if (internalGitRepo.isStatusModified(gitStatusNumber)) {
-          statusCode = StatusCodeNumber.MODIFIED;
-        } else if (internalGitRepo.isStatusIgnored(gitStatusNumber)) {
-          statusCode = StatusCodeNumber.IGNORED;
-        } else if (internalGitRepo.isStatusDeleted(gitStatusNumber)) {
-          statusCode = StatusCodeNumber.REMOVED;
-        } else {
-          (0, (_log4js || _load_log4js()).getLogger)('nuclide-file-tree').warn(`Unrecognized git status number ${gitStatusNumber}`);
-          statusCode = StatusCodeNumber.MODIFIED;
-        }
-        relativeCodePaths[relativePath] = statusCode;
-      }
-    } else {
-      throw new Error(`Unsupported repository type: ${repo.getType()}`);
-    }
+  _getCachedPathStatusesForGitRepo(repo) {
+    const gitRepo = repo;
+    const { statuses } = gitRepo;
+    const internalGitRepo = gitRepo.getRepo();
+    const codePathStatuses = new Map();
     const repoRoot = repo.getWorkingDirectory();
-    const absoluteCodePaths = {};
-    for (const relativePath in relativeCodePaths) {
-      const absolutePath = (_nuclideUri || _load_nuclideUri()).default.join(repoRoot, relativePath);
-      absoluteCodePaths[absolutePath] = relativeCodePaths[relativePath];
+    // Transform `git` bit numbers to `StatusCodeNumber` format.
+    const { StatusCodeNumber } = (_nuclideHgRpc || _load_nuclideHgRpc()).hgConstants;
+    for (const relativePath in statuses) {
+      const gitStatusNumber = statuses[relativePath];
+      let statusCode;
+      if (internalGitRepo.isStatusNew(gitStatusNumber)) {
+        statusCode = StatusCodeNumber.UNTRACKED;
+      } else if (internalGitRepo.isStatusStaged(gitStatusNumber)) {
+        statusCode = StatusCodeNumber.ADDED;
+      } else if (internalGitRepo.isStatusModified(gitStatusNumber)) {
+        statusCode = StatusCodeNumber.MODIFIED;
+      } else if (internalGitRepo.isStatusIgnored(gitStatusNumber)) {
+        statusCode = StatusCodeNumber.IGNORED;
+      } else if (internalGitRepo.isStatusDeleted(gitStatusNumber)) {
+        statusCode = StatusCodeNumber.REMOVED;
+      } else {
+        (0, (_log4js || _load_log4js()).getLogger)('nuclide-file-tree').warn(`Unrecognized git status number ${gitStatusNumber}`);
+        statusCode = StatusCodeNumber.MODIFIED;
+      }
+      codePathStatuses.set((_nuclideUri || _load_nuclideUri()).default.join(repoRoot, relativePath), statusCode);
     }
-    return absoluteCodePaths;
+
+    return codePathStatuses;
   }
 
   _repositoryRemoved(repo) {
@@ -684,4 +723,11 @@ class FileTreeActions {
     disposable.dispose();
   }
 }
-exports.default = FileTreeActions;
+
+exports.default = FileTreeActions; /**
+                                    * A flow-friendly way of filtering out null keys.
+                                    */
+
+function omitNullKeys(map) {
+  return map.filter((v, k) => k != null);
+}

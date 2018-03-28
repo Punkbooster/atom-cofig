@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getSuggestion = exports.findTargetLocation = exports.parseTarget = undefined;
+exports.resolveLoadTargetPath = exports.getSuggestion = exports.findTargetLocation = exports.parseTarget = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -19,12 +19,14 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
  */
 let parseTarget = exports.parseTarget = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (match, filePath, buckRoot) {
+    // flowlint-next-line sketchy-null-string:off
     if (!match || !filePath) {
       return null;
     }
 
     let path;
     const fullTarget = match[1];
+    // flowlint-next-line sketchy-null-string:off
     if (fullTarget) {
       // Strip off the leading slashes from the fully-qualified build target.
       const basePath = fullTarget.substring('//'.length);
@@ -36,6 +38,7 @@ let parseTarget = exports.parseTarget = (() => {
       path = filePath;
     }
     const name = match[2];
+    // flowlint-next-line sketchy-null-string:off
     if (!name) {
       return null;
     }
@@ -114,11 +117,14 @@ let getSuggestion = exports.getSuggestion = (() => {
     }
 
     const buckRoot = yield (0, (_nuclideBuckBase || _load_nuclideBuckBase()).getBuckProjectRoot)(absolutePath);
+    // flowlint-next-line sketchy-null-string:off
     if (!buckRoot) {
       return null;
     }
 
-    const results = yield Promise.all([findBuildTarget(textEditor, position, absolutePath, buckRoot), findRelativeFilePath(textEditor, position, (_nuclideUri || _load_nuclideUri()).default.dirname(absolutePath))]);
+    const results = yield Promise.all([
+    // look for load targets first since they are more specific
+    findLoadTarget(textEditor, position, absolutePath, buckRoot), findBuildTarget(textEditor, position, absolutePath, buckRoot), findRelativeFilePath(textEditor, position, (_nuclideUri || _load_nuclideUri()).default.dirname(absolutePath))]);
     const hyperclickMatch = results.find(function (x) {
       return x != null;
     });
@@ -128,7 +134,7 @@ let getSuggestion = exports.getSuggestion = (() => {
       return {
         range: match.range,
         callback() {
-          (0, (_goToLocation || _load_goToLocation()).goToLocation)(match.path, match.line, match.column);
+          (0, (_goToLocation || _load_goToLocation()).goToLocation)(match.path, { line: match.line, column: match.column });
         }
       };
     } else {
@@ -170,12 +176,58 @@ let findBuildTarget = (() => {
   };
 })();
 
+// matches "@cell//pkg/subpkg:ext.bzl" as (cell, package and target name)
+
+
+/**
+ * @return HyperclickMatch if (textEditor, position) identifies a load target.
+ */
+let findLoadTarget = (() => {
+  var _ref5 = (0, _asyncToGenerator.default)(function* (textEditor, position, absolutePath, buckRoot) {
+    const loadMatchAndRange = (0, (_range || _load_range()).wordAtPosition)(textEditor, position, LOAD_REGEX);
+    if (loadMatchAndRange == null) {
+      return null;
+    }
+    const { wordMatch, range } = loadMatchAndRange;
+    const path = yield resolveLoadTargetPath(wordMatch, buckRoot);
+    const location = { path, line: 0, column: 0 };
+    return Object.assign({}, location, { range });
+  });
+
+  return function findLoadTarget(_x11, _x12, _x13, _x14) {
+    return _ref5.apply(this, arguments);
+  };
+})();
+
+/**
+ * Resolves a load target regex match into a referenced .bzl file path.
+ * For example, input match
+ * ['@cell//pkg/subpkg:ext.bzl', '@cell', '//pkg/subpkg', 'ext.bzl'] would be
+ * resolved to "$buckRoot/cell/pkg/subpkg/ext.bzl".
+ */
+
+
+let resolveLoadTargetPath = exports.resolveLoadTargetPath = (() => {
+  var _ref6 = (0, _asyncToGenerator.default)(function* (wordMatch, buckRoot) {
+    const cellName = wordMatch[1] ? wordMatch[1].substring('@'.length) : wordMatch[1];
+    const cellLocation = cellName ? yield (0, (_buildFiles || _load_buildFiles()).getCellLocation)(buckRoot, cellName) : ''; // resolve relative to buck root in case cell is not specified
+    const packagePath = wordMatch[2];
+    const filePath = wordMatch[3];
+    const path = (_nuclideUri || _load_nuclideUri()).default.join(buckRoot, cellLocation, packagePath, filePath);
+    return path;
+  });
+
+  return function resolveLoadTargetPath(_x15, _x16) {
+    return _ref6.apply(this, arguments);
+  };
+})();
+
 /**
  * @return HyperclickMatch if (textEditor, position) identifies a file path that resolves to a file
  *   under the specified directory.
  */
 let findRelativeFilePath = (() => {
-  var _ref5 = (0, _asyncToGenerator.default)(function* (textEditor, position, directory) {
+  var _ref7 = (0, _asyncToGenerator.default)(function* (textEditor, position, directory) {
     const wordMatchAndRange = (0, (_range || _load_range()).wordAtPosition)(textEditor, position, RELATIVE_FILE_PATH_REGEX);
     if (!wordMatchAndRange) {
       return null;
@@ -208,8 +260,8 @@ let findRelativeFilePath = (() => {
     }
   });
 
-  return function findRelativeFilePath(_x11, _x12, _x13) {
-    return _ref5.apply(this, arguments);
+  return function findRelativeFilePath(_x17, _x18, _x19) {
+    return _ref7.apply(this, arguments);
   };
 })();
 
@@ -259,6 +311,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const VALID_BUILD_FILE_NAMES = new Set(['BUCK', 'BUCK.autodeps', 'TARGETS']);
 
-const TARGET_REGEX = /(\/(?:\/[\w.-]*)*){0,1}:([\w.-]+)/;
+const TARGET_REGEX = /(\/(?:\/[\w.-]*)*){0,1}:([\w.-]+)/;const LOAD_REGEX = /(@[\w-]+)?\/\/([\w.\-/]*):([\w.-]+\.bzl)/;
 
 const RELATIVE_FILE_PATH_REGEX = /(['"])(.*)(['"])/;

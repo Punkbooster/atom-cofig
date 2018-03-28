@@ -17,6 +17,13 @@ var CellMeasurerCache = function () {
 
     _classCallCheck(this, CellMeasurerCache);
 
+    this._cellHeightCache = {};
+    this._cellWidthCache = {};
+    this._columnWidthCache = {};
+    this._rowHeightCache = {};
+    this._columnCount = 0;
+    this._rowCount = 0;
+
     this.columnWidth = function (_ref) {
       var index = _ref.index;
 
@@ -53,7 +60,7 @@ var CellMeasurerCache = function () {
 
     if (process.env.NODE_ENV !== 'production') {
       if (this._hasFixedHeight === false && this._hasFixedWidth === false) {
-        console.warn('CellMeasurerCache should only measure a cell\'s width or height. ' + 'You have configured CellMeasurerCache to measure both. ' + 'This will result in poor performance.');
+        console.warn("CellMeasurerCache should only measure a cell's width or height. " + 'You have configured CellMeasurerCache to measure both. ' + 'This will result in poor performance.');
       }
 
       if (this._hasFixedHeight === false && this._defaultHeight === 0) {
@@ -64,19 +71,13 @@ var CellMeasurerCache = function () {
         console.warn('Fixed width CellMeasurerCache should specify a :defaultWidth greater than 0. ' + 'Failing to do so will lead to unnecessary layout and poor performance.');
       }
     }
-
-    this._columnCount = 0;
-    this._rowCount = 0;
-
-    this._cellHeightCache = {};
-    this._cellWidthCache = {};
-    this._columnWidthCache = {};
-    this._rowHeightCache = {};
   }
 
   _createClass(CellMeasurerCache, [{
     key: 'clear',
-    value: function clear(rowIndex, columnIndex) {
+    value: function clear(rowIndex) {
+      var columnIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
       var key = this._keyMapper(rowIndex, columnIndex);
 
       delete this._cellHeightCache[key];
@@ -91,6 +92,8 @@ var CellMeasurerCache = function () {
       this._cellWidthCache = {};
       this._columnWidthCache = {};
       this._rowHeightCache = {};
+      this._rowCount = 0;
+      this._columnCount = 0;
     }
   }, {
     key: 'hasFixedHeight',

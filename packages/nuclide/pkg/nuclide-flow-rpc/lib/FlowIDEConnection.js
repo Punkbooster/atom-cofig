@@ -5,12 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.FlowIDEConnection = undefined;
 
-var _eventKit;
-
-function _load_eventKit() {
-  return _eventKit = require('event-kit');
-}
-
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 var _vscodeJsonrpc;
@@ -29,6 +23,12 @@ var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _SafeStreamMessageReader;
+
+function _load_SafeStreamMessageReader() {
+  return _SafeStreamMessageReader = _interopRequireDefault(require('../../commons-node/SafeStreamMessageReader'));
 }
 
 var _nuclideAnalytics;
@@ -87,7 +87,7 @@ class FlowIDEConnection {
     this._ideProcess.stderr.pipe((0, (_through || _load_through()).default)(msg => {
       (0, (_log4js || _load_log4js()).getLogger)('nuclide-flow-rpc').info('Flow IDE process stderr: ', msg.toString());
     }));
-    this._connection = (_vscodeJsonrpc || _load_vscodeJsonrpc()).createMessageConnection(new (_vscodeJsonrpc || _load_vscodeJsonrpc()).StreamMessageReader(this._ideProcess.stdout), new (_vscodeJsonrpc || _load_vscodeJsonrpc()).StreamMessageWriter(this._ideProcess.stdin));
+    this._connection = (_vscodeJsonrpc || _load_vscodeJsonrpc()).createMessageConnection(new (_SafeStreamMessageReader || _load_SafeStreamMessageReader()).default(this._ideProcess.stdout), new (_vscodeJsonrpc || _load_vscodeJsonrpc()).StreamMessageWriter(this._ideProcess.stdin));
     this._connection.listen();
 
     this._ideProcess.on('exit', () => this.dispose());
@@ -102,9 +102,7 @@ class FlowIDEConnection {
     () => {});
 
     this._diagnostics = _rxjsBundlesRxMinJs.Observable.using(() => {
-      const fileEventsObservable = this._fileCache.observeFileEvents()
-      // $FlowFixMe (bufferTime isn't in the libdef for rxjs)
-      .bufferTime(100 /* ms */).filter(fileEvents => fileEvents.length !== 0);
+      const fileEventsObservable = this._fileCache.observeFileEvents().bufferTime(100 /* ms */).filter(fileEvents => fileEvents.length !== 0);
 
       const fileEventsHandler = fileEvents => {
         const openPaths = [];
@@ -120,6 +118,9 @@ class FlowIDEConnection {
               break;
             case (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).FileEventKind.EDIT:
               // TODO: errors-as-you-type
+              break;
+            case (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).FileEventKind.SAVE:
+              // TODO: handle saves correctly
               break;
             default:
               fileEvent.kind;
@@ -170,7 +171,7 @@ class FlowIDEConnection {
 
   onWillDispose(callback) {
     this._disposables.add(callback);
-    return new (_eventKit || _load_eventKit()).Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       this._disposables.remove(callback);
     });
   }

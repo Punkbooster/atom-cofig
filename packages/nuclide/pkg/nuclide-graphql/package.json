@@ -1,9 +1,9 @@
 {
   "name": "nuclide-graphql",
-  "repository": "https://github.com/facebook/nuclide",
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Provides GraphQL language support in Nuclide",
+  "author": "GraphQL JS",
   "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
@@ -11,6 +11,6 @@
   },
   "activationHooks": [
     "language-babel:grammar-used",
-    "langauge-graphql:grammar-used"
+    "language-graphql:grammar-used"
   ]
 }

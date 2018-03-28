@@ -1,9 +1,9 @@
 {
   "name": "nuclide-clang",
-  "repository": "https://github.com/facebook/nuclide",
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Exposes features from nuclide-clang in Atom",
+  "author": "NEEDS OWNER",
   "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "packageType": "Atom",
@@ -45,6 +45,12 @@
         "type": "boolean",
         "default": "false",
         "description": "Enable diagnostics even while using default flags. May lead to inaccurate results."
+      },
+      "serverProcessMemoryLimit": {
+        "title": "Clang server process memory limit",
+        "type": "integer",
+        "default": 15,
+        "description": "Total memory usage of all clang server processes may not exceed this percentage of total memory."
       }
     }
   },
@@ -54,11 +60,6 @@
     "language-objective-c:grammar-used"
   ],
   "consumedServices": {
-    "atom-ide-busy-signal": {
-      "versions": {
-        "0.1.0": "consumeBusySignal"
-      }
-    },
     "nuclide.clang.configuration": {
       "versions": {
         "0.0.0": "consumeClangConfigurationProvider"
@@ -76,9 +77,14 @@
         "0.0.0": "provideRelatedFiles"
       }
     },
-    "autocomplete.provider": {
+    "nuclide-autocomplete.provider": {
       "versions": {
-        "2.0.0": "createAutocompleteProvider"
+        "0.0.0": "createAutocompleteProvider"
+      }
+    },
+    "code-actions": {
+      "versions": {
+        "0.1.0": "provideCodeActions"
       }
     },
     "code-format.file": {

@@ -45,27 +45,22 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-working-sets-common');
 
 /**
-* WorkingSet is an implementation of a filter for files and directories.
-* - It is *immutable*
-* - It is created from a set of NuclideUris.
-*     A path URI is either a local path, such as: /aaa/bb/ccc
-*     or remote nuclide://sandbox.com/aaa/bb/ccc
-* - The URIs can point either to files or to directories.
-* - Empty WorkingSet is essentially an empty filter - it accepts everything.
-* - Non-empty WorkingSet contains every file specified by the contained URIs or below.
-*   So, if a URI points to a directory - all its sub-directories and files in them are included.
-*   This kind of test is performed by the .containsFile() method.
-* - WorkingSet aims to support queries for the hierarchical structures, such as TreeView.
-*   Therefore, if a file is included in the WorkingSet, then the file-tree must have a way
-*   to know that it must include its parent directories.
-*   This kind of test is performed by the .containsDir() method.
-*/
+ * WorkingSet is an implementation of a filter for files and directories.
+ * - It is *immutable*
+ * - It is created from a set of NuclideUris.
+ *     A path URI is either a local path, such as: /aaa/bb/ccc
+ *     or remote nuclide://sandbox.com/aaa/bb/ccc
+ * - The URIs can point either to files or to directories.
+ * - Empty WorkingSet is essentially an empty filter - it accepts everything.
+ * - Non-empty WorkingSet contains every file specified by the contained URIs or below.
+ *   So, if a URI points to a directory - all its sub-directories and files in them are included.
+ *   This kind of test is performed by the .containsFile() method.
+ * - WorkingSet aims to support queries for the hierarchical structures, such as TreeView.
+ *   Therefore, if a file is included in the WorkingSet, then the file-tree must have a way
+ *   to know that it must include its parent directories.
+ *   This kind of test is performed by the .containsDir() method.
+ */
 class WorkingSet {
-
-  static union(...sets) {
-    const combinedUris = [].concat(...sets.map(s => s._uris));
-    return new WorkingSet(combinedUris);
-  }
 
   constructor(uris = []) {
     try {

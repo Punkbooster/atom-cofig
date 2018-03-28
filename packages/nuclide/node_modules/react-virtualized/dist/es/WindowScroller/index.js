@@ -1,6 +1,4 @@
-import _default from './WindowScroller';
-export { _default as default };
-import _WindowScroller from './WindowScroller';
-export { _WindowScroller as WindowScroller };
+import WindowScroller, { IS_SCROLLING_TIMEOUT } from './WindowScroller';
 
-export { IS_SCROLLING_TIMEOUT } from './utils/onScroll';
+export default WindowScroller;
+export { WindowScroller, IS_SCROLLING_TIMEOUT };

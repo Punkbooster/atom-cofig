@@ -7,32 +7,39 @@ exports.initialize = exports.initializeLsp = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 let initializeLsp = exports.initializeLsp = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (command, args, projectFileNames, fileExtensions, logLevel, fileNotifier, host) {
     const cmd = command === '' ? yield (0, (_hackConfig || _load_hackConfig()).getHackCommand)() : command;
+    if (cmd === '') {
+      return null;
+    }
+
     return (0, (_nuclideVscodeLanguageServiceRpc || _load_nuclideVscodeLanguageServiceRpc()).createMultiLspLanguageService)('hack', cmd, args, {
       logCategory: (_hackConfig || _load_hackConfig()).HACK_LOGGER_CATEGORY,
       logLevel,
       fileNotifier,
       host,
       projectFileNames,
-      fileExtensions
+      fileExtensions,
+      additionalLogFilesRetentionPeriod: 5 * 60 * 1000 // 5 minutes
     });
   });
 
   return function initializeLsp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
     return _ref.apply(this, arguments);
   };
-})(); /**
-       * Copyright (c) 2015-present, Facebook, Inc.
-       * All rights reserved.
-       *
-       * This source code is licensed under the license found in the LICENSE file in
-       * the root directory of this source tree.
-       *
-       * 
-       * @format
-       */
+})();
 
 let initialize = exports.initialize = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* (hackCommand, logLevel, fileNotifier) {
@@ -65,6 +72,12 @@ var _nuclideVscodeLanguageServiceRpc;
 
 function _load_nuclideVscodeLanguageServiceRpc() {
   return _nuclideVscodeLanguageServiceRpc = require('../../nuclide-vscode-language-service-rpc');
+}
+
+var _constants;
+
+function _load_constants() {
+  return _constants = require('../../nuclide-hack-common/lib/constants');
 }
 
 var _HackHelpers;
@@ -156,7 +169,7 @@ class HackLanguageServiceImpl extends (_nuclideLanguageServiceRpc || _load_nucli
 
     super(fileNotifier, new HackSingleFileLanguageService(fileNotifier));
     this._resources = new (_UniversalDisposable || _load_UniversalDisposable()).default();
-    const configObserver = new (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).ConfigObserver(fileNotifier, (_hackConfig || _load_hackConfig()).HACK_FILE_EXTENSIONS, (_hackConfig || _load_hackConfig()).findHackConfigDir);
+    const configObserver = new (_nuclideOpenFilesRpc || _load_nuclideOpenFilesRpc()).ConfigObserver(fileNotifier, (_constants || _load_constants()).HACK_FILE_EXTENSIONS, (_hackConfig || _load_hackConfig()).findHackConfigDir);
     this._resources.add(configObserver, configObserver.observeConfigs().subscribe(configs => {
       (0, (_HackProcess || _load_HackProcess()).ensureProcesses)(fileNotifier, configs);
     }));
@@ -228,6 +241,12 @@ class HackSingleFileLanguageService {
     })();
   }
 
+  getCodeActions(filePath, range, diagnostics) {
+    return (0, _asyncToGenerator.default)(function* () {
+      throw new Error('Not implemented');
+    })();
+  }
+
   observeDiagnostics() {
     (_hackConfig || _load_hackConfig()).logger.debug('observeDiagnostics');
     return (0, (_HackProcess || _load_HackProcess()).observeConnections)(this._fileCache).mergeMap(connection => {
@@ -243,10 +262,7 @@ class HackSingleFileLanguageService {
         return hackDiagnostics.filename !== '';
       }).map(hackDiagnostics => {
         (_hackConfig || _load_hackConfig()).logger.debug(`Got hack error in ${hackDiagnostics.filename}`);
-        return [{
-          filePath: hackDiagnostics.filename,
-          messages: hackDiagnostics.errors.map(diagnostic => (0, (_Diagnostics || _load_Diagnostics()).hackMessageToDiagnosticMessage)(diagnostic.message))
-        }];
+        return new Map([[hackDiagnostics.filename, hackDiagnostics.errors.map(diagnostic => (0, (_Diagnostics || _load_Diagnostics()).hackMessageToDiagnosticMessage)(diagnostic.message))]]);
       }));
     }).catch(error => {
       (_hackConfig || _load_hackConfig()).logger.error(`Error: observeDiagnostics ${error}`);
@@ -284,6 +300,10 @@ class HackSingleFileLanguageService {
   }
 
   findReferences(filePath, buffer, position) {
+    return _rxjsBundlesRxMinJs.Observable.fromPromise(this._findReferences(filePath, buffer, position));
+  }
+
+  _findReferences(filePath, buffer, position) {
     return (0, _asyncToGenerator.default)(function* () {
       const contents = buffer.getText();
 
@@ -348,11 +368,8 @@ class HackSingleFileLanguageService {
       if (result == null || result.type == null || result.type === '_') {
         return null;
       } else {
-        return {
-          hint: result.type,
-          // TODO: Use hack range for type hints, not nuclide range.
-          range: match.range
-        };
+        // TODO: Use hack range for type hints, not nuclide range.
+        return (0, (_nuclideLanguageServiceRpc || _load_nuclideLanguageServiceRpc()).typeHintFromSnippet)(result.type, match.range);
       }
     })();
   }
@@ -428,6 +445,14 @@ class HackSingleFileLanguageService {
       const hhconfigPath = yield (0, (_hackConfig || _load_hackConfig()).findHackConfigDir)(fileUri);
       return hhconfigPath != null;
     })();
+  }
+
+  getExpandedSelectionRange(filePath, buffer, currentSelection) {
+    throw new Error('Not implemented');
+  }
+
+  getCollapsedSelectionRange(filePath, buffer, currentSelection, originalCursorPosition) {
+    throw new Error('Not implemented');
   }
 
   dispose() {}

@@ -1,3 +1,23 @@
+# 1.8.3
+- Update sass-lint version to 1.12.1
+
+# 1.8.2
+- Update sass-lint version to 1.12.0
+- Update dependencies
+
+# 1.8.1
+- apm publish issue - no such version
+
+# 1.8.0
+- Reworked the way that a config file is resolved to fix issues where configs in project roots were being ignored.
+- Updated a few dependencies
+
+# 1.7.6
+- Update sass-lint version to 1.11.1
+
+## 1.7.5
+- Update sass-lint version to 1.11.0
+
 ## 1.7.4
 - Update sass-lint version to 1.10.2
 

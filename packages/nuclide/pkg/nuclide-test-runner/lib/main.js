@@ -6,8 +6,6 @@ function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
-var _atom = require('atom');
-
 var _createPackage;
 
 function _load_createPackage() {
@@ -30,6 +28,12 @@ var _log4js;
 
 function _load_log4js() {
   return _log4js = require('log4js');
+}
+
+var _ToolbarUtils;
+
+function _load_ToolbarUtils() {
+  return _ToolbarUtils = require('nuclide-commons-ui/ToolbarUtils');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -65,7 +69,7 @@ class Activation {
 
   constructor() {
     this._testRunners = new Set();
-    this._disposables = new _atom.CompositeDisposable();
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     // Listen for run events on files in the file tree
     this._disposables.add(atom.commands.add('.tree-view .entry.file.list-item', 'nuclide-test-runner:run-tests', event => {
       const target = event.currentTarget.querySelector('.name');
@@ -125,11 +129,11 @@ class Activation {
       shouldDisplay: separatorShouldDisplay
     };
 
-    const menuItemSubscriptions = new _atom.CompositeDisposable();
+    const menuItemSubscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     menuItemSubscriptions.add(contextMenu.addItemToTestSection(fileItem, FILE_TREE_CONTEXT_MENU_PRIORITY), contextMenu.addItemToTestSection(directoryItem, FILE_TREE_CONTEXT_MENU_PRIORITY + 1), contextMenu.addItemToTestSection(separator, FILE_TREE_CONTEXT_MENU_PRIORITY + 2));
     this._disposables.add(menuItemSubscriptions);
 
-    return new _atom.Disposable(() => this._disposables.remove(menuItemSubscriptions));
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => this._disposables.remove(menuItemSubscriptions));
   }
 
   consumeTestRunner(testRunner) {
@@ -148,7 +152,7 @@ class Activation {
       this.getController().didUpdateTestRunners();
     }
 
-    return new _atom.Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       this._testRunners.delete(testRunner);
       // Tell the controller to re-render only if it exists so test runner services won't force
       // construction if the panel is still invisible.
@@ -160,13 +164,14 @@ class Activation {
 
   consumeToolBar(getToolBar) {
     const toolBar = getToolBar('nuclide-test-runner');
-    toolBar.addButton({
+
+    toolBar.addButton((0, (_ToolbarUtils || _load_ToolbarUtils()).makeToolbarButtonSpec)({
       icon: 'checklist',
       callback: 'nuclide-test-runner:toggle-panel',
       tooltip: 'Toggle Test Runner',
       priority: 600
-    });
-    const disposable = new _atom.Disposable(() => {
+    }));
+    const disposable = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       toolBar.removeItems();
     });
     this._disposables.add(disposable);
@@ -250,7 +255,9 @@ class Activation {
   _registerCommandAndOpener() {
     return new (_UniversalDisposable || _load_UniversalDisposable()).default(atom.workspace.addOpener(uri => {
       if (uri === (_TestRunnerController || _load_TestRunnerController()).WORKSPACE_VIEW_URI) {
-        return this.getController();
+        const controller = this.getController();
+        controller.reinitialize();
+        return controller;
       }
     }), () => (0, (_destroyItemWhere || _load_destroyItemWhere()).destroyItemWhere)(item => item instanceof (_TestRunnerController || _load_TestRunnerController()).TestRunnerController), atom.commands.add('atom-workspace', 'nuclide-test-runner:toggle-panel', () => {
       atom.workspace.toggle((_TestRunnerController || _load_TestRunnerController()).WORKSPACE_VIEW_URI);

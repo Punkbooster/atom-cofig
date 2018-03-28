@@ -100,16 +100,41 @@ const MergeConflictFileStatus = Object.freeze({
 MergeConflictFileStatus;
 
 const HEAD_REVISION_EXPRESSION = '.';
+const PARENT_REVISION_EXPRESSION = '.^';
 
-// eslint-disable-next-line nuclide-internal/no-commonjs
+const HisteditActions = Object.freeze({
+  PICK: 'pick'
+});
+
+// This is to work around flow's missing support of enums.
+HisteditActions;
+
+// These are the files that hg creates while working and deletes when done,
+// we can use them to track the state of onging histedits, rebases, grafts, etc.
+const LockFiles = Object.freeze({
+  GRAFT: '.hg/graftstate',
+  UPDATE: '.hg/updatestate',
+  REBASE: '.hg/rebasestate',
+  MERGE: '.hg/merge', // TODO(T25449730): actual state is in .hg/merge/state
+  SHELVED: '.hg/shelvedstate',
+  HISTEDIT: '.hg/histedit-state',
+  WLOCK: '.hg/wlock'
+});
+const LockFilesList = [LockFiles.GRAFT, LockFiles.UPDATE, LockFiles.REBASE, LockFiles.MERGE, LockFiles.SHELVED, LockFiles.HISTEDIT, LockFiles.WLOCK];
+
+// eslint-disable-next-line rulesdir/no-commonjs
 module.exports = {
   AmendMode,
   CommitPhase,
   HEAD_REVISION_EXPRESSION,
+  PARENT_REVISION_EXPRESSION,
   MergeConflictStatus,
   MergeConflictFileStatus,
   StatusCodeId,
   StatusCodeIdToNumber,
   StatusCodeNumber,
-  SuccessorType
+  SuccessorType,
+  HisteditActions,
+  LockFiles,
+  LockFilesList
 };

@@ -358,7 +358,7 @@ tproto.queryInterval = function (lo, hi, cb) {
   }
 };
 
-Object.defineProperty(tproto, "count", {
+Object.defineProperty(tproto, 'count', {
   get: function get() {
     if (this.root) {
       return this.root.count;
@@ -367,7 +367,7 @@ Object.defineProperty(tproto, "count", {
   }
 });
 
-Object.defineProperty(tproto, "intervals", {
+Object.defineProperty(tproto, 'intervals', {
   get: function get() {
     if (this.root) {
       return this.root.intervals([]);

@@ -7,8 +7,6 @@ exports.EvaluationExpressionProvider = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-exports.getEvaluationExpressionFromRegexp = getEvaluationExpressionFromRegexp;
-
 var _nuclideAnalytics;
 
 function _load_nuclideAnalytics() {
@@ -27,19 +25,24 @@ function _load_nuclideOpenFiles() {
   return _nuclideOpenFiles = require('../../nuclide-open-files');
 }
 
-var _range;
+var _nuclideDebuggerCommon;
 
-function _load_range() {
-  return _range = require('nuclide-commons-atom/range');
-}
-
-var _nuclideDebuggerBase;
-
-function _load_nuclideDebuggerBase() {
-  return _nuclideDebuggerBase = require('../../nuclide-debugger-base');
+function _load_nuclideDebuggerCommon() {
+  return _nuclideDebuggerCommon = require('nuclide-debugger-common');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 class EvaluationExpressionProvider {
 
@@ -60,7 +63,7 @@ class EvaluationExpressionProvider {
 
     return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)(this._analyticsEventName, (0, _asyncToGenerator.default)(function* () {
       if (_this._matcher.kind === 'default') {
-        return (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).getDefaultEvaluationExpression)(editor, position);
+        return (0, (_nuclideDebuggerCommon || _load_nuclideDebuggerCommon()).getDefaultEvaluationExpression)(editor, position);
       } else if (_this._matcher.kind === 'custom') {
         return _this._matcher.matcher(editor, position);
       } else if (_this._matcher.kind === 'call-service') {
@@ -77,24 +80,4 @@ class EvaluationExpressionProvider {
     }));
   }
 }
-
-exports.EvaluationExpressionProvider = EvaluationExpressionProvider; /**
-                                                                      * Copyright (c) 2015-present, Facebook, Inc.
-                                                                      * All rights reserved.
-                                                                      *
-                                                                      * This source code is licensed under the license found in the LICENSE file in
-                                                                      * the root directory of this source tree.
-                                                                      *
-                                                                      * 
-                                                                      * @format
-                                                                      */
-
-function getEvaluationExpressionFromRegexp(editor, position, regexp) {
-  const extractedIdentifier = (0, (_range || _load_range()).wordAtPosition)(editor, position, regexp);
-  if (extractedIdentifier == null) {
-    return null;
-  }
-  const { range, wordMatch } = extractedIdentifier;
-  const [expression] = wordMatch;
-  return expression == null ? null : { expression, range };
-}
+exports.EvaluationExpressionProvider = EvaluationExpressionProvider;

@@ -4,19 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = calculateSizeAndPositionDataAndUpdateScrollOffset;
-/**
- * Helper method that determines when to recalculate row or column metadata.
- *
- * @param cellCount Number of rows or columns in the current axis
- * @param cellsSize Width or height of cells for the current axis
- * @param computeMetadataCallback Method to invoke if cell metadata should be recalculated
- * @param computeMetadataCallbackProps Parameters to pass to :computeMetadataCallback
- * @param nextCellsCount Newly updated number of rows or columns in the current axis
- * @param nextCellsSize Newly updated width or height of cells for the current axis
- * @param nextScrollToIndex Newly updated scroll-to-index
- * @param scrollToIndex Scroll-to-index
- * @param updateScrollOffsetForScrollToIndex Callback to invoke if the scroll position should be recalculated
- */
 function calculateSizeAndPositionDataAndUpdateScrollOffset(_ref) {
   var cellCount = _ref.cellCount,
       cellSize = _ref.cellSize,
@@ -40,3 +27,7 @@ function calculateSizeAndPositionDataAndUpdateScrollOffset(_ref) {
     }
   }
 }
+
+/**
+ * Helper method that determines when to recalculate row or column metadata.
+ */

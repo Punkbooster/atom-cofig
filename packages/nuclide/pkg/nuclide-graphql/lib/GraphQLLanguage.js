@@ -16,7 +16,8 @@ let connectionToGraphQLService = (() => {
       env: Object.assign({}, process.env, { ELECTRON_RUN_AS_NODE: '1' })
     };
 
-    return graphqlService.initializeLsp(graphqlCommand, ['server', '--method', 'stream'], options, ['.graphqlconfig'], ['.js', '.graphql'], 'INFO', fileNotifier, host);
+    const lspService = yield graphqlService.initializeLsp(graphqlCommand, ['server', '--method', 'stream'], options, ['.graphqlconfig'], ['.js', '.graphql'], 'INFO', fileNotifier, host);
+    return lspService || new (_nuclideLanguageServiceRpc || _load_nuclideLanguageServiceRpc()).NullLanguageService();
   });
 
   return function connectionToGraphQLService(_x) {
@@ -38,14 +39,15 @@ let createLanguageService = (() => {
     };
 
     const autocompleteConfig = {
-      version: '2.0.0',
       inclusionPriority: 1,
       suggestionPriority: 3,
       excludeLowerPriority: false,
-      analyticsEventName: 'graphql.getAutocompleteSuggestions',
+      analytics: {
+        eventName: 'nuclide-graphql',
+        shouldLogInsertedSuggestion: false
+      },
       disableForSelector: null,
-      autocompleteCacherConfig: null,
-      onDidInsertSuggestionAnalyticsEventName: 'graphql.autocomplete-chosen'
+      autocompleteCacherConfig: null
     };
 
     const atomConfig = {
@@ -71,6 +73,12 @@ function _load_nuclideLanguageService() {
   return _nuclideLanguageService = require('../../nuclide-language-service');
 }
 
+var _nuclideLanguageServiceRpc;
+
+function _load_nuclideLanguageServiceRpc() {
+  return _nuclideLanguageServiceRpc = require('../../nuclide-language-service-rpc');
+}
+
 var _nuclideOpenFiles;
 
 function _load_nuclideOpenFiles() {
@@ -85,16 +93,18 @@ function _load_nuclideRemoteConnection() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const GRAPHQL_SERVICE_NAME = 'GraphQLService'; /**
-                                                * Copyright (c) 2015-present, Facebook, Inc.
-                                                * All rights reserved.
-                                                *
-                                                * This source code is licensed under the license found in the LICENSE file in
-                                                * the root directory of this source tree.
-                                                *
-                                                * 
-                                                * @format
-                                                */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const GRAPHQL_SERVICE_NAME = 'GraphQLService';
 
 let graphqlLanguageService = exports.graphqlLanguageService = createLanguageService();
 

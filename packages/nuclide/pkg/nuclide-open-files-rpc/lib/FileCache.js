@@ -42,6 +42,10 @@ function _load_constants() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
+ * NB: although it is possible to change the language ID after the file has
+ * already been opened, the file cache will not update to reflect that.
+ */
+/**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -71,11 +75,11 @@ class FileCache {
     this._requests.onEvent(event);
 
     // invariant: because the above two lines have updated both _buffers and _requests,
-    // then getBufferAtVersion will necessarily return immediately and succesfully.
-    // And getBufferForFileEdit will also succeed.
+    // then getBufferAtVersion will necessarily return immediately and successfully.
+    // And getBufferForFileEvent will also succeed.
 
-    if (!(event.kind !== 'edit' || this.getBufferForFileEdit(event))) {
-      throw new Error('Invariant violation: "event.kind !== \'edit\' || this.getBufferForFileEdit(event)"');
+    if (!(event.kind !== 'edit' || this.getBufferForFileEvent(event))) {
+      throw new Error('Invariant violation: "event.kind !== \'edit\' || this.getBufferForFileEvent(event)"');
     }
 
     this._fileEvents.next(event);
@@ -86,14 +90,15 @@ class FileCache {
   onFileEvent(event) {
     const filePath = event.fileVersion.filePath;
     const changeCount = event.fileVersion.version;
-    const buffer = this._buffers.get(filePath);
+    const fileInfo = this._buffers.get(filePath);
+    const buffer = fileInfo != null ? fileInfo.buffer : null;
     switch (event.kind) {
       case (_constants || _load_constants()).FileEventKind.OPEN:
         if (!(buffer == null)) {
           throw new Error('Invariant violation: "buffer == null"');
         }
 
-        this._open(filePath, event.contents, changeCount);
+        this._open(filePath, event.contents, changeCount, event.languageId);
         break;
       case (_constants || _load_constants()).FileEventKind.CLOSE:
         if (buffer != null) {
@@ -123,24 +128,39 @@ class FileCache {
           return event;
         });
         break;
+      case (_constants || _load_constants()).FileEventKind.SAVE:
+        this._save(filePath, changeCount);
+        break;
       case (_constants || _load_constants()).FileEventKind.SYNC:
         if (buffer == null) {
-          this._open(filePath, event.contents, changeCount);
+          this._open(filePath, event.contents, changeCount, event.languageId);
         } else {
           this._syncEdit(filePath, buffer, event.contents, changeCount);
         }
         break;
       default:
+        event.kind;
         throw new Error(`Unexpected FileEvent.kind: ${event.kind}`);
     }
     return Promise.resolve(undefined);
   }
 
-  onDirectoriesChanged(openDirectories) {
+  getTotalBufferSize() {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      _this._directoryEvents.next(openDirectories);
+      const addLength = function (acc, { buffer }) {
+        return acc + buffer.getText().length;
+      };
+      return [..._this._buffers.values()].reduce(addLength, 0);
+    })();
+  }
+
+  onDirectoriesChanged(openDirectories) {
+    var _this2 = this;
+
+    return (0, _asyncToGenerator.default)(function* () {
+      _this2._directoryEvents.next(openDirectories);
     })();
   }
 
@@ -160,14 +180,14 @@ class FileCache {
     });
   }
 
-  _open(filePath, contents, changeCount) {
+  _open(filePath, contents, changeCount, languageId) {
     // We never call setPath on these TextBuffers as that will
     // start the TextBuffer attempting to sync with the file system.
     const newBuffer = new (_simpleTextBuffer || _load_simpleTextBuffer()).default(contents);
     newBuffer.changeCount = changeCount;
     this.update(() => {
-      this._buffers.set(filePath, newBuffer);
-      return createOpenEvent(this.createFileVersion(filePath, changeCount), contents);
+      this._buffers.set(filePath, { buffer: newBuffer, languageId });
+      return createOpenEvent(this.createFileVersion(filePath, changeCount), contents, languageId);
     });
   }
 
@@ -179,9 +199,15 @@ class FileCache {
     buffer.destroy();
   }
 
+  _save(filePath, changeCount) {
+    this.update(() => {
+      return createSaveEvent(this.createFileVersion(filePath, changeCount));
+    });
+  }
+
   dispose() {
     // The _close routine will delete elements from the _buffers map.
-    for (const [filePath, buffer] of this._buffers.entries()) {
+    for (const [filePath, { buffer }] of this._buffers.entries()) {
       this._close(filePath, buffer);
     }
 
@@ -199,7 +225,8 @@ class FileCache {
     // TODO: change this to return a string, to ensure that no caller will ever mutate
     // the buffer contents (and hence its changeCount). The only modifications allowed
     // are those that come from the editor inside this.onFileEvent.
-    return this._buffers.get(filePath);
+    const fileInfo = this._buffers.get(filePath);
+    return fileInfo != null ? fileInfo.buffer : null;
   }
 
   // getBufferAtVersion(version): if the stream of onFileEvent gets up to this particular
@@ -208,23 +235,23 @@ class FileCache {
   // then returns null. See comments in _requests.waitForBufferAtVersion for
   // the subtle scenarios where it might return null.
   getBufferAtVersion(fileVersion) {
-    var _this2 = this;
+    var _this3 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
       // TODO: change this to return a string, like getBuffer() above.
-      if (!(yield _this2._requests.waitForBufferAtVersion(fileVersion))) {
+      if (!(yield _this3._requests.waitForBufferAtVersion(fileVersion))) {
         return null;
       }
-      const buffer = _this2.getBuffer(fileVersion.filePath);
+      const buffer = _this3.getBuffer(fileVersion.filePath);
       return buffer != null && buffer.changeCount === fileVersion.version ? buffer : null;
     })();
   }
 
-  // getBufferForFileEdit - this function may be called immediately when an edit event
-  // happens, before any awaits. At that time the buffer is guaranteed to be
+  // getBufferForFileEvent - this function may be called immediately when an edit or save
+  // event happens, before any awaits. At that time the buffer is guaranteed to be
   // available. If called at any other time, the buffer may no longer be available,
   // in which case it may throw.
-  getBufferForFileEdit(fileEvent) {
+  getBufferForFileEvent(fileEvent) {
     // TODO: change this to return a string, like getBuffer() above.
     const fileVersion = fileEvent.fileVersion;
 
@@ -263,12 +290,16 @@ class FileCache {
   }
 
   observeFileEvents() {
-    return _rxjsBundlesRxMinJs.Observable.from(Array.from(this._buffers.entries()).map(([filePath, buffer]) => {
+    return _rxjsBundlesRxMinJs.Observable.from(Array.from(this._buffers.entries()).map(([filePath, { buffer, languageId }]) => {
       if (!(buffer != null)) {
         throw new Error('Invariant violation: "buffer != null"');
       }
 
-      return createOpenEvent(this.createFileVersion(filePath, buffer.changeCount), buffer.getText());
+      if (!(languageId != null)) {
+        throw new Error('Invariant violation: "languageId != null"');
+      }
+
+      return createOpenEvent(this.createFileVersion(filePath, buffer.changeCount), buffer.getText(), languageId);
     })).concat(this._fileEvents);
   }
 
@@ -286,17 +317,25 @@ class FileCache {
 }
 
 exports.FileCache = FileCache;
-function createOpenEvent(fileVersion, contents) {
+function createOpenEvent(fileVersion, contents, languageId) {
   return {
     kind: (_constants || _load_constants()).FileEventKind.OPEN,
     fileVersion,
-    contents
+    contents,
+    languageId
   };
 }
 
 function createCloseEvent(fileVersion) {
   return {
     kind: (_constants || _load_constants()).FileEventKind.CLOSE,
+    fileVersion
+  };
+}
+
+function createSaveEvent(fileVersion) {
+  return {
+    kind: (_constants || _load_constants()).FileEventKind.SAVE,
     fileVersion
   };
 }

@@ -3,22 +3,14 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.IS_SCROLLING_TIMEOUT = exports.WindowScroller = exports.default = undefined;
+exports.IS_SCROLLING_TIMEOUT = exports.WindowScroller = undefined;
 
-var _onScroll = require('./utils/onScroll');
+var _WindowScroller = require('./WindowScroller');
 
-Object.defineProperty(exports, 'IS_SCROLLING_TIMEOUT', {
-  enumerable: true,
-  get: function get() {
-    return _onScroll.IS_SCROLLING_TIMEOUT;
-  }
-});
-
-var _WindowScroller2 = require('./WindowScroller');
-
-var _WindowScroller3 = _interopRequireDefault(_WindowScroller2);
+var _WindowScroller2 = _interopRequireDefault(_WindowScroller);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = _WindowScroller3.default;
-exports.WindowScroller = _WindowScroller3.default;
+exports.default = _WindowScroller2.default;
+exports.WindowScroller = _WindowScroller2.default;
+exports.IS_SCROLLING_TIMEOUT = _WindowScroller.IS_SCROLLING_TIMEOUT;

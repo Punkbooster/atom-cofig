@@ -6,35 +6,34 @@ Object.defineProperty(exports, "__esModule", {
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
-
 let createOCamlLanguageService = (() => {
   var _ref = (0, _asyncToGenerator.default)(function* (connection) {
     const service = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).getVSCodeLanguageServiceByConnection)(connection);
     const [fileNotifier, host] = yield Promise.all([(0, (_nuclideOpenFiles || _load_nuclideOpenFiles()).getNotifierByConnection)(connection), (0, (_nuclideLanguageService || _load_nuclideLanguageService()).getHostServices)()]);
 
-    return service.createMultiLspLanguageService('ocaml', 'ocaml-language-server', ['--stdio'], {
+    const lspService = yield service.createMultiLspLanguageService('ocaml', 'ocaml-language-server', ['--stdio'], {
       logCategory: 'OcamlService',
       logLevel: 'INFO',
       fileNotifier,
       host,
-      projectFileNames: ['.merlin'],
-      fileExtensions: ['.ml', '.mli'],
+      projectFileNames: ['esy', 'esy.json', 'package.json', '.merlin'],
+      projectFileSearchStrategy: 'priority',
+      useOriginalEnvironment: true,
+      fileExtensions: ['.ml', '.mli', '.re', '.rei'],
+      additionalLogFilesRetentionPeriod: 5 * 60 * 1000, // 5 minutes
       initializationOptions: {
         codelens: {
           unicode: true
         },
         debounce: {
-          linter: 500
+          linter: 10 * 1000 // 10s
+        },
+        format: {
+          width: 80
+        },
+        diagnostics: {
+          merlinPerfLogging: true,
+          tools: ['merlin']
         },
         path: {
           ocamlfind: 'ocamlfind',
@@ -46,16 +45,26 @@ let createOCamlLanguageService = (() => {
           rtop: 'rtop'
         },
         server: {
-          languages: ['ocaml']
+          languages: ['ocaml', 'reason']
         }
       }
     });
+    return lspService || new (_nuclideLanguageServiceRpc || _load_nuclideLanguageServiceRpc()).NullLanguageService();
   });
 
   return function createOCamlLanguageService(_x) {
     return _ref.apply(this, arguments);
   };
-})();
+})(); /**
+       * Copyright (c) 2015-present, Facebook, Inc.
+       * All rights reserved.
+       *
+       * This source code is licensed under the license found in the LICENSE file in
+       * the root directory of this source tree.
+       *
+       * 
+       * @format
+       */
 
 exports.createLanguageService = createLanguageService;
 
@@ -63,6 +72,12 @@ var _nuclideLanguageService;
 
 function _load_nuclideLanguageService() {
   return _nuclideLanguageService = require('../../nuclide-language-service');
+}
+
+var _nuclideLanguageServiceRpc;
+
+function _load_nuclideLanguageServiceRpc() {
+  return _nuclideLanguageServiceRpc = require('../../nuclide-language-service-rpc');
 }
 
 var _nuclideOpenFiles;
@@ -82,12 +97,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function createLanguageService() {
   const atomConfig = {
     name: 'OCaml',
-    grammars: ['source.ocaml'],
-    highlight: {
-      version: '0.1.0',
-      priority: 1,
-      analyticsEventName: 'ocaml.codeHighlight'
-    },
+    grammars: ['source.ocaml', 'source.reason'],
     outline: {
       version: '0.1.0',
       priority: 1,
@@ -115,15 +125,16 @@ function createLanguageService() {
       analyticsEventName: 'ocaml.findReferences'
     },
     autocomplete: {
-      version: '2.0.0',
       inclusionPriority: 1,
       // OCaml completions are more relevant than snippets.
       suggestionPriority: 3,
       disableForSelector: null,
       excludeLowerPriority: false,
-      analyticsEventName: 'ocaml.getAutocompleteSuggestions',
-      autocompleteCacherConfig: null,
-      onDidInsertSuggestionAnalyticsEventName: 'ocaml.autocompleteChosen'
+      analytics: {
+        eventName: 'nuclide-ocaml',
+        shouldLogInsertedSuggestion: false
+      },
+      autocompleteCacherConfig: null
     },
     diagnostics: {
       version: '0.2.0',

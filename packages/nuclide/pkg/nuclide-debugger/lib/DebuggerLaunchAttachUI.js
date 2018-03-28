@@ -7,7 +7,7 @@ exports.DebuggerLaunchAttachUI = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _UniversalDisposable;
 
@@ -19,18 +19,6 @@ var _nuclideUri;
 
 function _load_nuclideUri() {
   return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
-}
-
-var _nuclideDebuggerBase;
-
-function _load_nuclideDebuggerBase() {
-  return _nuclideDebuggerBase = require('../../nuclide-debugger-base');
-}
-
-var _promise;
-
-function _load_promise() {
-  return _promise = require('nuclide-commons/promise');
 }
 
 var _Button;
@@ -45,15 +33,48 @@ function _load_ButtonGroup() {
   return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
 }
 
+var _Dropdown;
+
+function _load_Dropdown() {
+  return _Dropdown = require('../../nuclide-ui/Dropdown');
+}
+
 var _Tabs;
 
 function _load_Tabs() {
   return _Tabs = _interopRequireDefault(require('../../nuclide-ui/Tabs'));
 }
 
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class DebuggerLaunchAttachUI extends _react.default.Component {
+// TODO those should be managed by the debugger store state
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+/* global localStorage */
+
+function setLastUsedDebugger(host, action, debuggerDisplayName) {
+  const key = 'NUCLIDE_DEBUGGER_LAST_USED_' + host + '_' + action;
+  localStorage.setItem(key, debuggerDisplayName);
+}
+
+function getLastUsedDebugger(host, action) {
+  const key = 'NUCLIDE_DEBUGGER_LAST_USED_' + host + '_' + action;
+  return localStorage.getItem(key);
+}
+
+class DebuggerLaunchAttachUI extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -94,16 +115,25 @@ class DebuggerLaunchAttachUI extends _react.default.Component {
     // button is clicked.
     const host = (_nuclideUri || _load_nuclideUri()).default.isRemote(this.props.connection) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(this.props.connection) : 'local';
     if (this.state.selectedProviderTab != null) {
-      (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).setLastUsedDebugger)(host, this.props.dialogMode, this.state.selectedProviderTab || '');
+      setLastUsedDebugger(host, this.props.dialogMode, this.state.selectedProviderTab || '');
     }
   }
 
   componentWillMount() {
     const host = (_nuclideUri || _load_nuclideUri()).default.isRemote(this.props.connection) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(this.props.connection) : 'local';
 
-    this._filterProviders();
+    this._filterProviders(host);
     this.setState({
-      selectedProviderTab: (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).getLastUsedDebugger)(host, this.props.dialogMode)
+      selectedProviderTab: getLastUsedDebugger(host, this.props.dialogMode)
+    });
+  }
+
+  componentWillReceiveProps(nextProps) {
+    const host = (_nuclideUri || _load_nuclideUri()).default.isRemote(nextProps.connection) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(nextProps.connection) : 'local';
+
+    this._filterProviders(host);
+    this.setState({
+      selectedProviderTab: getLastUsedDebugger(host, nextProps.dialogMode)
     });
   }
 
@@ -111,35 +141,42 @@ class DebuggerLaunchAttachUI extends _react.default.Component {
     this._disposables.dispose();
   }
 
-  _filterProviders() {
+  _getProviderIfEnabled(provider) {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      const enabled = yield (0, (_promise || _load_promise()).asyncFilter)(_this.props.providers, function (provider) {
-        return provider.getCallbacksForAction(_this.props.dialogMode).isEnabled();
-      });
-
-      const enabledProviders = [].concat(...enabled.map(function (provider) {
-        return provider.getCallbacksForAction(_this.props.dialogMode).getDebuggerTypeNames().map(function (debuggerName) {
-          return {
-            provider,
-            debuggerName
-          };
-        });
-      }));
-
-      _this.setState({
-        enabledProviders
-      });
+      const enabled = yield provider.getCallbacksForAction(_this.props.dialogMode).isEnabled();
+      return enabled ? provider : null;
     })();
   }
 
-  render() {
-    const displayName = (_nuclideUri || _load_nuclideUri()).default.isRemote(this.props.connection) ? (_nuclideUri || _load_nuclideUri()).default.getHostname(this.props.connection) : 'localhost';
+  _filterProviders(key) {
+    this.setState({
+      enabledProviders: []
+    });
 
+    _rxjsBundlesRxMinJs.Observable.merge(...(this.props.providers.get(key) || []).map(provider => _rxjsBundlesRxMinJs.Observable.fromPromise(this._getProviderIfEnabled(provider)))).filter(provider => provider != null).subscribe(provider => {
+      if (!(provider != null)) {
+        throw new Error('Invariant violation: "provider != null"');
+      }
+
+      const enabledProviders = this.state.enabledProviders.concat(...provider.getCallbacksForAction(this.props.dialogMode).getDebuggerTypeNames().map(debuggerName => {
+        return {
+          provider,
+          debuggerName
+        };
+      }));
+
+      this.setState({
+        enabledProviders
+      });
+    });
+  }
+
+  render() {
     const tabs = this.state.enabledProviders.map(debuggerType => ({
       name: debuggerType.debuggerName,
-      tabContent: _react.default.createElement(
+      tabContent: _react.createElement(
         'span',
         { title: debuggerType.debuggerName },
         debuggerType.debuggerName
@@ -157,10 +194,10 @@ class DebuggerLaunchAttachUI extends _react.default.Component {
 
       const debuggerConfigPage = provider.provider.getCallbacksForAction(this.props.dialogMode).getComponent(selectedTab, valid => this._setConfigValid(valid));
 
-      providerContent = _react.default.createElement(
+      providerContent = _react.createElement(
         'div',
         null,
-        _react.default.createElement((_Tabs || _load_Tabs()).default, {
+        _react.createElement((_Tabs || _load_Tabs()).default, {
           className: 'nuclide-debugger-launch-attach-tabs',
           tabs: tabs,
           activeTabName: this.state.selectedProviderTab,
@@ -170,7 +207,7 @@ class DebuggerLaunchAttachUI extends _react.default.Component {
             this.setState({ selectedProviderTab: newTab.name });
           }
         }),
-        _react.default.createElement(
+        _react.createElement(
           'div',
           { className: 'nuclide-debugger-launch-attach-tabcontent' },
           debuggerConfigPage
@@ -183,48 +220,46 @@ class DebuggerLaunchAttachUI extends _react.default.Component {
       }
     } else {
       // No debugging providers available.
-      providerContent = _react.default.createElement(
+      providerContent = _react.createElement(
         'div',
         { className: 'nuclide-debugger-launch-attach-tabcontent' },
         'There are no debuggers available.'
       );
     }
 
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       { className: 'padded nuclide-debugger-launch-attach-container' },
-      _react.default.createElement(
+      _react.createElement(
         'h1',
         { className: 'nuclide-debugger-launch-attach-header' },
-        this.props.dialogMode === 'attach' ? 'Attach debugger to ' : 'Launch debugger on ',
-        _react.default.createElement(
+        _react.createElement(
           'span',
-          {
-            className: 'nuclide-debugger-launch-connection',
-            title: 'Click to change the connection to be used for debugging.',
-            onClick: () => this.props.chooseConnection() },
-          displayName
+          { className: 'padded' },
+          this.props.dialogMode === 'attach' ? 'Attach debugger to ' : 'Launch debugger on '
         ),
-        _react.default.createElement(
-          'span',
-          null,
-          ':'
-        )
+        _react.createElement((_Dropdown || _load_Dropdown()).Dropdown, {
+          className: 'inline',
+          options: this.props.connectionOptions,
+          onChange: value => this.props.connectionChanged(value),
+          size: 'xs',
+          value: this.props.connection
+        })
       ),
       providerContent,
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { className: 'nuclide-debugger-launch-attach-actions' },
-        _react.default.createElement(
+        _react.createElement(
           (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
           null,
-          _react.default.createElement(
+          _react.createElement(
             (_Button || _load_Button()).Button,
             {
               onClick: () => atom.commands.dispatch(atom.views.getView(atom.workspace), 'core:cancel') },
             'Cancel'
           ),
-          _react.default.createElement(
+          _react.createElement(
             (_Button || _load_Button()).Button,
             {
               buttonType: (_Button || _load_Button()).ButtonTypes.PRIMARY,
@@ -237,13 +272,4 @@ class DebuggerLaunchAttachUI extends _react.default.Component {
     );
   }
 }
-exports.DebuggerLaunchAttachUI = DebuggerLaunchAttachUI; /**
-                                                          * Copyright (c) 2015-present, Facebook, Inc.
-                                                          * All rights reserved.
-                                                          *
-                                                          * This source code is licensed under the license found in the LICENSE file in
-                                                          * the root directory of this source tree.
-                                                          *
-                                                          * 
-                                                          * @format
-                                                          */
+exports.DebuggerLaunchAttachUI = DebuggerLaunchAttachUI;

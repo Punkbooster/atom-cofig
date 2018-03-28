@@ -3,7 +3,20 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.TimingTracker = exports.HistogramTracker = undefined;
+exports.TimingTracker = exports.HistogramTracker = exports.isTrackSupported = undefined;
+
+var _track;
+
+function _load_track() {
+  return _track = require('./track');
+}
+
+Object.defineProperty(exports, 'isTrackSupported', {
+  enumerable: true,
+  get: function () {
+    return (_track || _load_track()).isTrackSupported;
+  }
+});
 
 var _HistogramTracker;
 
@@ -21,6 +34,7 @@ exports.track = track;
 exports.trackImmediate = trackImmediate;
 exports.trackEvent = trackEvent;
 exports.trackEvents = trackEvents;
+exports.trackSampled = trackSampled;
 exports.startTracking = startTracking;
 exports.trackTiming = trackTiming;
 
@@ -40,12 +54,6 @@ var _performanceNow;
 
 function _load_performanceNow() {
   return _performanceNow = _interopRequireDefault(require('nuclide-commons/performanceNow'));
-}
-
-var _track;
-
-function _load_track() {
-  return _track = require('./track');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -84,13 +92,28 @@ function trackEvents(events) {
   return new (_UniversalDisposable || _load_UniversalDisposable()).default(events.subscribe(trackEvent));
 }
 
-const PERFORMANCE_EVENT = 'performance';
+/**
+ * A sampled version of track that only tracks every 1/sampleRate calls.
+ */
+function trackSampled(eventName, sampleRate, values) {
+  if (Math.random() * sampleRate <= 1) {
+    (0, (_track || _load_track()).track)(eventName, values || {});
+  }
+}
 
+const PERFORMANCE_EVENT = 'performance';
+const canMeasure = typeof performance !== 'undefined';
 class TimingTracker {
 
-  constructor(eventName) {
+  constructor(eventName, values) {
     this._eventName = eventName;
+    this._startMark = `${this._eventName}_${TimingTracker.eventCount++}_start`;
     this._startTime = (0, (_performanceNow || _load_performanceNow()).default)();
+    this._values = values;
+    if (canMeasure) {
+      // eslint-disable-next-line no-undef
+      performance.mark(this._startMark);
+    }
   }
 
   onError(error) {
@@ -102,18 +125,31 @@ class TimingTracker {
   }
 
   _trackTimingEvent(exception) {
-    track(PERFORMANCE_EVENT, {
+    if (canMeasure) {
+      /* eslint-disable no-undef */
+      // call measure to add this information to the devtools timeline in the
+      // case the profiler is running.
+      performance.measure(this._eventName, this._startMark);
+      // then clear all the marks and measurements to avoid growing the
+      // performance entry buffer
+      performance.clearMarks(this._startMark);
+      performance.clearMeasures(this._eventName);
+      /* eslint-enable no-undef */
+    }
+
+    track(PERFORMANCE_EVENT, Object.assign({}, this._values, {
       duration: Math.round((0, (_performanceNow || _load_performanceNow()).default)() - this._startTime).toString(),
       eventName: this._eventName,
       error: exception ? '1' : '0',
       exception: exception ? exception.toString() : ''
-    });
+    }));
   }
 }
 
 exports.TimingTracker = TimingTracker;
-function startTracking(eventName) {
-  return new TimingTracker(eventName);
+TimingTracker.eventCount = 0;
+function startTracking(eventName, values = {}) {
+  return new TimingTracker(eventName, values);
 }
 
 /**
@@ -125,8 +161,8 @@ function startTracking(eventName) {
  *
  * Returns (or throws) the result of the operation.
  */
-function trackTiming(eventName, operation) {
-  const tracker = startTracking(eventName);
+function trackTiming(eventName, operation, values = {}) {
+  const tracker = startTracking(eventName, values);
 
   try {
     const result = operation();

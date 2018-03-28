@@ -10,8 +10,7 @@ export default function initCellMetadata(_ref) {
   var cellCount = _ref.cellCount,
       size = _ref.size;
 
-  var sizeGetter = typeof size === 'function' ? size : function (_ref2) {
-    var index = _ref2.index;
+  var sizeGetter = typeof size === 'function' ? size : function () {
     return size;
   };
 

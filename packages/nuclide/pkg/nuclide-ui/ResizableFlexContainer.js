@@ -23,28 +23,38 @@ function _load_createPaneContainer() {
   return _createPaneContainer = _interopRequireDefault(require('../commons-atom/create-pane-container'));
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _nullthrows;
+
+function _load_nullthrows() {
+  return _nullthrows = _interopRequireDefault(require('nullthrows'));
+}
+
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
 const FlexDirections = exports.FlexDirections = Object.freeze({
   HORIZONTAL: 'HORIZONTAL',
   VERTICAL: 'VERTICAL'
-}); /**
-     * Copyright (c) 2015-present, Facebook, Inc.
-     * All rights reserved.
-     *
-     * This source code is licensed under the license found in the LICENSE file in
-     * the root directory of this source tree.
-     *
-     * 
-     * @format
-     */
+});
 
 function getChildrenFlexScales(children) {
-  return (0, (_collection || _load_collection()).arrayCompact)(_react.default.Children.map(children, child => {
+  return (0, (_collection || _load_collection()).arrayCompact)(_react.Children.map(children, child => {
     if (child == null) {
       return null;
     } else if (!(child.type === ResizableFlexItem)) {
@@ -55,7 +65,7 @@ function getChildrenFlexScales(children) {
   }) || []);
 }
 
-class ResizableFlexContainer extends _react.default.Component {
+class ResizableFlexContainer extends _react.Component {
 
   componentDidMount() {
     this._setupPanes(this.props);
@@ -77,10 +87,8 @@ class ResizableFlexContainer extends _react.default.Component {
     const flexScales = getChildrenFlexScales(props.children);
     const { direction } = props;
     this._paneContainer = (0, (_createPaneContainer || _load_createPaneContainer()).default)();
-    const containerNode = _reactDom.default.findDOMNode(this.refs.flexContainer);
-    // $FlowFixMe
+    const containerNode = (0, (_nullthrows || _load_nullthrows()).default)(this._flexContainer);
     containerNode.innerHTML = '';
-    // $FlowFixMe
     containerNode.appendChild(atom.views.getView(this._paneContainer));
     const startingPane = this._paneContainer.getActivePane();
     let lastPane = startingPane;
@@ -100,7 +108,7 @@ class ResizableFlexContainer extends _react.default.Component {
   _renderPanes() {
     const { children } = this.props;
     let i = 0;
-    _react.default.Children.forEach(children, child => {
+    _react.Children.forEach(children, child => {
       if (child == null) {
         return;
       }
@@ -128,15 +136,19 @@ class ResizableFlexContainer extends _react.default.Component {
   render() {
     const { className } = this.props;
     const containerClassName = (0, (_classnames || _load_classnames()).default)('nuclide-ui-resizable-flex-container', className);
-    return _react.default.createElement('div', { className: containerClassName, ref: 'flexContainer' });
+    return _react.createElement('div', {
+      className: containerClassName,
+      ref: el => {
+        this._flexContainer = el;
+      }
+    });
   }
 }
 
 exports.ResizableFlexContainer = ResizableFlexContainer;
-class ResizableFlexItem extends _react.default.Component {
-
+class ResizableFlexItem extends _react.Component {
   render() {
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       { className: 'nuclide-ui-resizable-flex-item' },
       this.props.children

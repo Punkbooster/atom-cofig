@@ -17,4 +17,4 @@ try {
    * @format
    */
 
-/* eslint-disable nuclide-internal/no-commonjs */
+/* eslint-disable rulesdir/no-commonjs */

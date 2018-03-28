@@ -18,10 +18,10 @@ function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
-var _DebuggerStore;
+var _constants;
 
-function _load_DebuggerStore() {
-  return _DebuggerStore = require('./DebuggerStore');
+function _load_constants() {
+  return _constants = require('./constants');
 }
 
 var _CommandDispatcher;
@@ -36,10 +36,10 @@ function _load_ChromeActionRegistryActions() {
   return _ChromeActionRegistryActions = _interopRequireDefault(require('./ChromeActionRegistryActions'));
 }
 
-var _nuclideDebuggerBase;
+var _AtomServiceContainer;
 
-function _load_nuclideDebuggerBase() {
-  return _nuclideDebuggerBase = require('../../nuclide-debugger-base');
+function _load_AtomServiceContainer() {
+  return _AtomServiceContainer = require('./AtomServiceContainer');
 }
 
 var _log4js;
@@ -72,9 +72,6 @@ class Bridge {
         case 'notification':
           switch (event.args[0]) {
             case 'ready':
-              if (atom.config.get('nuclide.nuclide-debugger.openDevToolsOnDebuggerStart')) {
-                this.openDevTools();
-              }
               this._sendAllBreakpoints();
               this._syncDebuggerState();
               break;
@@ -123,7 +120,10 @@ class Bridge {
               this._handleThreadUpdate(event.args[1]);
               break;
             case 'ReportError':
-              this._reportEngineError(event.args[1]);
+              this._reportEngineError(event.args[1], false);
+              break;
+            case 'ReportErrorFromConsole':
+              this._reportEngineError(event.args[1], true);
               break;
             case 'ReportWarning':
               this._reportEngineWarning(event.args[1]);
@@ -135,10 +135,16 @@ class Bridge {
 
     this._debuggerModel = debuggerModel;
     this._suppressBreakpointSync = false;
-    this._commandDispatcher = new (_CommandDispatcher || _load_CommandDispatcher()).default(() => debuggerModel.getStore().getIsReadonlyTarget());
+    this._commandDispatcher = new (_CommandDispatcher || _load_CommandDispatcher()).default(() => debuggerModel.getIsReadonlyTarget(), pausedEvent => {
+      const info = debuggerModel.getDebugProcessInfo();
+      if (info != null) {
+        return info.shouldFilterBreak(pausedEvent);
+      }
+      return false;
+    });
     this._consoleEvent$ = new _rxjsBundlesRxMinJs.Subject();
-    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(debuggerModel.getBreakpointStore().onUserChange(this._handleUserBreakpointChange.bind(this)));
-    const subscription = (0, (_nuclideDebuggerBase || _load_nuclideDebuggerBase()).registerConsoleLogging)('Debugger', this._consoleEvent$);
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(debuggerModel.onUserChange(this._handleUserBreakpointChange.bind(this)));
+    const subscription = (0, (_AtomServiceContainer || _load_AtomServiceContainer()).registerConsoleLogging)('Debugger', this._consoleEvent$);
     if (subscription != null) {
       this._disposables.add(subscription);
     }
@@ -188,8 +194,10 @@ class Bridge {
   }
 
   runToLocation(filePath, line) {
+    const stopThreadId = this._debuggerModel.getStopThread();
+    const threadId = stopThreadId == null ? -1 : stopThreadId;
     this._clearInterfaceDelayed();
-    this._commandDispatcher.send('RunToLocation', filePath, line);
+    this._commandDispatcher.send('RunToLocation', filePath, line, threadId);
   }
 
   triggerAction(actionId) {
@@ -225,8 +233,8 @@ class Bridge {
     this._commandDispatcher.send('setPauseOnCaughtException', pauseOnCaughtExceptionEnabled);
   }
 
-  setSingleThreadStepping(singleThreadStepping) {
-    this._commandDispatcher.send('setSingleThreadStepping', singleThreadStepping);
+  setShowDisassembly(disassembly) {
+    this._commandDispatcher.send('setShowDisassembly', disassembly);
   }
 
   selectThread(threadId) {
@@ -235,6 +243,14 @@ class Bridge {
     if (!isNaN(threadNo)) {
       this._debuggerModel.getActions().updateSelectedThread(threadNo);
     }
+  }
+
+  sendSetVariableCommand(scopeObjectId, expression, newValue, callback) {
+    this._commandDispatcher.send('setVariable', scopeObjectId, expression, newValue, callback);
+  }
+
+  sendCompletionsCommand(text, column, callback) {
+    this._commandDispatcher.send('completions', text, column, callback);
   }
 
   sendEvaluationCommand(command, evalId, ...args) {
@@ -264,9 +280,13 @@ class Bridge {
     }));
   }
 
-  _reportEngineError(message) {
+  _reportEngineError(message, fromConsole) {
     const outputMessage = `Debugger engine reports error: ${message}`;
     logger.error(outputMessage);
+    if (fromConsole) {
+      this._sendConsoleMessage('error', outputMessage);
+      atom.notifications.addError(outputMessage);
+    }
   }
 
   _reportEngineWarning(message) {
@@ -274,19 +294,15 @@ class Bridge {
     logger.warn(outputMessage);
   }
 
-  _updateDebuggerSettings() {
-    this._commandDispatcher.send('UpdateSettings', this._debuggerModel.getStore().getSettings().getSerializedData());
-  }
-
   _syncDebuggerState() {
-    const store = this._debuggerModel.getStore();
+    const store = this._debuggerModel;
     this.setPauseOnException(store.getTogglePauseOnException());
     this.setPauseOnCaughtException(store.getTogglePauseOnCaughtException());
-    this.setSingleThreadStepping(store.getEnableSingleThreadStepping());
+    this.setShowDisassembly(store.getShowDisassembly());
   }
 
   _handleDebuggerPaused(options) {
-    this._debuggerModel.getActions().setDebuggerMode((_DebuggerStore || _load_DebuggerStore()).DebuggerMode.PAUSED);
+    this._debuggerModel.getActions().setDebuggerMode((_constants || _load_constants()).DebuggerMode.PAUSED);
     if (options != null) {
       if (options.stopThreadId != null) {
         this._handleStopThreadUpdate(options.stopThreadId);
@@ -297,11 +313,11 @@ class Bridge {
 
   _handleDebuggerResumed() {
     this._clearInterface();
-    this._debuggerModel.getActions().setDebuggerMode((_DebuggerStore || _load_DebuggerStore()).DebuggerMode.RUNNING);
+    this._debuggerModel.getActions().setDebuggerMode((_constants || _load_constants()).DebuggerMode.RUNNING);
   }
 
   _handleLoaderBreakpointResumed() {
-    this._debuggerModel.getStore().loaderBreakpointResumed();
+    this._debuggerModel.loaderBreakpointResumed();
   }
 
   _clearInterfaceDelayed() {
@@ -335,6 +351,7 @@ class Bridge {
     const { sourceURL, lineNumber, condition, enabled } = breakpoint;
     const path = (_nuclideUri || _load_nuclideUri()).default.uriToNuclideUri(sourceURL);
     // only handle real files for now.
+    // flowlint-next-line sketchy-null-string:off
     if (path) {
       try {
         this._suppressBreakpointSync = true;
@@ -349,6 +366,7 @@ class Bridge {
     const { breakpoint, hitCount } = params;
     const { sourceURL, lineNumber } = breakpoint;
     const path = (_nuclideUri || _load_nuclideUri()).default.uriToNuclideUri(sourceURL);
+    // flowlint-next-line sketchy-null-string:off
     if (path) {
       this._debuggerModel.getActions().updateBreakpointHitCount(path, lineNumber, hitCount);
     }
@@ -356,8 +374,15 @@ class Bridge {
 
   _removeBreakpoint(breakpoint) {
     const { sourceURL, lineNumber } = breakpoint;
-    const path = (_nuclideUri || _load_nuclideUri()).default.uriToNuclideUri(sourceURL);
+    let path = (_nuclideUri || _load_nuclideUri()).default.uriToNuclideUri(sourceURL);
+    // For address based breakpoints handled by the backend, do not require
+    // a parsable file path here.
+    if (path != null && path === '/') {
+      path = sourceURL.replace('file://', '');
+    }
+
     // only handle real files for now.
+    // flowlint-next-line sketchy-null-string:off
     if (path) {
       try {
         this._suppressBreakpointSync = true;
@@ -394,7 +419,7 @@ class Bridge {
     // Send an array of file/line objects.
     if (!this._suppressBreakpointSync) {
       const results = [];
-      this._debuggerModel.getBreakpointStore().getAllBreakpoints().forEach(breakpoint => {
+      this._debuggerModel.getAllBreakpoints().forEach(breakpoint => {
         results.push({
           sourceURL: (_nuclideUri || _load_nuclideUri()).default.nuclideUriToUri(breakpoint.path),
           lineNumber: breakpoint.line,
@@ -420,24 +445,22 @@ class Bridge {
 
   // This will be unnecessary after we remove 'ready' event.
   _signalNewChannelReadyIfNeeded() {
-    if (this._commandDispatcher.isNewChannel()) {
-      this._handleIpcMessage({
-        channel: 'notification',
-        args: ['ready']
-      });
-    }
+    this._handleIpcMessage({
+      channel: 'notification',
+      args: ['ready']
+    });
   }
 
-  setupChromeChannel(url) {
-    this._commandDispatcher.setupChromeChannel(url);
+  setupChromeChannel() {
+    this._commandDispatcher.setupChromeChannel();
   }
 
   setupNuclideChannel(debuggerInstance) {
     return this._commandDispatcher.setupNuclideChannel(debuggerInstance);
   }
 
-  openDevTools() {
-    this._commandDispatcher.openDevTools();
+  getCommandDispatcher() {
+    return this._commandDispatcher;
   }
 }
 exports.default = Bridge;

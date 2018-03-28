@@ -30,13 +30,15 @@ function _load_Inspector2() {
   return _Inspector2 = require('./ui/Inspector');
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _destroyItemWhere;
 
 function _load_destroyItemWhere() {
   return _destroyItemWhere = require('nuclide-commons-atom/destroyItemWhere');
 }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -67,7 +69,7 @@ function deactivate() {
 function registerCommandAndOpener() {
   return new (_UniversalDisposable || _load_UniversalDisposable()).default(atom.workspace.addOpener(uri => {
     if (uri === (_Inspector2 || _load_Inspector2()).WORKSPACE_VIEW_URI) {
-      return (0, (_viewableFromReactElement || _load_viewableFromReactElement()).viewableFromReactElement)(_react.default.createElement((_Inspector || _load_Inspector()).default, null));
+      return (0, (_viewableFromReactElement || _load_viewableFromReactElement()).viewableFromReactElement)(_react.createElement((_Inspector || _load_Inspector()).default, null));
     }
   }), () => (0, (_destroyItemWhere || _load_destroyItemWhere()).destroyItemWhere)(item => item instanceof (_Inspector || _load_Inspector()).default), atom.commands.add('atom-workspace', 'nuclide-react-inspector:toggle', () => {
     atom.workspace.toggle((_Inspector2 || _load_Inspector2()).WORKSPACE_VIEW_URI);

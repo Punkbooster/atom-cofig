@@ -13,9 +13,21 @@ function _load_classnames() {
 
 var _atom = require('atom');
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
+
+var _event;
+
+function _load_event() {
+  return _event = require('nuclide-commons/event');
+}
+
+var _observable;
+
+function _load_observable() {
+  return _observable = require('nuclide-commons/observable');
+}
 
 var _goToLocation;
 
@@ -35,11 +47,33 @@ function _load_analytics() {
   return _analytics = _interopRequireDefault(require('nuclide-commons-atom/analytics'));
 }
 
+var _bindObservableAsProps;
+
+function _load_bindObservableAsProps() {
+  return _bindObservableAsProps = require('nuclide-commons-ui/bindObservableAsProps');
+}
+
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+
 var _DiagnosticsPopup;
 
 function _load_DiagnosticsPopup() {
-  return _DiagnosticsPopup = require('./DiagnosticsPopup');
+  return _DiagnosticsPopup = require('./ui/DiagnosticsPopup');
 }
+
+var _GroupUtils;
+
+function _load_GroupUtils() {
+  return _GroupUtils = _interopRequireWildcard(require('./GroupUtils'));
+}
+
+var _aim;
+
+function _load_aim() {
+  return _aim = require('./aim');
+}
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -55,12 +89,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
-const GUTTER_ID = 'nuclide-diagnostics-gutter';
-
-// Needs to be the same as glyph-height in gutter.atom-text-editor.less.
-const GLYPH_HEIGHT = 15; // px
-
-const POPUP_DISPOSE_TIMEOUT = 100;
+const GUTTER_ID = 'diagnostics-gutter';
 
 // TODO(mbolin): Make it so that when mousing over an element with this CSS class (or specifically,
 // the child element with the "region" CSS class), we also do a showPopupFor(). This seems to be
@@ -72,18 +101,28 @@ const POPUP_DISPOSE_TIMEOUT = 100;
 // might have to listen for mouseover events on TextEditor and then use its own APIs, such as
 // decorationsForScreenRowRange(), to see if there is a hit target instead. Since this will be
 // happening onmousemove, we also have to be careful to make sure this is not expensive.
-const HIGHLIGHT_CSS = 'nuclide-diagnostics-gutter-ui-highlight';
+const HIGHLIGHT_CSS = 'diagnostics-gutter-ui-highlight';
 
-const ERROR_HIGHLIGHT_CSS = 'nuclide-diagnostics-gutter-ui-highlight-error';
-const WARNING_HIGHLIGHT_CSS = 'nuclide-diagnostics-gutter-ui-highlight-warning';
+const HIGHLIGHT_CSS_LEVELS = {
+  Error: 'diagnostics-gutter-ui-highlight-error',
+  Warning: 'diagnostics-gutter-ui-highlight-warning',
+  Info: 'diagnostics-gutter-ui-highlight-info',
+  Hint: ''
+};
 
-const ERROR_GUTTER_CSS = 'nuclide-diagnostics-gutter-ui-gutter-error';
-const WARNING_GUTTER_CSS = 'nuclide-diagnostics-gutter-ui-gutter-warning';
+const GUTTER_CSS_GROUPS = {
+  review: 'diagnostics-gutter-ui-gutter-review',
+  errors: 'diagnostics-gutter-ui-gutter-error',
+  warnings: 'diagnostics-gutter-ui-gutter-warning',
+  info: 'diagnostics-gutter-ui-gutter-info',
+  action: 'diagnostics-gutter-ui-gutter-action',
+  hidden: ''
+};
 
 const editorToMarkers = new WeakMap();
 const itemToEditor = new WeakMap();
 
-function applyUpdateToEditor(editor, update, fixer) {
+function applyUpdateToEditor(editor, update, diagnosticUpdater) {
   let gutter = editor.gutterWithName(GUTTER_ID);
   if (!gutter) {
     // TODO(jessicalin): Determine an appropriate priority so that the gutter:
@@ -129,7 +168,7 @@ function applyUpdateToEditor(editor, update, fixer) {
     const wordRange = message.range != null && message.range.isEmpty() ? (0, (_range || _load_range()).wordAtPosition)(editor, message.range.start) : null;
     const range = wordRange != null ? wordRange.range : message.range;
 
-    const highlightCssClass = (0, (_classnames || _load_classnames()).default)(HIGHLIGHT_CSS, message.type === 'Error' ? ERROR_HIGHLIGHT_CSS : WARNING_HIGHLIGHT_CSS);
+    const highlightCssClass = (0, (_classnames || _load_classnames()).default)(HIGHLIGHT_CSS, HIGHLIGHT_CSS_LEVELS[message.type]);
 
     let highlightMarker;
     if (range) {
@@ -179,12 +218,8 @@ function applyUpdateToEditor(editor, update, fixer) {
 
   // Find all of the gutter markers for the same row and combine them into one marker/popup.
   for (const [row, messages] of rowToMessage.entries()) {
-    // If at least one of the diagnostics is an error rather than the warning,
-    // display the glyph in the gutter to represent an error rather than a warning.
-    const gutterMarkerCssClass = messages.some(msg => msg.type === 'Error') ? ERROR_GUTTER_CSS : WARNING_GUTTER_CSS;
-
     // This marker adds some UI to the gutter.
-    const { item, dispose } = createGutterItem(messages, gutterMarkerCssClass, fixer);
+    const { item, dispose } = createGutterItem(messages, diagnosticUpdater, gutter);
     itemToEditor.set(item, editor);
     const gutterMarker = editor.markBufferPosition([row, 0]);
     gutter.decorateMarker(gutterMarker, { item });
@@ -201,76 +236,89 @@ function applyUpdateToEditor(editor, update, fixer) {
   }
 }
 
-function createGutterItem(messages, gutterMarkerCssClass, fixer) {
-  const item = document.createElement('a');
-  item.className = gutterMarkerCssClass;
-  let popupElement = null;
-  let paneItemSubscription = null;
-  let disposeTimeout = null;
-  const clearDisposeTimeout = () => {
-    if (disposeTimeout) {
-      clearTimeout(disposeTimeout);
-    }
-  };
-  const dispose = () => {
-    if (popupElement) {
-      _reactDom.default.unmountComponentAtNode(popupElement);
+function createGutterItem(messages, diagnosticUpdater, gutter) {
+  // Determine which group to display.
+  const messageGroups = new Set();
+  messages.forEach(msg => messageGroups.add((_GroupUtils || _load_GroupUtils()).getGroup(msg)));
+  const group = (_GroupUtils || _load_GroupUtils()).getHighestPriorityGroup(messageGroups);
 
-      if (!(popupElement.parentNode != null)) {
-        throw new Error('Invariant violation: "popupElement.parentNode != null"');
+  const item = document.createElement('span');
+  const groupClassName = GUTTER_CSS_GROUPS[group];
+  item.className = `diagnostics-gutter-ui-item ${groupClassName || ''}`;
+
+  // Add the icon
+  const icon = document.createElement('span');
+  icon.className = `icon icon-${(_GroupUtils || _load_GroupUtils()).getIcon(group)}`;
+  item.appendChild(icon);
+
+  const spawnPopup = () => {
+    return _rxjsBundlesRxMinJs.Observable.create(observer => {
+      const goToLocation = (path, line) => {
+        // Before we jump to the location, we want to close the popup.
+        const column = 0;
+        (0, (_goToLocation || _load_goToLocation()).goToLocation)(path, { line, column });
+        observer.complete();
+      };
+
+      const popupElement = showPopupFor(messages, item, goToLocation, diagnosticUpdater, gutter);
+      observer.next(popupElement);
+
+      return () => {
+        _reactDom.default.unmountComponentAtNode(popupElement);
+
+        if (!(popupElement.parentNode != null)) {
+          throw new Error('Invariant violation: "popupElement.parentNode != null"');
+        }
+
+        popupElement.parentNode.removeChild(popupElement);
+      };
+    });
+  };
+
+  const hoverSubscription = _rxjsBundlesRxMinJs.Observable.fromEvent(item, 'mouseenter').exhaustMap(event => {
+    return spawnPopup().let((0, (_observable || _load_observable()).completingSwitchMap)(popupElement => {
+      const innerPopupElement = popupElement.firstChild;
+
+      if (!(innerPopupElement instanceof HTMLElement)) {
+        throw new Error('Invariant violation: "innerPopupElement instanceof HTMLElement"');
       }
 
-      popupElement.parentNode.removeChild(popupElement);
-      popupElement = null;
-    }
-    if (paneItemSubscription) {
-      paneItemSubscription.dispose();
-      paneItemSubscription = null;
-    }
-    clearDisposeTimeout();
-  };
-  const goToLocation = (path, line) => {
-    // Before we jump to the location, we want to close the popup.
-    dispose();
-    const column = 0;
-    (0, (_goToLocation || _load_goToLocation()).goToLocation)(path, line, column);
-  };
-  item.addEventListener('mouseenter', event => {
-    // If there was somehow another popup for this gutter item, dispose it. This can happen if the
-    // user manages to scroll and escape disposal.
-    dispose();
-    popupElement = showPopupFor(messages, item, goToLocation, fixer);
-    popupElement.addEventListener('mouseleave', dispose);
-    popupElement.addEventListener('mouseenter', clearDisposeTimeout);
-    // This makes sure that the popup disappears when you ctrl+tab to switch tabs.
-    paneItemSubscription = atom.workspace.onDidChangeActivePaneItem(dispose);
-  });
-  item.addEventListener('mouseleave', event => {
-    // When the popup is shown, we want to dispose it if the user manages to move the cursor off of
-    // the gutter glyph without moving it onto the popup. Even though the popup appears above (as in
-    // Z-index above) the gutter glyph, if you move the cursor such that it is only above the glyph
-    // for one frame you can cause the popup to appear without the mouse ever entering it.
-    disposeTimeout = setTimeout(dispose, POPUP_DISPOSE_TIMEOUT);
-  });
+      // Events which should cause the popup to close.
+
+
+      return _rxjsBundlesRxMinJs.Observable.merge((0, (_aim || _load_aim()).hoveringOrAiming)(item, innerPopupElement),
+      // This makes sure that the popup disappears when you ctrl+tab to switch tabs.
+      (0, (_event || _load_event()).observableFromSubscribeFunction)(cb => atom.workspace.onDidChangeActivePaneItem(cb)).mapTo(false));
+    })).takeWhile(Boolean);
+  }).subscribe();
+
+  const dispose = () => hoverSubscription.unsubscribe();
   return { item, dispose };
 }
 
 /**
  * Shows a popup for the diagnostic just below the specified item.
  */
-function showPopupFor(messages, item, goToLocation, fixer) {
+function showPopupFor(messages, item, goToLocation, diagnosticUpdater, gutter) {
   // The popup will be an absolutely positioned child element of <atom-workspace> so that it appears
   // on top of everything.
   const workspaceElement = atom.views.getView(atom.workspace);
   const hostElement = document.createElement('div');
+  hostElement.classList.add('diagnostics-gutter-popup');
   // $FlowFixMe check parentNode for null
   workspaceElement.parentNode.appendChild(hostElement);
 
-  // Move it down vertically so it does not end up under the mouse pointer.
-  const { top, left } = item.getBoundingClientRect();
+  const {
+    bottom: itemBottom,
+    top: itemTop,
+    height: itemHeight
+  } = item.getBoundingClientRect();
+  // $FlowFixMe atom$Gutter.getElement is not a documented API, but it beats using a query selector.
+  const gutterContainer = gutter.getElement();
+  const { right: gutterRight } = gutterContainer.getBoundingClientRect();
 
   const trackedFixer = (...args) => {
-    fixer(...args);
+    diagnosticUpdater.applyFix(...args);
     (_analytics || _load_analytics()).default.track('diagnostics-gutter-autofix');
   };
   const trackedGoToLocation = (filePath, line) => {
@@ -278,27 +326,32 @@ function showPopupFor(messages, item, goToLocation, fixer) {
     (_analytics || _load_analytics()).default.track('diagnostics-gutter-goto-location');
   };
 
-  _reactDom.default.render(_react.default.createElement((_DiagnosticsPopup || _load_DiagnosticsPopup()).DiagnosticsPopup, {
-    left: left,
-    top: top,
-    messages: messages,
-    fixer: trackedFixer,
-    goToLocation: trackedGoToLocation
-  }), hostElement);
-  // Check to see whether the popup is within the bounds of the TextEditor. If not, display it above
-  // the glyph rather than below it.
   const editor = itemToEditor.get(item);
 
   if (!(editor != null)) {
     throw new Error('Invariant violation: "editor != null"');
   }
 
+  diagnosticUpdater.fetchCodeActions(editor, messages);
+
+  const popupTop = itemBottom;
+  const BoundPopup = (0, (_bindObservableAsProps || _load_bindObservableAsProps()).bindObservableAsProps)((0, (_event || _load_event()).observableFromSubscribeFunction)(cb => diagnosticUpdater.observeCodeActionsForMessage(cb)).map(codeActionsForMessage => ({
+    style: { left: gutterRight, top: popupTop, position: 'absolute' },
+    messages,
+    fixer: trackedFixer,
+    goToLocation: trackedGoToLocation,
+    codeActionsForMessage
+  })), (_DiagnosticsPopup || _load_DiagnosticsPopup()).DiagnosticsPopup);
+  _reactDom.default.render(_react.createElement(BoundPopup, null), hostElement);
+
+  // Check to see whether the popup is within the bounds of the TextEditor. If not, display it above
+  // the glyph rather than below it.
   const editorElement = atom.views.getView(editor);
   const {
     top: editorTop,
     height: editorHeight
   } = editorElement.getBoundingClientRect();
-  const { top: itemTop, height: itemHeight } = item.getBoundingClientRect();
+
   const popupElement = hostElement.firstElementChild;
 
   if (!(popupElement instanceof HTMLElement)) {
@@ -307,10 +360,7 @@ function showPopupFor(messages, item, goToLocation, fixer) {
 
   const popupHeight = popupElement.clientHeight;
   if (itemTop + itemHeight + popupHeight > editorTop + editorHeight) {
-    // Shift the popup back down by GLYPH_HEIGHT, so that the bottom padding overlaps with the
-    // glyph. An additional 4 px is needed to make it look the same way it does when it shows up
-    // below. I don't know why.
-    popupElement.style.top = String(itemTop - popupHeight + GLYPH_HEIGHT + 4) + 'px';
+    popupElement.style.top = `${popupTop - popupHeight - itemHeight}px`;
   }
 
   try {
@@ -319,6 +369,7 @@ function showPopupFor(messages, item, goToLocation, fixer) {
     messages.forEach(message => {
       (_analytics || _load_analytics()).default.track('diagnostics-gutter-show-popup', {
         'diagnostics-provider': message.providerName,
+        // flowlint-next-line sketchy-null-string:off
         'diagnostics-message': message.text || message.html || ''
       });
     });

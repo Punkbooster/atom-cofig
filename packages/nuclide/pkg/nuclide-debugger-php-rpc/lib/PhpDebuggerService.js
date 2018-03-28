@@ -37,22 +37,10 @@ function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
-var _constants;
+var _main;
 
-function _load_constants() {
-  return _constants = require('../../nuclide-debugger-common/lib/constants');
-}
-
-var _passesGK;
-
-function _load_passesGK() {
-  return _passesGK = _interopRequireDefault(require('../../commons-node/passesGK'));
-}
-
-var _nuclideDebuggerCommon;
-
-function _load_nuclideDebuggerCommon() {
-  return _nuclideDebuggerCommon = require('../../nuclide-debugger-common');
+function _load_main() {
+  return _main = require('nuclide-debugger-common/main');
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -85,7 +73,6 @@ const CLOSED = 'closed';
  *    After the promise returned by debug() is resolved, call sendCommand() to send Chrome Commands,
  *    and be prepared to receive notifications via the server notifications observable.
  */
-const GK_PAUSE_ONE_PAUSE_ALL = 'nuclide_debugger_php_pause_one_pause_all';
 
 class PhpDebuggerService {
 
@@ -93,7 +80,7 @@ class PhpDebuggerService {
     this._state = INITIAL;
     this._translator = null;
     this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
-    this._clientCallback = new (_nuclideDebuggerCommon || _load_nuclideDebuggerCommon()).ClientCallback();
+    this._clientCallback = new (_main || _load_main()).ClientCallback();
     this._disposables.add(this._clientCallback);
   }
 
@@ -113,22 +100,20 @@ class PhpDebuggerService {
     var _this = this;
 
     return (0, _asyncToGenerator.default)(function* () {
+      config.stopOneStopAll = false;
       (_utils || _load_utils()).default.info('Connecting config: ' + JSON.stringify(config));
 
       yield _this._warnIfHphpdAttached();
-      if (!(yield (0, (_passesGK || _load_passesGK()).default)(GK_PAUSE_ONE_PAUSE_ALL))) {
-        config.stopOneStopAll = false;
-      }
 
       (0, (_config || _load_config()).setConfig)(config);
       yield (0, (_ConnectionUtils || _load_ConnectionUtils()).setRootDirectoryUri)(config.targetUri);
       (_utils || _load_utils()).default.setLevel(config.logLevel);
       _this._setState(CONNECTING);
 
-      const translator = new (_nuclideDebuggerCommon || _load_nuclideDebuggerCommon()).VsDebugSessionTranslator((_constants || _load_constants()).VsAdapterTypes.HHVM, {
+      const translator = new (_main || _load_main()).VsDebugSessionTranslator((_main || _load_main()).VsAdapterTypes.HHVM, {
         command: _this._getNodePath(),
         args: [require.resolve('./vscode/vscode-debugger-entry')]
-      }, {
+      }, 'launch', {
         config,
         trace: false
       }, _this._clientCallback, (_utils || _load_utils()).default);
@@ -146,7 +131,7 @@ class PhpDebuggerService {
   _getNodePath() {
     try {
       // $FlowFB
-      return require('../../nuclide-debugger-common/lib/fb-constants').DEVSERVER_NODE_PATH;
+      return require('nuclide-debugger-common//fb-constants').DEVSERVER_NODE_PATH;
     } catch (error) {
       return 'node';
     }
@@ -156,7 +141,7 @@ class PhpDebuggerService {
     var _this2 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
-      (_utils || _load_utils()).default.info('Recieved command: ' + message);
+      (_utils || _load_utils()).default.info('Received command: ' + message);
       if (_this2._translator) {
         _this2._translator.processCommand(JSON.parse(message));
       }

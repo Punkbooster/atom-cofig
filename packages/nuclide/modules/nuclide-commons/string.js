@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.URL_REGEX = undefined;
+exports.ELLIPSIS_CHAR = exports.URL_REGEX = undefined;
 exports.stringifyError = stringifyError;
 exports.maybeToString = maybeToString;
 exports.relativeDate = relativeDate;
@@ -17,6 +17,7 @@ exports.splitOnce = splitOnce;
 exports.indent = indent;
 exports.pluralize = pluralize;
 exports.capitalize = capitalize;
+exports.getMatchRanges = getMatchRanges;
 
 var _shellQuote;
 
@@ -71,6 +72,7 @@ function relativeDate(input_, reference_, useShortVariant = false) {
   if (input instanceof Date) {
     input = input.getTime();
   }
+  // flowlint-next-line sketchy-null-number:off
   if (!reference) {
     reference = new Date().getTime();
   }
@@ -181,6 +183,31 @@ function capitalize(str) {
   return str.length === 0 ? str : str.charAt(0).toUpperCase().concat(str.slice(1));
 }
 
+/**
+ * Returns a list of ranges where needle occurs in haystack.
+ * This will *not* return overlapping matches; i.e. the returned list will be disjoint.
+ * This makes it easier to use for e.g. highlighting matches in a UI.
+ */
+function getMatchRanges(haystack, needle) {
+  if (needle === '') {
+    // Not really a valid use.
+    return [];
+  }
+
+  const ranges = [];
+  let matchIndex = 0;
+  while ((matchIndex = haystack.indexOf(needle, matchIndex)) !== -1) {
+    const prevRange = ranges[ranges.length - 1];
+    if (prevRange != null && prevRange[1] === matchIndex) {
+      prevRange[1] += needle.length;
+    } else {
+      ranges.push([matchIndex, matchIndex + needle.length]);
+    }
+    matchIndex += needle.length;
+  }
+  return ranges;
+}
+
 // Originally copied from:
 // http://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url
 // But adopted to match `www.` urls as well as `https?` urls
@@ -189,3 +216,5 @@ function capitalize(str) {
 // Added a single matching group for use with String.split.
 // eslint-disable-next-line max-len
 const URL_REGEX = exports.URL_REGEX = /(https?:\/\/(?:www\.)?[-\w@:%.+~#=]{2,256}\.[a-z]{2,6}\b[-\w@:%+.~#?&/=!]*|www\.[-\w@:%.+~#=]{2,256}\.[a-z]{2,6}\b[-\w@:%+.~#?&/=!]*)/;
+
+const ELLIPSIS_CHAR = exports.ELLIPSIS_CHAR = '\u2026';

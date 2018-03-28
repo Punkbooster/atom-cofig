@@ -14,7 +14,7 @@ function _load_utils() {
 var _ClientCallback;
 
 function _load_ClientCallback() {
-  return _ClientCallback = _interopRequireDefault(require('../../nuclide-debugger-common/lib/ClientCallback'));
+  return _ClientCallback = _interopRequireDefault(require('nuclide-debugger-common/ClientCallback'));
 }
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');

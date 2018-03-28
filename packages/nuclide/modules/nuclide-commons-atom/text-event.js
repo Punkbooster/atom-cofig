@@ -6,8 +6,6 @@ Object.defineProperty(exports, "__esModule", {
 exports.__TEST__ = exports.TextEventDispatcher = undefined;
 exports.observeTextEditorEvents = observeTextEditorEvents;
 
-var _atom = require('atom');
-
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
 var _debounce;
@@ -26,6 +24,12 @@ var _textEditor;
 
 function _load_textEditor() {
   return _textEditor = require('./text-editor');
+}
+
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -190,7 +194,7 @@ class TextEventDispatcher {
     // (particularly on startup).
     const debouncedCallback = (0, (_debounce || _load_debounce()).default)(callback, 50, true);
     this._callbackContainer.addCallback(grammarScopes, events, debouncedCallback);
-    const disposables = new _atom.Disposable(() => {
+    const disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       this._callbackContainer.removeCallback(grammarScopes, events, debouncedCallback);
       if (this._callbackContainer.isEmpty()) {
         this._deregisterEditorListeners();
@@ -202,6 +206,7 @@ class TextEventDispatcher {
   onFileChange(grammarScopes, callback) {
     return this._onEvents(grammarScopes, FILE_CHANGE_EVENTS, callback);
   }
+
   onAnyFileChange(callback) {
     return this._onEvents('all', FILE_CHANGE_EVENTS, callback);
   }
@@ -216,7 +221,7 @@ class TextEventDispatcher {
 
   _registerEditorListeners() {
     if (!this._editorListenerDisposable) {
-      this._editorListenerDisposable = new _atom.CompositeDisposable();
+      this._editorListenerDisposable = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     }
 
     // Whenever the active pane item changes, we check to see if there are any

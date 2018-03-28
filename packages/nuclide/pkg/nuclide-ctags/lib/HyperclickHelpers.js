@@ -53,7 +53,7 @@ const QUALIFYING_FIELDS = ['class', 'namespace', 'struct', 'enum', 'Module'];
 function createCallback(tag) {
   return (0, _asyncToGenerator.default)(function* () {
     const lineNumber = yield (0, (_utils || _load_utils()).getLineNumberForTag)(tag);
-    (0, (_goToLocation || _load_goToLocation()).goToLocation)(tag.file, lineNumber, 0);
+    (0, (_goToLocation || _load_goToLocation()).goToLocation)(tag.file, { line: lineNumber, column: 0 });
   });
 }
 
@@ -107,7 +107,7 @@ class HyperclickHelpers {
             const relpath = (_nuclideUri || _load_nuclideUri()).default.relative(tagsDir, file);
             let title = `${tag.name} (${relpath})`;
             if (fields != null) {
-              // Python uses a.b.c; most other langauges use a::b::c.
+              // Python uses a.b.c; most other languages use a::b::c.
               // There are definitely other cases, but it's not a big issue.
               const sep = file.endsWith('.py') ? '.' : '::';
               for (const field of QUALIFYING_FIELDS) {

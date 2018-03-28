@@ -17,7 +17,7 @@ function _load_DebuggerActions() {
   return _DebuggerActions = _interopRequireDefault(require('./DebuggerActions'));
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _Button;
 
@@ -37,6 +37,12 @@ function _load_nuclideUri() {
   return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
+var _nullthrows;
+
+function _load_nullthrows() {
+  return _nullthrows = _interopRequireDefault(require('nullthrows'));
+}
+
 var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
@@ -49,16 +55,10 @@ function _load_Checkbox() {
   return _Checkbox = require('nuclide-commons-ui/Checkbox');
 }
 
-var _BreakpointStore;
-
-function _load_BreakpointStore() {
-  return _BreakpointStore = _interopRequireDefault(require('./BreakpointStore'));
-}
-
 var _Modal;
 
 function _load_Modal() {
-  return _Modal = require('../../nuclide-ui/Modal');
+  return _Modal = require('nuclide-commons-ui/Modal');
 }
 
 var _nuclideAnalytics;
@@ -67,26 +67,17 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
-
-class BreakpointConfigComponent extends _react.default.Component {
+class BreakpointConfigComponent extends _react.Component {
 
   constructor(props) {
     super(props);
 
     this._updateBreakpoint = () => {
-      const condition = this.refs.condition.getText().trim();
+      const condition = (0, (_nullthrows || _load_nullthrows()).default)(this._condition).getText().trim();
       this.props.actions.updateBreakpointCondition(this.state.breakpoint.id, condition);
       (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nuclide-debugger-breakpoint-condition-saved', {
         path: this.props.breakpoint.path,
@@ -102,8 +93,8 @@ class BreakpointConfigComponent extends _react.default.Component {
       breakpoint: this.props.breakpoint
     };
 
-    this._disposables.add(this.props.breakpointStore.onNeedUIUpdate(() => {
-      const breakpoint = this.props.breakpointStore.getBreakpointAtLine(this.state.breakpoint.path, this.state.breakpoint.line);
+    this._disposables.add(this.props.model.onNeedUIUpdate(() => {
+      const breakpoint = this.props.model.getBreakpointAtLine(this.state.breakpoint.path, this.state.breakpoint.line);
       if (breakpoint == null) {
         // Breakpoint no longer exists.
         this.props.onDismiss();
@@ -129,21 +120,21 @@ class BreakpointConfigComponent extends _react.default.Component {
   }
 
   render() {
-    return _react.default.createElement(
+    return _react.createElement(
       (_Modal || _load_Modal()).Modal,
       { onDismiss: () => this.props.onDismiss() },
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { className: 'padded nuclide-debugger-bp-dialog' },
-        _react.default.createElement(
+        _react.createElement(
           'h1',
           { className: 'nuclide-debugger-bp-config-header' },
           'Edit breakpoint'
         ),
-        _react.default.createElement(
+        _react.createElement(
           'div',
           { className: 'block' },
-          _react.default.createElement(
+          _react.createElement(
             'label',
             null,
             'Breakpoint at ',
@@ -152,43 +143,45 @@ class BreakpointConfigComponent extends _react.default.Component {
             this.state.breakpoint.line
           )
         ),
-        _react.default.createElement(
+        _react.createElement(
           'div',
           { className: 'block' },
-          _react.default.createElement((_Checkbox || _load_Checkbox()).Checkbox, {
+          _react.createElement((_Checkbox || _load_Checkbox()).Checkbox, {
             onChange: isChecked => this.props.actions.updateBreakpointEnabled(this.state.breakpoint.id, isChecked),
             checked: this.state.breakpoint.enabled,
             label: 'Enable breakpoint'
           })
         ),
-        _react.default.createElement(
+        _react.createElement(
           'div',
           { className: 'block' },
-          _react.default.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
+          _react.createElement((_AtomInput || _load_AtomInput()).AtomInput, {
             placeholderText: 'Breakpoint hit condition...',
             value: this.state.breakpoint.condition,
             size: 'sm',
-            ref: 'condition',
+            ref: input => {
+              this._condition = input;
+            },
             autofocus: true
           })
         ),
-        _react.default.createElement(
+        _react.createElement(
           'label',
           null,
           'This expression will be evaluated each time the corresponding line is hit, but the debugger will only break execution if the expression evaluates to true.'
         ),
-        _react.default.createElement(
+        _react.createElement(
           'div',
           { className: 'nuclide-debugger-bp-config-actions' },
-          _react.default.createElement(
+          _react.createElement(
             (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
             null,
-            _react.default.createElement(
+            _react.createElement(
               (_Button || _load_Button()).Button,
               { onClick: this.props.onDismiss },
               'Cancel'
             ),
-            _react.default.createElement(
+            _react.createElement(
               (_Button || _load_Button()).Button,
               {
                 buttonType: (_Button || _load_Button()).ButtonTypes.PRIMARY,
@@ -201,4 +194,13 @@ class BreakpointConfigComponent extends _react.default.Component {
     );
   }
 }
-exports.BreakpointConfigComponent = BreakpointConfigComponent;
+exports.BreakpointConfigComponent = BreakpointConfigComponent; /**
+                                                                * Copyright (c) 2015-present, Facebook, Inc.
+                                                                * All rights reserved.
+                                                                *
+                                                                * This source code is licensed under the license found in the LICENSE file in
+                                                                * the root directory of this source tree.
+                                                                *
+                                                                * 
+                                                                * @format
+                                                                */

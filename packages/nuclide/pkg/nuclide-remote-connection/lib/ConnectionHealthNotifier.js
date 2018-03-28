@@ -11,12 +11,10 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
-var _atom = require('atom');
+var _UniversalDisposable;
 
-var _NuclideSocket;
-
-function _load_NuclideSocket() {
-  return _NuclideSocket = require('../../nuclide-server/lib/NuclideSocket');
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _log4js;
@@ -24,6 +22,8 @@ var _log4js;
 function _load_log4js() {
   return _log4js = require('log4js');
 }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection'); /**
                                                                                          * Copyright (c) 2015-present, Facebook, Inc.
@@ -46,11 +46,11 @@ const HEARTBEAT_NOTIFICATION_WARNING = 2;
 // Provides feedback to the user of the health of a NuclideSocket.
 class ConnectionHealthNotifier {
 
-  constructor(host, socket) {
+  constructor(host, port, heartbeat) {
     this._heartbeatNetworkAwayCount = 0;
     this._lastHeartbeatNotification = null;
 
-    const serverUri = socket.getServerUri();
+    const uri = `https://${host}:${port}`;
 
     /**
      * Adds an Atom notification for the detected heartbeat network status
@@ -105,7 +105,7 @@ class ConnectionHealthNotifier {
         // being restored without a reconnect prompt.
         const { notification } = this._lastHeartbeatNotification;
         notification.dismiss();
-        atom.notifications.addSuccess('Connection restored to Nuclide Server at: ' + serverUri);
+        atom.notifications.addSuccess('Connection restored to Nuclide Server at: ' + uri);
         this._heartbeatNetworkAwayCount = 0;
         this._lastHeartbeatNotification = null;
       }
@@ -114,7 +114,7 @@ class ConnectionHealthNotifier {
     const notifyNetworkAway = code => {
       this._heartbeatNetworkAwayCount++;
       if (this._heartbeatNetworkAwayCount >= HEARTBEAT_AWAY_REPORT_COUNT) {
-        addHeartbeatNotification(HEARTBEAT_NOTIFICATION_WARNING, code, `Nuclide server cannot be reached at "${serverUri}".<br/>` + 'Nuclide will reconnect when the network is restored.',
+        addHeartbeatNotification(HEARTBEAT_NOTIFICATION_WARNING, code, `Nuclide server cannot be reached at "${uri}".<br/>` + 'Nuclide will reconnect when the network is restored.',
         /* dismissable */true,
         /* askToReload */false);
       }
@@ -122,14 +122,18 @@ class ConnectionHealthNotifier {
 
     const onHeartbeatError = error => {
       const { code, message, originalCode } = error;
-      (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackEvent)({
-        type: 'heartbeat-error',
-        data: {
-          code: code || '',
-          message: message || '',
-          host
-        }
-      });
+      // Don't keep tracking consecutive NETWORK_AWAY events:
+      // the user's probably offline anyway so analytics events just pile up.
+      if (code !== 'NETWORK_AWAY' || this._heartbeatNetworkAwayCount < HEARTBEAT_AWAY_REPORT_COUNT) {
+        (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackEvent)({
+          type: 'heartbeat-error',
+          data: {
+            code: code || '',
+            message: message || '',
+            host
+          }
+        });
+      }
       logger.info('Heartbeat network error:', code, originalCode, message);
 
       if (this._onHeartbeatError != null && this._onHeartbeatError(error)) {
@@ -151,7 +155,6 @@ class ConnectionHealthNotifier {
           break;
         case 'PORT_NOT_ACCESSIBLE':
           // Notify never heard a heartbeat from the server.
-          const port = socket.getServerPort();
           addHeartbeatNotification(HEARTBEAT_NOTIFICATION_ERROR, code, '**Nuclide Server Is Not Reachable**<br/>' + `It could be running on a port that is not accessible: ${String(port)}.`,
           /* dismissable */true,
           /* askToReload */false);
@@ -172,7 +175,7 @@ class ConnectionHealthNotifier {
           break;
       }
     };
-    this._subscription = new _atom.CompositeDisposable(socket.onHeartbeat(onHeartbeat), socket.onHeartbeatError(onHeartbeatError));
+    this._subscription = new (_UniversalDisposable || _load_UniversalDisposable()).default(heartbeat.onHeartbeat(onHeartbeat), heartbeat.onHeartbeatError(onHeartbeatError));
   }
 
   // Sets function to be called on Heartbeat error.

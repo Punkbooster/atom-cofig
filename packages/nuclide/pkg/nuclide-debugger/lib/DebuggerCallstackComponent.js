@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.DebuggerCallstackComponent = undefined;
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _nuclideUri;
 
@@ -17,12 +17,6 @@ var _UniversalDisposable;
 
 function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
-}
-
-var _Bridge;
-
-function _load_Bridge() {
-  return _Bridge = _interopRequireDefault(require('./Bridge'));
 }
 
 var _Table;
@@ -45,7 +39,20 @@ function _load_addTooltip() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-class DebuggerCallstackComponent extends _react.default.Component {
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+class DebuggerCallstackComponent extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -54,17 +61,17 @@ class DebuggerCallstackComponent extends _react.default.Component {
 
     this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this.state = {
-      callstack: props.callstackStore.getCallstack(),
-      selectedCallFrameIndex: props.callstackStore.getSelectedCallFrameIndex()
+      callstack: props.model.getCallstack(),
+      selectedCallFrameIndex: props.model.getSelectedCallFrameIndex()
     };
   }
 
   componentDidMount() {
-    const { callstackStore } = this.props;
-    this._disposables.add(callstackStore.onChange(() => {
+    const { model } = this.props;
+    this._disposables.add(model.onCallstackChange(() => {
       this.setState({
-        selectedCallFrameIndex: callstackStore.getSelectedCallFrameIndex(),
-        callstack: callstackStore.getCallstack()
+        selectedCallFrameIndex: model.getSelectedCallFrameIndex(),
+        callstack: model.getCallstack()
       });
     }));
   }
@@ -108,13 +115,13 @@ class DebuggerCallstackComponent extends _react.default.Component {
       key: 'location'
     }];
 
-    const emptyComponent = () => _react.default.createElement(
+    const emptyComponent = () => _react.createElement(
       'div',
       { className: 'nuclide-debugger-callstack-list-empty' },
       'callstack unavailable'
     );
 
-    return _react.default.createElement((_Table || _load_Table()).Table, {
+    return _react.createElement((_Table || _load_Table()).Table, {
       className: 'nuclide-debugger-callstack-table',
       columns: columns,
       emptyComponent: emptyComponent,
@@ -122,25 +129,15 @@ class DebuggerCallstackComponent extends _react.default.Component {
       selectable: true,
       resizable: true,
       onSelect: this._handleCallframeClick,
-      sortable: false,
-      ref: 'callstackTable'
+      sortable: false
     });
   }
 }
-exports.DebuggerCallstackComponent = DebuggerCallstackComponent; /**
-                                                                  * Copyright (c) 2015-present, Facebook, Inc.
-                                                                  * All rights reserved.
-                                                                  *
-                                                                  * This source code is licensed under the license found in the LICENSE file in
-                                                                  * the root directory of this source tree.
-                                                                  *
-                                                                  * 
-                                                                  * @format
-                                                                  */
+exports.DebuggerCallstackComponent = DebuggerCallstackComponent;
 
 var _initialiseProps = function () {
   this._locationComponent = props => {
-    const missingSourceItem = this.props.callstackStore.getDebuggerStore().getCanSetSourcePaths() && !props.data.hasSource ? _react.default.createElement('span', {
+    const missingSourceItem = this.props.model.getCanSetSourcePaths() && !props.data.hasSource ? _react.createElement('span', {
       className: (0, (_classnames || _load_classnames()).default)('text-error', 'icon', 'icon-alert'),
       onClick: () => this.props.actions.configureSourcePaths(),
       ref: (0, (_addTooltip || _load_addTooltip()).default)({
@@ -155,11 +152,11 @@ var _initialiseProps = function () {
 
     // Chrome line numbers are actually 0-based, so add 1.
     const line = props.data.line + 1;
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       { title: `${path}:${line}` },
       missingSourceItem,
-      _react.default.createElement(
+      _react.createElement(
         'span',
         null,
         path,
@@ -170,7 +167,6 @@ var _initialiseProps = function () {
   };
 
   this._handleCallframeClick = (clickedCallframe, callFrameIndex) => {
-    this.props.bridge.setSelectedCallFrameIndex(callFrameIndex);
-    this.props.actions.setSelectedCallFrameIndex(callFrameIndex);
+    this.props.model.setSelectedCallFrameIndex(callFrameIndex);
   };
 };

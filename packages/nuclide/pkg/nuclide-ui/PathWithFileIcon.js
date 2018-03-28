@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.DecorationIcons = undefined;
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
 
@@ -35,6 +35,8 @@ function _load_Icon() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; } /**
                                                                                                                                                                                                                               * Copyright (c) 2015-present, Facebook, Inc.
                                                                                                                                                                                                                               * All rights reserved.
@@ -47,10 +49,10 @@ function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in ob
                                                                                                                                                                                                                               */
 
 function WarningIconWithShadow() {
-  return _react.default.createElement(
+  return _react.createElement(
     'div',
     null,
-    _react.default.createElement(
+    _react.createElement(
       'svg',
       {
         className: 'nuclide-ui-path-with-file-icon-warning-icon-background',
@@ -58,17 +60,17 @@ function WarningIconWithShadow() {
         height: '18',
         viewBox: '0 0 20 20',
         xmlns: 'http://www.w3.org/2000/svg' },
-      _react.default.createElement('polygon', { points: '10,2 0,18 20,18' })
+      _react.createElement('polygon', { points: '10,2 0,18 20,18' })
     ),
-    _react.default.createElement((_Icon || _load_Icon()).Icon, { className: 'text-warning', icon: 'alert' })
+    _react.createElement((_Icon || _load_Icon()).Icon, { className: 'text-warning', icon: 'alert' })
   );
 }
 
 function ErrorIconWithShadow() {
-  return _react.default.createElement(
+  return _react.createElement(
     'div',
     null,
-    _react.default.createElement(
+    _react.createElement(
       'svg',
       {
         className: 'nuclide-ui-path-with-file-icon-error-icon-background',
@@ -76,9 +78,9 @@ function ErrorIconWithShadow() {
         height: '16',
         viewBox: '0 0 16 16',
         xmlns: 'http://www.w3.org/2000/svg' },
-      _react.default.createElement('circle', { cx: '10', cy: '10', r: '8' })
+      _react.createElement('circle', { cx: '10', cy: '10', r: '8' })
     ),
-    _react.default.createElement((_Icon || _load_Icon()).Icon, { className: 'text-error', icon: 'stop' })
+    _react.createElement((_Icon || _load_Icon()).Icon, { className: 'text-error', icon: 'stop' })
   );
 }
 
@@ -89,7 +91,22 @@ const DecorationIcons = exports.DecorationIcons = Object.freeze({
   Error: ErrorIconWithShadow
 });
 
-class PathWithFileIcon extends _react.default.Component {
+let addItemToElement;
+atom.packages.serviceHub.consume('file-icons.element-icons', '1.0.0', _addItemToElement => {
+  addItemToElement = (element, path) => {
+    try {
+      return _addItemToElement(element, path);
+    } catch (e) {
+      (0, (_log4js || _load_log4js()).getLogger)('nuclide-ui-path-with-file-icon').error('Error adding item to element', e);
+      return new (_UniversalDisposable || _load_UniversalDisposable()).default();
+    }
+  };
+  return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
+    addItemToElement = null;
+  });
+});
+
+class PathWithFileIcon extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -99,7 +116,7 @@ class PathWithFileIcon extends _react.default.Component {
         return;
       }
       this._ensureIconRemoved();
-      if (this._addItemToElement == null) {
+      if (addItemToElement == null) {
         // file-icons service not available; ignore.
         return;
       }
@@ -107,16 +124,11 @@ class PathWithFileIcon extends _react.default.Component {
         // Element is unmounting.
         return;
       }
-      this._fileIconsDisposable = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._addItemToElement(element, this.props.path),
-      // On dispose, file-icons doesn't actually remove the classNames it assigned to the node,
-      // so we need to reset the classList manually.
-      () => {
-        element.className = this._getDefaultClassName();
-      });
+      this._fileIconsDisposable = addItemToElement(element, this.props.path);
     };
 
     this._mounted = false;
-    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(consumeServiceAsync('file-icons.element-icons', '1.0.0', this._consumeFileIconService.bind(this)), () => {
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       if (this._fileIconsDisposable != null) {
         this._fileIconsDisposable.dispose();
       }
@@ -131,23 +143,6 @@ class PathWithFileIcon extends _react.default.Component {
     if (prevProps.path !== this.props.path) {
       this._forceIconUpdate();
     }
-  }
-
-  // This only gets called if the file-icons package is installed.
-  _consumeFileIconService(addItemToElement) {
-    this._addItemToElement = (element, path) => {
-      try {
-        return addItemToElement(element, path);
-      } catch (e) {
-        (0, (_log4js || _load_log4js()).getLogger)('nuclide-ui-path-with-file-icon').error('Error adding item to element', e);
-        return new (_UniversalDisposable || _load_UniversalDisposable()).default();
-      }
-    };
-    this._forceIconUpdate();
-    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
-      this._addItemToElement = null;
-      this._forceIconUpdate();
-    });
   }
 
   _getDefaultClassName() {
@@ -191,12 +186,12 @@ class PathWithFileIcon extends _react.default.Component {
     } = _props,
           rest = _objectWithoutProperties(_props, ['className', 'children', 'decorationIcon', 'isFolder', 'path']);
     const displayPath = children == null ? path : children;
-    const decoration = DecorationIcon == null ? null : _react.default.createElement(
+    const decoration = DecorationIcon == null ? null : _react.createElement(
       'div',
       { className: 'nuclide-ui-path-with-file-icon-decoration-icon' },
-      _react.default.createElement(DecorationIcon, null)
+      _react.createElement(DecorationIcon, null)
     );
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       Object.assign({
         className: this._getDefaultClassName(),
@@ -207,38 +202,4 @@ class PathWithFileIcon extends _react.default.Component {
     );
   }
 }
-
-exports.default = PathWithFileIcon; /**
-                                     * Currently, Atom's service hub [provides services while iterating over consumers][0]. If, as a
-                                     * result of providing a service, new consumers are added, its array will be mutated, screwing up
-                                     * the next step of the iteration.
-                                     *
-                                     * This is the case with the above component as providing the service may cause it to be mounted (or
-                                     * unmounted), which in turn will cause it to consume (or "unconsume" by disposing) the service.
-                                     *
-                                     * This function is a workaround that delays both the consuming of the service and the disposal,
-                                     * without affecting the API. This way, the ServiceHub's array won't be synchronously mutated while
-                                     * iterating over it. We should be able to remove this workaround (in favor of calling
-                                     * `serviceHub.consume()` directly) once atom/service-hub#11 makes it into our oldest-supported
-                                     * version of Atom.
-                                     *
-                                     * [0]: https://github.com/atom/service-hub/blob/v0.7.3/src/service-hub.coffee#L32-L34
-                                     */
-
-function consumeServiceAsync(service, version, callback) {
-  let serviceDisposable;
-  // Don't call `consume()` synchronously.
-  const id = setImmediate(() => {
-    serviceDisposable = atom.packages.serviceHub.consume(service, version, callback);
-  });
-  return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
-    clearImmediate(id);
-  }, () => {
-    if (serviceDisposable != null) {
-      // "unconsume" the service asynchronously too.
-      setImmediate(() => {
-        serviceDisposable.dispose();
-      });
-    }
-  });
-}
+exports.default = PathWithFileIcon;

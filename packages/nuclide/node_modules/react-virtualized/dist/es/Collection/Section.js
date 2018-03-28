@@ -7,6 +7,11 @@ import _createClass from 'babel-runtime/helpers/createClass';
  * This enables us to more quickly determine which cells to display in a given region of the Window.
  * Sections have a fixed size and contain 0 to many cells (tracked by their indices).
  */
+var babelPluginFlowReactPropTypes_proptype_SizeAndPositionInfo = require('./types').babelPluginFlowReactPropTypes_proptype_SizeAndPositionInfo || require('prop-types').any; /** @rlow */
+
+
+var babelPluginFlowReactPropTypes_proptype_Index = require('./types').babelPluginFlowReactPropTypes_proptype_Index || require('prop-types').any;
+
 var Section = function () {
   function Section(_ref) {
     var height = _ref.height,
@@ -57,7 +62,6 @@ var Section = function () {
   }]);
 
   return Section;
-}(); /** @rlow */
-
+}();
 
 export default Section;

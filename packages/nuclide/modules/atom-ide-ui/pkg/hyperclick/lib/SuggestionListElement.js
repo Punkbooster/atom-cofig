@@ -4,11 +4,23 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _atom = require('atom');
+var _UniversalDisposable;
 
-var _react = _interopRequireDefault(require('react'));
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
+
+var _scrollIntoView;
+
+function _load_scrollIntoView() {
+  return _scrollIntoView = require('nuclide-commons-ui/scrollIntoView');
+}
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -16,20 +28,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * We need to create this custom HTML element so we can hook into the view
  * registry. The overlay decoration only works through the view registry.
  */
-/**
- * Copyright (c) 2017-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *
- * 
- * @format
- */
-
-/* global HTMLElement */
-
 class SuggestionListElement extends HTMLElement {
 
   initialize(model) {
@@ -38,7 +36,7 @@ class SuggestionListElement extends HTMLElement {
   }
 
   attachedCallback() {
-    _reactDom.default.render(_react.default.createElement(SuggestionList, { suggestionList: this._model }), this);
+    _reactDom.default.render(_react.createElement(SuggestionList, { suggestionList: this._model }), this);
   }
 
   detachedCallback() {
@@ -50,16 +48,28 @@ class SuggestionListElement extends HTMLElement {
       this.parentNode.removeChild(this);
     }
   }
-}
+} /**
+   * Copyright (c) 2017-present, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the BSD-style license found in the
+   * LICENSE file in the root directory of this source tree. An additional grant
+   * of patent rights can be found in the PATENTS file in the same directory.
+   *
+   * 
+   * @format
+   */
 
-class SuggestionList extends _react.default.Component {
+/* global HTMLElement */
+
+class SuggestionList extends _react.Component {
 
   constructor(props) {
     super(props);
     this.state = {
       selectedIndex: 0
     };
-    this._subscriptions = new _atom.CompositeDisposable();
+    this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._boundConfirm = this._confirm.bind(this);
   }
 
@@ -95,16 +105,20 @@ class SuggestionList extends _react.default.Component {
       'editor:newline': this._boundConfirm
     }));
 
-    this._subscriptions.add(textEditor.onDidChange(boundClose));
+    this._subscriptions.add(textEditor.getBuffer().onDidChangeText(boundClose));
     this._subscriptions.add(textEditor.onDidChangeCursorPosition(boundClose));
 
     // Prevent scrolling the editor when scrolling the suggestion list.
     const stopPropagation = event => event.stopPropagation();
-    // $FlowFixMe
-    _reactDom.default.findDOMNode(this.refs.scroller).addEventListener('mousewheel', stopPropagation);
-    this._subscriptions.add(new _atom.Disposable(() => {
-      // $FlowFixMe
-      _reactDom.default.findDOMNode(this.refs.scroller).removeEventListener('mousewheel', stopPropagation);
+    const scroller = this._scroller;
+
+    if (!(scroller != null)) {
+      throw new Error('Invariant violation: "scroller != null"');
+    }
+
+    scroller.addEventListener('mousewheel', stopPropagation);
+    this._subscriptions.add(new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
+      scroller.removeEventListener('mousewheel', stopPropagation);
     }));
 
     const keydown = event => {
@@ -115,7 +129,7 @@ class SuggestionList extends _react.default.Component {
       }
     };
     textEditorView.addEventListener('keydown', keydown);
-    this._subscriptions.add(new _atom.Disposable(() => {
+    this._subscriptions.add(new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       textEditorView.removeEventListener('keydown', keydown);
     }));
   }
@@ -126,7 +140,7 @@ class SuggestionList extends _react.default.Component {
       if (index === this.state.selectedIndex) {
         className += ' selected';
       }
-      return _react.default.createElement(
+      return _react.createElement(
         'li',
         {
           className: className,
@@ -134,7 +148,7 @@ class SuggestionList extends _react.default.Component {
           onMouseDown: this._boundConfirm,
           onMouseEnter: this._setSelectedIndex.bind(this, index) },
         item.title,
-        _react.default.createElement(
+        _react.createElement(
           'span',
           { className: 'right-label' },
           item.rightLabel
@@ -142,14 +156,20 @@ class SuggestionList extends _react.default.Component {
       );
     });
 
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       {
         className: 'popover-list select-list hyperclick-suggestion-list-scroller',
-        ref: 'scroller' },
-      _react.default.createElement(
+        ref: el => {
+          this._scroller = el;
+        } },
+      _react.createElement(
         'ol',
-        { className: 'list-group', ref: 'selectionList' },
+        {
+          className: 'list-group',
+          ref: el => {
+            this._selectionList = el;
+          } },
         itemComponents
       )
     );
@@ -217,11 +237,14 @@ class SuggestionList extends _react.default.Component {
   }
 
   _updateScrollPosition() {
-    const listNode = _reactDom.default.findDOMNode(this.refs.selectionList);
-    // $FlowFixMe
+    const listNode = this._selectionList;
+
+    if (!(listNode != null)) {
+      throw new Error('Invariant violation: "listNode != null"');
+    }
+
     const selectedNode = listNode.getElementsByClassName('selected')[0];
-    // $FlowFixMe
-    selectedNode.scrollIntoViewIfNeeded(false);
+    (0, (_scrollIntoView || _load_scrollIntoView()).scrollIntoViewIfNeeded)(selectedNode, false);
   }
 }
 

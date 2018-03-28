@@ -13,6 +13,12 @@ function _load_UniversalDisposable() {
   return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
+var _lookupPreferIpV;
+
+function _load_lookupPreferIpV() {
+  return _lookupPreferIpV = _interopRequireDefault(require('./lookup-prefer-ip-v6'));
+}
+
 var _ServerConnection;
 
 function _load_ServerConnection() {
@@ -41,18 +47,16 @@ function _load_log4js() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
-
-const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection');
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-remote-connection'); /**
+                                                                                         * Copyright (c) 2015-present, Facebook, Inc.
+                                                                                         * All rights reserved.
+                                                                                         *
+                                                                                         * This source code is licensed under the license found in the LICENSE file in
+                                                                                         * the root directory of this source tree.
+                                                                                         *
+                                                                                         * 
+                                                                                         * @format
+                                                                                         */
 
 const FILE_WATCHER_SERVICE = 'FileWatcherService';
 const FILE_SYSTEM_SERVICE = 'FileSystemService';
@@ -64,27 +68,29 @@ const FILE_SYSTEM_SERVICE = 'FileSystemService';
 // Nuclide behaves badly when remote directories are opened which are parent/child of each other.
 // And there needn't be a 1:1 relationship between RemoteConnections and hg repos.
 class RemoteConnection {
-  // Path to remote directory user should start in upon connection.
+
   static findOrCreate(config) {
     return (0, _asyncToGenerator.default)(function* () {
       const serverConnection = yield (_ServerConnection || _load_ServerConnection()).ServerConnection.getOrCreate(config);
-      return RemoteConnection.findOrCreateFromConnection(serverConnection, config.cwd, config.displayTitle);
+      return RemoteConnection.findOrCreateFromConnection(serverConnection, config.cwd, config.displayTitle, config.promptReconnectOnFailure);
     })();
-  }
+  } // Path to remote directory user should start in upon connection.
 
-  static findOrCreateFromConnection(serverConnection, cwd, displayTitle) {
-    const connection = new RemoteConnection(serverConnection, cwd, displayTitle);
+
+  static findOrCreateFromConnection(serverConnection, cwd, displayTitle, promptReconnectOnFailure = true) {
+    const connection = new RemoteConnection(serverConnection, cwd, displayTitle, promptReconnectOnFailure);
     return connection._initialize();
   }
 
   // Do NOT call this directly. Use findOrCreate instead.
-  constructor(connection, cwd, displayTitle) {
+  constructor(connection, cwd, displayTitle, promptReconnectOnFailure) {
     this._cwd = cwd;
     this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._hgRepositoryDescription = null;
     this._connection = connection;
     this._displayTitle = displayTitle;
     this._alwaysShutdownIfLast = false;
+    this._promptReconnectOnFailure = promptReconnectOnFailure;
   }
 
   static _createInsecureConnectionForTesting(cwd, port) {
@@ -103,20 +109,53 @@ class RemoteConnection {
    * connection, null (resolved by promise) is returned.
    * Configurations may also be retrieved by IP address.
    */
-  static createConnectionBySavedConfig(hostOrIp, cwd, displayTitle) {
+  static _createConnectionBySavedConfig(host, cwd, displayTitle, promptReconnectOnFailure = true) {
     return (0, _asyncToGenerator.default)(function* () {
-      const connectionConfig = (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).getConnectionConfig)(hostOrIp);
+      let connectionConfig = yield (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).getConnectionConfig)(host);
       if (!connectionConfig) {
         return null;
       }
       try {
-        const config = Object.assign({}, connectionConfig, { cwd, displayTitle });
+        // Connection configs are also stored by IP address to share between hostnames.
+        const { address } = yield (0, (_lookupPreferIpV || _load_lookupPreferIpV()).default)(host);
+        connectionConfig = yield (0, (_RemoteConnectionConfigurationManager || _load_RemoteConnectionConfigurationManager()).getConnectionConfig)(address);
+      } catch (err) {
+        // It's OK if the backup IP check fails.
+      }
+      if (!connectionConfig) {
+        return null;
+      }
+      try {
+        const config = Object.assign({}, connectionConfig, {
+          cwd,
+          displayTitle,
+          promptReconnectOnFailure
+        });
         return yield RemoteConnection.findOrCreate(config);
       } catch (e) {
         const log = e.name === 'VersionMismatchError' ? logger.warn.bind(logger) : logger.error.bind(logger);
-        log(`Failed to reuse connectionConfiguration for ${hostOrIp}`, e);
+        log(`Failed to reuse connectionConfiguration for ${host}`, e);
         return null;
       }
+    })();
+  }
+
+  /**
+   * Attempts to connect to an open or previously open remote connection.
+   */
+  static reconnect(host, cwd, displayTitle, promptReconnectOnFailure = true) {
+    return (0, _asyncToGenerator.default)(function* () {
+      logger.info('Attempting to reconnect', {
+        host,
+        cwd,
+        displayTitle,
+        promptReconnectOnFailure
+      });
+      const connection = RemoteConnection.getByHostnameAndPath(host, cwd);
+      if (connection != null) {
+        return connection;
+      }
+      return RemoteConnection._createConnectionBySavedConfig(host, cwd, displayTitle, promptReconnectOnFailure);
     })();
   }
 
@@ -259,6 +298,7 @@ class RemoteConnection {
     var _this4 = this;
 
     return (0, _asyncToGenerator.default)(function* () {
+      logger.info('Received close command!', { shutdownIfLast });
       _this4._subscriptions.dispose();
       yield _this4._connection.removeConnection(_this4, shutdownIfLast);
       RemoteConnection._emitter.emit('did-close', _this4);
@@ -292,7 +332,8 @@ class RemoteConnection {
   getConfig() {
     return Object.assign({}, this._connection.getConfig(), {
       cwd: this._cwd,
-      displayTitle: this._displayTitle
+      displayTitle: this._displayTitle,
+      promptReconnectOnFailure: this._promptReconnectOnFailure
     });
   }
 

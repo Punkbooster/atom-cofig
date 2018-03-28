@@ -29,14 +29,14 @@ function beginTimerTracking(eventName) {
 }
 
 function failTimerTracking(err) {
-  if (timer !== null) {
+  if (timer != null) {
     timer.onError(err);
     timer = null;
   }
 }
 
 function endTimerTracking() {
-  if (timer !== null) {
+  if (timer != null) {
     timer.onSuccess();
     timer = null;
   }

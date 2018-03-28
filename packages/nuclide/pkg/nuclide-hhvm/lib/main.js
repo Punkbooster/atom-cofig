@@ -2,7 +2,11 @@
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _createPackage;
 
@@ -20,12 +24,6 @@ var _consumeFirstProvider;
 
 function _load_consumeFirstProvider() {
   return _consumeFirstProvider = _interopRequireDefault(require('../../commons-atom/consumeFirstProvider'));
-}
-
-var _UniversalDisposable;
-
-function _load_UniversalDisposable() {
-  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
 }
 
 var _goToLocation;
@@ -54,11 +52,22 @@ function _load_HhvmBuildSystem() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// eslint-disable-next-line nuclide-internal/no-cross-atom-imports
+// eslint-disable-next-line rulesdir/no-cross-atom-imports
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class Activation {
 
   constructor(state) {
-    this._disposables = new _atom.CompositeDisposable();
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
   }
 
   dispose() {
@@ -112,6 +121,8 @@ class Activation {
       const pathString = decodeURIComponent(String(nuclidePath));
       const hackRootString = decodeURIComponent(String(hackRoot));
 
+      const startDebugger = params.noDebugger == null || params.noDebugger !== 'true';
+
       (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)('nuclide-attach-hhvm-deeplink', {
         pathString,
         line,
@@ -131,7 +142,7 @@ class Activation {
 
       const host = (_nuclideUri || _load_nuclideUri()).default.getHostname(pathString);
       const cwd = (_nuclideUri || _load_nuclideUri()).default.createRemoteUri(host, hackRootString);
-      const notification = atom.notifications.addInfo(`Connecting to ${host} and attaching debugger...`, {
+      const notification = atom.notifications.addInfo(startDebugger ? `Connecting to ${host} and attaching debugger...` : `Connecting to ${host}...`, {
         dismissable: true
       });
 
@@ -150,41 +161,41 @@ class Activation {
         return;
       }
 
+      // The hostname might have changed slightly from what was passed in due to
+      // DNS lookup, so create a new remote URI rather than using cwd from above.
+      const hackRootUri = remoteConnection.getUriOfRemotePath(hackRootString);
+      const navUri = remoteConnection.getUriOfRemotePath((_nuclideUri || _load_nuclideUri()).default.getPath(pathString));
+
       // Set the current project root.
       if (_this._cwdApi != null) {
-        _this._cwdApi.setCwd(cwd);
+        _this._cwdApi.setCwd(hackRootUri);
       }
 
       // Open the script path in the editor.
       const lineNumber = parseInt(line, 10);
       if (Number.isNaN(lineNumber)) {
-        (0, (_goToLocation || _load_goToLocation()).goToLocation)(pathString);
+        (0, (_goToLocation || _load_goToLocation()).goToLocation)(navUri);
       } else {
-        (0, (_goToLocation || _load_goToLocation()).goToLocation)(pathString, lineNumber);
+        // NOTE: line numbers start at 0, so subtract 1.
+        (0, (_goToLocation || _load_goToLocation()).goToLocation)(navUri, { line: lineNumber - 1 });
       }
 
-      // Debug the remote HHVM server!
-      const debuggerService = yield (0, (_consumeFirstProvider || _load_consumeFirstProvider()).default)('nuclide-debugger.remote');
+      if (startDebugger) {
+        // Debug the remote HHVM server!
+        const debuggerService = yield (0, (_consumeFirstProvider || _load_consumeFirstProvider()).default)('nuclide-debugger.remote');
 
-      if (addBreakpoint === 'true' && !Number.isNaN(lineNumber)) {
-        // Insert a breakpoint if requested.
-        // NOTE: Nuclide protocol breakpoint line numbers start at 0, so subtract 1.
-        debuggerService.addBreakpoint(pathString, lineNumber - 1);
+        if (addBreakpoint === 'true' && !Number.isNaN(lineNumber)) {
+          // Insert a breakpoint if requested.
+          // NOTE: Nuclide protocol breakpoint line numbers start at 0, so subtract 1.
+          debuggerService.addBreakpoint(navUri, lineNumber - 1);
+        }
+
+        yield debuggerService.startDebugging(new (_AttachProcessInfo || _load_AttachProcessInfo()).AttachProcessInfo(hackRootUri));
       }
 
-      yield debuggerService.startDebugging(new (_AttachProcessInfo || _load_AttachProcessInfo()).AttachProcessInfo(hackRootString));
       notification.dismiss();
     })();
   }
-} /**
-   * Copyright (c) 2015-present, Facebook, Inc.
-   * All rights reserved.
-   *
-   * This source code is licensed under the license found in the LICENSE file in
-   * the root directory of this source tree.
-   *
-   * 
-   * @format
-   */
+}
 
 (0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

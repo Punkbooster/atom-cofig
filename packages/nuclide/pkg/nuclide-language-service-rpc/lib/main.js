@@ -61,3 +61,16 @@ Object.defineProperty(exports, 'forkHostServices', {
     return (_HostServicesAggregator || _load_HostServicesAggregator()).forkHostServices;
   }
 });
+
+var _TypeHintFromSnippet;
+
+function _load_TypeHintFromSnippet() {
+  return _TypeHintFromSnippet = require('./TypeHintFromSnippet');
+}
+
+Object.defineProperty(exports, 'typeHintFromSnippet', {
+  enumerable: true,
+  get: function () {
+    return (_TypeHintFromSnippet || _load_TypeHintFromSnippet()).typeHintFromSnippet;
+  }
+});

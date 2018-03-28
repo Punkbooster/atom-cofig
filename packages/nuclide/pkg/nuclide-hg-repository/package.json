@@ -1,9 +1,9 @@
 {
   "name": "nuclide-hg-repository",
-  "repository": "https://github.com/facebook/nuclide",
   "main": "./lib/main.js",
   "version": "0.0.0",
   "description": "Provides support for Mercurial source control repositories",
+  "author": "NEEDS OWNER",
   "atomTestRunner": "../../lib/test-runner-entry.js",
   "nuclide": {
     "configMetadata": {
@@ -34,6 +34,12 @@
     "atom.repository-provider": {
       "versions": {
         "0.1.0": "createHgRepositoryProvider"
+      }
+    },
+    "additional-log-files": {
+      "description": "Hg log files",
+      "versions": {
+        "0.0.0": "createHgAdditionalLogFilesProvider"
       }
     }
   }

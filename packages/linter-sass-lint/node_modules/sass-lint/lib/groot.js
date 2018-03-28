@@ -3,7 +3,7 @@
 //////////////////////////////
 'use strict';
 
-var gonzales = require('gonzales-pe');
+var gonzales = require('gonzales-pe-sl');
 var fm = require('front-matter');
 var helpers = require('./helpers');
 
@@ -15,7 +15,14 @@ module.exports = function (text, syntax, filename) {
 
   // if we're skipping front matter do it here, fall back to just our text in case it fails
   if (fm.test(text)) {
-    text = fm(text).body || text;
+    var withFrontMatter = fm(text);
+    // Replace front matter by empty lines, so that line numbers are preserved
+    var numEmptyLines = 2;
+    if (withFrontMatter.frontmatter !== '') {
+      numEmptyLines += withFrontMatter.frontmatter.split('\r\n|\r|\n').length;
+    }
+    var emptyLines = new Array(numEmptyLines + 1).join('\n');
+    text = emptyLines + withFrontMatter.body || text;
   }
 
   try {

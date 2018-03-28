@@ -6,9 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
-var _react = _interopRequireDefault(require('react'));
-
-var _reactDom = _interopRequireDefault(require('react-dom'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _FileReferencesView;
 
@@ -27,6 +25,8 @@ var _string;
 function _load_string() {
   return _string = require('nuclide-commons/string');
 }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -47,7 +47,7 @@ const PAGE_SIZE = 10;
 // Start loading more once the user scrolls within this many pixels of the bottom.
 const SCROLL_LOAD_THRESHOLD = 250;
 
-class FindReferencesView extends _react.default.Component {
+class FindReferencesView extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -81,14 +81,16 @@ class FindReferencesView extends _react.default.Component {
   }
 
   _onScroll(evt) {
-    const root = _reactDom.default.findDOMNode(this.refs.root);
-    // $FlowFixMe
+    const root = this._root;
+
+    if (!(root != null)) {
+      throw new Error('Invariant violation: "root != null"');
+    }
+
     if (this.state.loading || root.clientHeight >= root.scrollHeight) {
       return;
     }
-    // $FlowFixMe
     const scrollBottom = root.scrollTop + root.clientHeight;
-    // $FlowFixMe
     if (root.scrollHeight - scrollBottom <= SCROLL_LOAD_THRESHOLD) {
       this.setState({ loading: true });
       this._fetchMore(PAGE_SIZE);
@@ -100,7 +102,7 @@ class FindReferencesView extends _react.default.Component {
   }
 
   render() {
-    const children = this.state.references.map((fileRefs, i) => _react.default.createElement((_FileReferencesView || _load_FileReferencesView()).default, Object.assign({
+    const children = this.state.references.map((fileRefs, i) => _react.createElement((_FileReferencesView || _load_FileReferencesView()).default, Object.assign({
       key: i,
       isSelected: this.state.selected === i
     }, fileRefs, {
@@ -111,18 +113,18 @@ class FindReferencesView extends _react.default.Component {
     const refCount = this.props.model.getReferenceCount();
     const fileCount = this.props.model.getFileCount();
     if (this.state.fetched < fileCount) {
-      children.push(_react.default.createElement('div', {
+      children.push(_react.createElement('div', {
         key: 'loading',
-        className: 'atom-ide-find-references-loading loading-spinner-medium'
+        className: 'find-references-loading loading-spinner-medium'
       }));
     }
 
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
-      { className: 'atom-ide-find-references' },
-      _react.default.createElement(
+      { className: 'find-references' },
+      _react.createElement(
         'div',
-        { className: 'atom-ide-find-references-count panel-heading' },
+        { className: 'find-references-count panel-heading' },
         refCount,
         ' ',
         (0, (_string || _load_string()).pluralize)('reference', refCount),
@@ -132,18 +134,20 @@ class FindReferencesView extends _react.default.Component {
         (0, (_string || _load_string()).pluralize)('file', fileCount),
         ' for',
         ' ',
-        _react.default.createElement(
+        _react.createElement(
           'span',
           { className: 'highlight-info' },
           this.props.model.getSymbolName()
         )
       ),
-      _react.default.createElement(
+      _react.createElement(
         'ul',
         {
-          className: 'atom-ide-find-references-files list-tree has-collapsable-children',
+          className: 'find-references-files list-tree has-collapsable-children',
           onScroll: this._onScroll,
-          ref: 'root',
+          ref: el => {
+            this._root = el;
+          },
           tabIndex: '0' },
         children
       )

@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.FileChangesExamples = undefined;
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _diffparser;
 
@@ -20,6 +20,8 @@ function _load_FileChanges() {
 }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 const sampleUnifiedDiff = `
 diff --git a/some/folder/filename.js b/some/folder/filename.js
@@ -82,11 +84,11 @@ index abc123..cde456 100644
     * @format
     */
 
-class FileChangesExample extends _react.default.Component {
+class FileChangesExample extends _react.Component {
   render() {
     const diff = (0, (_diffparser || _load_diffparser()).default)(sampleUnifiedDiff);
-    const changes = diff.map(file => _react.default.createElement((_FileChanges || _load_FileChanges()).default, { diff: file, key: `${file.from}:${file.to}` }));
-    return _react.default.createElement(
+    const changes = diff.map(file => _react.createElement((_FileChanges || _load_FileChanges()).default, { diff: file, key: `${file.from}:${file.to}` }));
+    return _react.createElement(
       'div',
       null,
       changes

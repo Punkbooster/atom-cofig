@@ -3,7 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.BuckTaskRunner = undefined;
+exports.BuckTaskRunner = exports.CONSOLE_VIEW_URI = undefined;
+
+var _DeploymentTarget;
+
+function _load_DeploymentTarget() {
+  return _DeploymentTarget = require('./DeploymentTarget');
+}
 
 var _PlatformService;
 
@@ -25,6 +31,12 @@ function _load_tasks() {
   return _tasks = require('../../commons-node/tasks');
 }
 
+var _nuclideArtillery;
+
+function _load_nuclideArtillery() {
+  return _nuclideArtillery = require('../../nuclide-artillery');
+}
+
 var _BuckBuildSystem;
 
 function _load_BuckBuildSystem() {
@@ -40,7 +52,7 @@ function _load_UniversalDisposable() {
 var _reduxObservable;
 
 function _load_reduxObservable() {
-  return _reduxObservable = require('../../commons-node/redux-observable');
+  return _reduxObservable = require('nuclide-commons/redux-observable');
 }
 
 var _bindObservableAsProps;
@@ -91,7 +103,7 @@ function _load_observeBuildCommands() {
   return _observeBuildCommands = _interopRequireDefault(require('./observeBuildCommands'));
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _collection;
 
@@ -143,7 +155,7 @@ const TASKS = [{
 }];
 
 // This must match URI defined in ../../nuclide-console/lib/ui/ConsoleContainer
-const CONSOLE_VIEW_URI = 'atom://nuclide/console';
+const CONSOLE_VIEW_URI = exports.CONSOLE_VIEW_URI = 'atom://nuclide/console';
 
 function shouldEnableTask(taskType, ruleType) {
   switch (taskType) {
@@ -166,6 +178,7 @@ class BuckTaskRunner {
     this._serializedState = initialState;
     this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._platformService = new (_PlatformService || _load_PlatformService()).PlatformService();
+    this._completedTasksObservable = new _rxjsBundlesRxMinJs.Subject();
   }
 
   getExtraUi() {
@@ -178,13 +191,13 @@ class BuckTaskRunner {
       };
       this._extraUi = (0, (_bindObservableAsProps || _load_bindObservableAsProps()).bindObservableAsProps)(
       // $FlowFixMe: type symbol-observable
-      _rxjsBundlesRxMinJs.Observable.from(store).map(appState => Object.assign({ appState }, boundActions)), (_BuckToolbar || _load_BuckToolbar()).default);
+      _rxjsBundlesRxMinJs.Observable.from(store).map(appState => Object.assign({ appState }, boundActions)).filter(props => props.appState.buckRoot != null), (_BuckToolbar || _load_BuckToolbar()).default);
     }
     return this._extraUi;
   }
 
   getIcon() {
-    return () => _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: 'nuclicon-buck', className: 'nuclide-buck-task-runner-icon' });
+    return () => _react.createElement((_Icon || _load_Icon()).Icon, { icon: 'nuclicon-buck', className: 'nuclide-buck-task-runner-icon' });
   }
 
   getBuildSystem() {
@@ -195,11 +208,21 @@ class BuckTaskRunner {
     return this._platformService;
   }
 
-  setProjectRoot(projectRoot, callback) {
-    const path = projectRoot == null ? null : projectRoot.getPath();
+  getBuildTarget() {
+    this._getStore().getState().buildTarget;
+  }
 
+  getCompletedTasks() {
+    return this._completedTasksObservable;
+  }
+
+  setBuildTarget(buildTarget) {
+    this._getStore().dispatch((_Actions || _load_Actions()).setBuildTarget(buildTarget));
+  }
+
+  setProjectRoot(projectRoot, callback) {
     // $FlowFixMe: type symbol-observable
-    const storeReady = _rxjsBundlesRxMinJs.Observable.from(this._getStore()).distinctUntilChanged().filter(state => !state.isLoadingBuckProject && state.projectRoot === path).share();
+    const storeReady = _rxjsBundlesRxMinJs.Observable.from(this._getStore()).distinctUntilChanged().filter(state => !state.isLoadingBuckProject && state.projectRoot === projectRoot).share();
 
     const enabledObservable = storeReady.map(state => state.buckRoot != null).distinctUntilChanged();
 
@@ -228,7 +251,7 @@ class BuckTaskRunner {
 
     const subscription = _rxjsBundlesRxMinJs.Observable.combineLatest(enabledObservable, tasksObservable).subscribe(([enabled, tasks]) => callback(enabled, tasks));
 
-    this._getStore().dispatch((_Actions || _load_Actions()).setProjectRoot(path));
+    this._getStore().dispatch((_Actions || _load_Actions()).setProjectRoot(projectRoot));
 
     return new (_UniversalDisposable || _load_UniversalDisposable()).default(subscription);
   }
@@ -244,6 +267,7 @@ class BuckTaskRunner {
         platformService: this._platformService,
         projectRoot: null,
         buckRoot: null,
+        buckversionFileContents: null,
         isLoadingBuckProject: false,
         isLoadingRule: false,
         isLoadingPlatforms: false,
@@ -252,7 +276,9 @@ class BuckTaskRunner {
         selectedDeploymentTarget: null,
         taskSettings: this._serializedState.taskSettings || {},
         platformProviderUi: null,
+        lastSessionPlatformGroupName: this._serializedState.selectedPlatformGroupName,
         lastSessionPlatformName: this._serializedState.selectedPlatformName,
+        lastSessionDeviceGroupName: this._serializedState.selectedDeviceGroupName,
         lastSessionDeviceName: this._serializedState.selectedDeviceName
       };
       const epics = Object.keys(_Epics || _load_Epics()).map(k => (_Epics || _load_Epics())[k]).filter(epic => typeof epic === 'function');
@@ -286,10 +312,10 @@ class BuckTaskRunner {
       throw new Error('Invalid task type');
     }
 
-    // eslint-disable-next-line nuclide-internal/atom-apis
+    // eslint-disable-next-line rulesdir/atom-apis
 
 
-    atom.workspace.open(CONSOLE_VIEW_URI);
+    atom.workspace.open(CONSOLE_VIEW_URI, { searchAllPanes: true });
 
     const state = this._getStore().getState();
     const {
@@ -300,30 +326,57 @@ class BuckTaskRunner {
       taskSettings
     } = state;
 
-    if (!buckRoot) {
-      throw new Error('Invariant violation: "buckRoot"');
+    if (!(buckRoot != null)) {
+      throw new Error('Invariant violation: "buckRoot != null"');
     }
 
     if (!buildRuleType) {
       throw new Error('Invariant violation: "buildRuleType"');
     }
 
-    const deploymentString = formatDeploymentTarget(selectedDeploymentTarget);
+    const deploymentTargetString = (0, (_DeploymentTarget || _load_DeploymentTarget()).formatDeploymentTarget)(selectedDeploymentTarget);
+    const deploymentString = deploymentTargetString === '' ? '' : ` on "${deploymentTargetString}"`;
 
     const task = (0, (_tasks || _load_tasks()).taskFromObservable)(_rxjsBundlesRxMinJs.Observable.concat((0, (_tasks || _load_tasks()).createMessage)(`Resolving ${taskType} command for "${buildTarget}"${deploymentString}`, 'log'), _rxjsBundlesRxMinJs.Observable.defer(() => {
+      const trace = (_nuclideArtillery || _load_nuclideArtillery()).NuclideArtilleryTrace.begin('nuclide_buck', taskType);
       if (selectedDeploymentTarget) {
         const { platform, device } = selectedDeploymentTarget;
-        return platform.runTask(this._buildSystem, taskType, buildRuleType.buildTarget, taskSettings, device);
+        return platform.runTask(this._buildSystem, taskType, buildRuleType.buildTarget, taskSettings, device).do({
+          error() {
+            trace.end();
+          },
+          complete() {
+            trace.end();
+          }
+        });
       } else {
         const subcommand = taskType === 'debug' ? 'build' : taskType;
-        return this._buildSystem.runSubcommand(buckRoot, subcommand, buildRuleType.buildTarget, taskSettings, taskType === 'debug', null);
+        return this._buildSystem.runSubcommand(buckRoot, subcommand, buildRuleType.buildTarget, taskSettings, taskType === 'debug', null).do({
+          error() {
+            trace.end();
+          },
+          complete() {
+            trace.end();
+          }
+        });
       }
     })));
 
+    task.onDidComplete(() => {
+      this._completedTasksObservable.next({
+        buckRoot,
+        buildRuleType,
+        buildTarget,
+        deploymentTarget: selectedDeploymentTarget,
+        taskSettings
+      });
+    });
+
     return Object.assign({}, task, {
       getTrackingData: () => ({
-        buckRoot,
         buildTarget,
+        deploymentTarget: deploymentTargetString,
+        ruleType: buildRuleType.type,
         taskSettings: state.taskSettings
       })
     });
@@ -339,33 +392,33 @@ class BuckTaskRunner {
       return;
     }
     const state = this._store.getState();
-    const { buildTarget, taskSettings, selectedDeploymentTarget } = state;
+    const { buildTarget, taskSettings } = state;
+    const target = state.selectedDeploymentTarget;
+    let selectedPlatformGroupName;
     let selectedPlatformName;
+    let selectedDeviceGroupName;
     let selectedDeviceName;
-    if (selectedDeploymentTarget) {
-      selectedPlatformName = selectedDeploymentTarget.platform.name;
-      selectedDeviceName = selectedDeploymentTarget.device ? selectedDeploymentTarget.device.name : null;
+    if (target != null) {
+      selectedPlatformGroupName = target.platformGroup.name;
+      selectedPlatformName = target.platform.name;
+      selectedDeviceGroupName = target.deviceGroup != null ? target.deviceGroup.name : null;
+      selectedDeviceName = target.device != null ? target.device.name : null;
     } else {
       // In case the user quits before the session is restored, forward the session restoration.
+      selectedPlatformGroupName = state.lastSessionPlatformGroupName;
       selectedPlatformName = state.lastSessionPlatformName;
+      selectedDeviceGroupName = state.lastSessionDeviceGroupName;
       selectedDeviceName = state.lastSessionDeviceName;
     }
 
     return {
       buildTarget,
       taskSettings,
+      selectedPlatformGroupName,
       selectedPlatformName,
+      selectedDeviceGroupName,
       selectedDeviceName
     };
   }
 }
-
 exports.BuckTaskRunner = BuckTaskRunner;
-function formatDeploymentTarget(deploymentTarget) {
-  if (!deploymentTarget) {
-    return '';
-  }
-  const { device, platform } = deploymentTarget;
-  const deviceString = device ? `: ${device.name}` : '';
-  return ` on "${platform.name}${deviceString}"`;
-}

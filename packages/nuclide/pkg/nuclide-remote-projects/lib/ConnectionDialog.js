@@ -4,6 +4,14 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
+
+var _passesGK;
+
+function _load_passesGK() {
+  return _passesGK = _interopRequireDefault(require('../../commons-node/passesGK'));
+}
+
 var _AuthenticationPrompt;
 
 function _load_AuthenticationPrompt() {
@@ -20,6 +28,12 @@ var _ButtonGroup;
 
 function _load_ButtonGroup() {
   return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
+}
+
+var _connectBigDigSshHandshake;
+
+function _load_connectBigDigSshHandshake() {
+  return _connectBigDigSshHandshake = _interopRequireDefault(require('./connectBigDigSshHandshake'));
 }
 
 var _ConnectionDetailsPrompt;
@@ -40,7 +54,7 @@ function _load_notification() {
   return _notification = require('./notification');
 }
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _electron = _interopRequireDefault(require('electron'));
 
@@ -61,6 +75,8 @@ var _log4js;
 function _load_log4js() {
   return _log4js = require('log4js');
 }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -90,7 +106,7 @@ const WAITING_FOR_AUTHENTICATION = 4;
 /**
  * Component that manages the state transitions as the user connects to a server.
  */
-class ConnectionDialog extends _react.default.Component {
+class ConnectionDialog extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -104,8 +120,14 @@ class ConnectionDialog extends _react.default.Component {
         throw new Error('Invariant violation: "this.props.connectionProfiles != null"');
       }
 
-      const selectedProfile = this.props.connectionProfiles[this.state.indexOfSelectedConnectionProfile];
-      const connectionDetails = this.refs.content.getFormFields();
+      const selectedProfile = this.props.connectionProfiles[this.props.selectedProfileIndex];
+      const connectionDetailsPrompt = this._content;
+
+      if (!(connectionDetailsPrompt instanceof (_ConnectionDetailsPrompt || _load_ConnectionDetailsPrompt()).default)) {
+        throw new Error('Invariant violation: "connectionDetailsPrompt instanceof ConnectionDetailsPrompt"');
+      }
+
+      const connectionDetails = connectionDetailsPrompt.getFormFields();
       const validationResult = (0, (_formValidationUtils || _load_formValidationUtils()).validateFormInputs)(selectedProfile.displayTitle, connectionDetails, '');
 
       if (typeof validationResult.errorMessage === 'string') {
@@ -124,24 +146,24 @@ class ConnectionDialog extends _react.default.Component {
         atom.notifications.addWarning(validationResult.warningMessage);
       }
 
-      this.props.onSaveProfile(this.state.indexOfSelectedConnectionProfile, newProfile);
+      this.props.onSaveProfile(this.props.selectedProfileIndex, newProfile);
       this.setState({ isDirty: false });
     };
 
     this.cancel = () => {
       const mode = this.state.mode;
 
-      // It is safe to call cancel even if no connection is started
-      this.state.sshHandshake.cancel();
+      if (this._pendingHandshake != null) {
+        this._pendingHandshake.unsubscribe();
+        this._pendingHandshake = null;
+      }
 
       if (mode === WAITING_FOR_CONNECTION) {
-        // TODO(mikeo): Tell delegate to cancel the connection request.
         this.setState({
           isDirty: false,
           mode: REQUEST_CONNECTION_DETAILS
         });
       } else {
-        // TODO(mikeo): Also cancel connection request, as appropriate for mode?
         this.props.onCancel();
         this.close();
       }
@@ -152,7 +174,12 @@ class ConnectionDialog extends _react.default.Component {
 
       if (mode === REQUEST_CONNECTION_DETAILS) {
         // User is trying to submit connection details.
-        const connectionDetailsForm = this.refs.content;
+        const connectionDetailsForm = this._content;
+
+        if (!(connectionDetailsForm instanceof (_ConnectionDetailsPrompt || _load_ConnectionDetailsPrompt()).default)) {
+          throw new Error('Invariant violation: "connectionDetailsForm instanceof ConnectionDetailsPrompt"');
+        }
+
         const {
           username,
           server,
@@ -175,9 +202,9 @@ class ConnectionDialog extends _react.default.Component {
             isDirty: false,
             mode: WAITING_FOR_CONNECTION
           });
-          this.state.sshHandshake.connect({
+          this._pendingHandshake = this._connect({
             host: server,
-            sshPort,
+            sshPort: parseInt(sshPort, 10),
             username,
             pathToPrivateKey,
             authMethod,
@@ -190,7 +217,12 @@ class ConnectionDialog extends _react.default.Component {
           remote.dialog.showErrorBox('Missing information', "Please make sure you've filled out all the form fields.");
         }
       } else if (mode === REQUEST_AUTHENTICATION_DETAILS) {
-        const authenticationPrompt = this.refs.content;
+        const authenticationPrompt = this._content;
+
+        if (!(authenticationPrompt instanceof (_AuthenticationPrompt || _load_AuthenticationPrompt()).default)) {
+          throw new Error('Invariant violation: "authenticationPrompt instanceof AuthenticationPrompt"');
+        }
+
         const password = authenticationPrompt.getPassword();
 
         this.state.finish([password]);
@@ -202,14 +234,12 @@ class ConnectionDialog extends _react.default.Component {
       }
     };
 
-    this.onProfileClicked = indexOfSelectedConnectionProfile => {
-      this.setState({
-        indexOfSelectedConnectionProfile,
-        isDirty: false
-      });
+    this.onProfileClicked = selectedProfileIndex => {
+      this.setState({ isDirty: false });
+      this.props.onProfileSelected(selectedProfileIndex);
     };
 
-    const sshHandshake = new (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).SshHandshake((0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).decorateSshConnectionDelegateWithTracking)({
+    this._delegate = (0, (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).decorateSshConnectionDelegateWithTracking)({
       onKeyboardInteractive: (name, instructions, instructionsLang, prompts, finish) => {
         // TODO: Display all prompts, not just the first one.
         this.requestAuthentication(prompts[0], finish);
@@ -228,15 +258,13 @@ class ConnectionDialog extends _react.default.Component {
         this.props.onError(error, config);
         logger.debug(error);
       }
-    }));
+    });
 
     this.state = {
       finish: answers => {},
-      indexOfSelectedConnectionProfile: props.indexOfInitiallySelectedConnectionProfile,
       instructions: '',
       isDirty: false,
-      mode: REQUEST_CONNECTION_DETAILS,
-      sshHandshake
+      mode: REQUEST_CONNECTION_DETAILS
     };
   }
 
@@ -244,41 +272,23 @@ class ConnectionDialog extends _react.default.Component {
     this._focus();
   }
 
-  componentWillReceiveProps(nextProps) {
-    let indexOfSelectedConnectionProfile = this.state.indexOfSelectedConnectionProfile;
-    if (nextProps.connectionProfiles == null) {
-      indexOfSelectedConnectionProfile = -1;
-    } else if (this.props.connectionProfiles == null ||
-    // The current selection is outside the bounds of the next profiles list
-    indexOfSelectedConnectionProfile > nextProps.connectionProfiles.length - 1 ||
-    // The next profiles list is longer than before, a new one was added
-    nextProps.connectionProfiles.length > this.props.connectionProfiles.length) {
-      // Select the final connection profile in the list because one of the above conditions means
-      // the current selected index is outdated.
-      indexOfSelectedConnectionProfile = nextProps.connectionProfiles.length - 1;
-    }
-
-    this.setState({ indexOfSelectedConnectionProfile });
-  }
-
   componentDidUpdate(prevProps, prevState) {
     if (this.state.mode !== prevState.mode) {
       this._focus();
-    } else if (this.state.mode === REQUEST_CONNECTION_DETAILS && this.state.indexOfSelectedConnectionProfile === prevState.indexOfSelectedConnectionProfile && !this.state.isDirty && prevState.isDirty && this.refs.okButton != null) {
+    } else if (this.state.mode === REQUEST_CONNECTION_DETAILS && this.props.selectedProfileIndex === prevProps.selectedProfileIndex && !this.state.isDirty && prevState.isDirty && this._okButton != null) {
       // When editing a profile and clicking "Save", the Save button disappears. Focus the primary
       // button after re-rendering so focus is on a logical element.
-      this.refs.okButton.focus();
+      this._okButton.focus();
     }
   }
 
   _focus() {
-    const content = this.refs.content;
+    const content = this._content;
     if (content == null) {
-      const { cancelButton } = this.refs;
-      if (cancelButton == null) {
+      if (this._cancelButton == null) {
         return;
       }
-      cancelButton.focus();
+      this._cancelButton.focus();
     } else {
       content.focus();
     }
@@ -295,29 +305,33 @@ class ConnectionDialog extends _react.default.Component {
     let okButtonText;
 
     if (mode === REQUEST_CONNECTION_DETAILS) {
-      content = _react.default.createElement((_ConnectionDetailsPrompt || _load_ConnectionDetailsPrompt()).default, {
+      content = _react.createElement((_ConnectionDetailsPrompt || _load_ConnectionDetailsPrompt()).default, {
         connectionProfiles: this.props.connectionProfiles,
-        indexOfSelectedConnectionProfile: this.state.indexOfSelectedConnectionProfile,
+        selectedProfileIndex: this.props.selectedProfileIndex,
         onAddProfileClicked: this.props.onAddProfileClicked,
         onCancel: this.cancel,
         onConfirm: this.ok,
         onDeleteProfileClicked: this.props.onDeleteProfileClicked,
         onDidChange: this._handleDidChange,
         onProfileClicked: this.onProfileClicked,
-        ref: 'content'
+        ref: prompt => {
+          this._content = prompt;
+        }
       });
       isOkDisabled = false;
       okButtonText = 'Connect';
     } else if (mode === WAITING_FOR_CONNECTION || mode === WAITING_FOR_AUTHENTICATION) {
-      content = _react.default.createElement((_IndeterminateProgressBar || _load_IndeterminateProgressBar()).default, null);
+      content = _react.createElement((_IndeterminateProgressBar || _load_IndeterminateProgressBar()).default, null);
       isOkDisabled = true;
       okButtonText = 'Connect';
     } else {
-      content = _react.default.createElement((_AuthenticationPrompt || _load_AuthenticationPrompt()).default, {
+      content = _react.createElement((_AuthenticationPrompt || _load_AuthenticationPrompt()).default, {
         instructions: this.state.instructions,
         onCancel: this.cancel,
         onConfirm: this.ok,
-        ref: 'content'
+        ref: prompt => {
+          this._content = prompt;
+        }
       });
       isOkDisabled = false;
       okButtonText = 'OK';
@@ -325,14 +339,14 @@ class ConnectionDialog extends _react.default.Component {
 
     let saveButtonGroup;
     let selectedProfile;
-    if (this.state.indexOfSelectedConnectionProfile >= 0 && this.props.connectionProfiles != null) {
-      selectedProfile = this.props.connectionProfiles[this.state.indexOfSelectedConnectionProfile];
+    if (this.props.selectedProfileIndex >= 0 && this.props.connectionProfiles != null) {
+      selectedProfile = this.props.connectionProfiles[this.props.selectedProfileIndex];
     }
     if (this.state.isDirty && selectedProfile != null && selectedProfile.saveable) {
-      saveButtonGroup = _react.default.createElement(
+      saveButtonGroup = _react.createElement(
         (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
         { className: 'inline-block' },
-        _react.default.createElement(
+        _react.createElement(
           (_Button || _load_Button()).Button,
           { onClick: this._handleClickSave },
           'Save'
@@ -340,33 +354,39 @@ class ConnectionDialog extends _react.default.Component {
       );
     }
 
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       null,
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { className: 'block' },
         content
       ),
-      _react.default.createElement(
+      _react.createElement(
         'div',
         { style: { display: 'flex', justifyContent: 'flex-end' } },
         saveButtonGroup,
-        _react.default.createElement(
+        _react.createElement(
           (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
           null,
-          _react.default.createElement(
+          _react.createElement(
             (_Button || _load_Button()).Button,
-            { onClick: this.cancel, ref: 'cancelButton' },
+            {
+              onClick: this.cancel,
+              ref: button => {
+                this._cancelButton = button;
+              } },
             'Cancel'
           ),
-          _react.default.createElement(
+          _react.createElement(
             (_Button || _load_Button()).Button,
             {
               buttonType: (_Button || _load_Button()).ButtonTypes.PRIMARY,
               disabled: isOkDisabled,
               onClick: this.ok,
-              ref: 'okButton' },
+              ref: button => {
+                this._okButton = button;
+              } },
             okButtonText
           )
         )
@@ -375,6 +395,11 @@ class ConnectionDialog extends _react.default.Component {
   }
 
   close() {
+    if (this._pendingHandshake != null) {
+      this._pendingHandshake.unsubscribe();
+      this._pendingHandshake = null;
+    }
+
     if (this.props.onClosed) {
       this.props.onClosed();
     }
@@ -390,9 +415,13 @@ class ConnectionDialog extends _react.default.Component {
   }
 
   getFormFields() {
-    const connectionDetailsForm = this.refs.content;
+    const connectionDetailsForm = this._content;
     if (!connectionDetailsForm) {
       return null;
+    }
+
+    if (!(connectionDetailsForm instanceof (_ConnectionDetailsPrompt || _load_ConnectionDetailsPrompt()).default)) {
+      throw new Error('Invariant violation: "connectionDetailsForm instanceof ConnectionDetailsPrompt"');
     }
 
     const {
@@ -417,8 +446,24 @@ class ConnectionDialog extends _react.default.Component {
     };
   }
 
+  _connect(connectionConfig) {
+    return _rxjsBundlesRxMinJs.Observable.defer(() => Promise.all([(0, (_passesGK || _load_passesGK()).default)('nuclide_big_dig'), (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).RemoteConnection.reconnect(connectionConfig.host, connectionConfig.cwd, connectionConfig.displayTitle)])).switchMap(([useBigDig, existingConnection]) => {
+      if (existingConnection != null) {
+        this._delegate.onWillConnect(connectionConfig); // required for the API
+        this._delegate.onDidConnect(existingConnection, connectionConfig);
+        return _rxjsBundlesRxMinJs.Observable.empty();
+      }
+      let sshHandshake;
+      if (useBigDig) {
+        sshHandshake = (0, (_connectBigDigSshHandshake || _load_connectBigDigSshHandshake()).default)(connectionConfig, this._delegate);
+      } else {
+        sshHandshake = new (_nuclideRemoteConnection || _load_nuclideRemoteConnection()).SshHandshake(this._delegate);
+        sshHandshake.connect(connectionConfig);
+      }
+      return _rxjsBundlesRxMinJs.Observable.create(() => {
+        return () => sshHandshake.cancel();
+      });
+    }).subscribe();
+  }
 }
 exports.default = ConnectionDialog;
-ConnectionDialog.defaultProps = {
-  indexOfInitiallySelectedConnectionProfile: -1
-};

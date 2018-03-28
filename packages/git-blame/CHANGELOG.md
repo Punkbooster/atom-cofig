@@ -2,6 +2,79 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.5.0"></a>
+# [1.5.0](https://github.com/alexcorre/git-blame/compare/v1.4.0...v1.5.0) (2018-01-25)
+
+
+### Bug Fixes
+
+* **config:** change .gitconfig entry keypath to atom-git-blame.repositoryUrlTemplate ([98ccf82](https://github.com/alexcorre/git-blame/commit/98ccf82))
+
+
+### Features
+
+* **config:** set custom repository URL in git config file (#222) ([264405d](https://github.com/alexcorre/git-blame/commit/264405d)), closes [#125](https://github.com/alexcorre/git-blame/issues/125)
+
+
+
+<a name="1.4.0"></a>
+# [1.4.0](https://github.com/alexcorre/git-blame/compare/v1.3.1...v1.4.0) (2017-12-11)
+
+
+### Bug Fixes
+
+* **ux:** default color commit authors to false ([60aeb01](https://github.com/alexcorre/git-blame/commit/60aeb01))
+* **ux:** text overflow in gutter (#216) ([0237c96](https://github.com/alexcorre/git-blame/commit/0237c96))
+* **ux:** tweak color styles. lint. ([efcb9af](https://github.com/alexcorre/git-blame/commit/efcb9af))
+
+
+### Features
+
+* **errors:** use atom build in error notier. remove legacy space pen custom view ([91274ab](https://github.com/alexcorre/git-blame/commit/91274ab))
+* **ux:** color commit authors (#205) ([3236257](https://github.com/alexcorre/git-blame/commit/3236257))
+
+
+
+<a name="1.3.1"></a>
+## [1.3.1](https://github.com/alexcorre/git-blame/compare/v1.3.0...v1.3.1) (2017-09-24)
+
+
+### Bug Fixes
+
+* **syntax:** fix syntax error preventing package activation (#208) ([5537244](https://github.com/alexcorre/git-blame/commit/5537244)), closes [#208](https://github.com/alexcorre/git-blame/issues/208)
+
+
+
+<a name="1.3.0"></a>
+# [1.3.0](https://github.com/alexcorre/git-blame/compare/v1.2.2...v1.3.0) (2017-09-24)
+
+
+### Features
+
+* **gitlab:** Add GitLab to default repo sources (#207) ([5079a47](https://github.com/alexcorre/git-blame/commit/5079a47)), closes [#183](https://github.com/alexcorre/git-blame/issues/183)
+
+
+
+<a name="1.2.2"></a>
+## [1.2.2](https://github.com/alexcorre/git-blame/compare/v1.2.1...v1.2.2) (2017-08-24)
+
+
+### Bug Fixes
+
+* **tooltip:** tooltips remaining after hiding the gutter (#204) ([3bcdb1e](https://github.com/alexcorre/git-blame/commit/3bcdb1e))
+
+
+
+<a name="1.2.1"></a>
+## [1.2.1](https://github.com/alexcorre/git-blame/compare/v1.2.0...v1.2.1) (2017-08-09)
+
+
+### Bug Fixes
+
+* **gutter:** gutter resize jump issue (#201) ([7fabe30](https://github.com/alexcorre/git-blame/commit/7fabe30))
+
+
+
 <a name="1.2.0"></a>
 # [1.2.0](https://github.com/alexcorre/git-blame/compare/v1.1.1...v1.2.0) (2017-08-02)
 

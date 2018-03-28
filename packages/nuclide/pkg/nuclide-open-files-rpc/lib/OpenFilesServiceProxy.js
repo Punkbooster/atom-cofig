@@ -6,25 +6,21 @@ module.exports = _client => {
   const remoteModule = {};
   remoteModule.FileNotifier = class {
     onFileEvent(arg0) {
-      return _client.marshalArguments(Array.from(arguments), [{
+      return Promise.all([_client.marshalArguments(Array.from(arguments), [{
         name: "event",
         type: {
           kind: "named",
           name: "FileEvent"
         }
-      }]).then(args => {
-        return _client.marshal(this, {
-          kind: "named",
-          location: {
-            type: "source",
-            fileName: "rpc-types.js",
-            line: 50
-          },
-          name: "FileNotifier"
-        }).then(id => {
-          return _client.callRemoteMethod(id, "onFileEvent", "promise", args);
-        });
-      }).then(value => {
+      }]), _client.marshal(this, {
+        kind: "named",
+        location: {
+          type: "source",
+          fileName: "rpc-types.js",
+          line: 62
+        },
+        name: "FileNotifier"
+      })]).then(([args, id]) => _client.callRemoteMethod(id, "onFileEvent", "promise", args)).then(value => {
         return _client.unmarshal(value, {
           kind: "void"
         });
@@ -32,7 +28,7 @@ module.exports = _client => {
     }
 
     onDirectoriesChanged(arg0) {
-      return _client.marshalArguments(Array.from(arguments), [{
+      return Promise.all([_client.marshalArguments(Array.from(arguments), [{
         name: "openDirectories",
         type: {
           kind: "set",
@@ -41,21 +37,33 @@ module.exports = _client => {
             name: "NuclideUri"
           }
         }
-      }]).then(args => {
-        return _client.marshal(this, {
-          kind: "named",
-          location: {
-            type: "source",
-            fileName: "rpc-types.js",
-            line: 50
-          },
-          name: "FileNotifier"
-        }).then(id => {
-          return _client.callRemoteMethod(id, "onDirectoriesChanged", "promise", args);
-        });
-      }).then(value => {
+      }]), _client.marshal(this, {
+        kind: "named",
+        location: {
+          type: "source",
+          fileName: "rpc-types.js",
+          line: 62
+        },
+        name: "FileNotifier"
+      })]).then(([args, id]) => _client.callRemoteMethod(id, "onDirectoriesChanged", "promise", args)).then(value => {
         return _client.unmarshal(value, {
           kind: "void"
+        });
+      });
+    }
+
+    getTotalBufferSize() {
+      return Promise.all([_client.marshalArguments(Array.from(arguments), []), _client.marshal(this, {
+        kind: "named",
+        location: {
+          type: "source",
+          fileName: "rpc-types.js",
+          line: 62
+        },
+        name: "FileNotifier"
+      })]).then(([args, id]) => _client.callRemoteMethod(id, "getTotalBufferSize", "promise", args)).then(value => {
+        return _client.unmarshal(value, {
+          kind: "number"
         });
       });
     }
@@ -148,7 +156,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "rpc-types.js",
-        line: 56
+        line: 69
       },
       name: "FileVersion",
       definition: {
@@ -206,6 +214,12 @@ Object.defineProperty(module.exports, "defs", {
             kind: "string"
           },
           optional: false
+        }, {
+          name: "languageId",
+          type: {
+            kind: "string"
+          },
+          optional: false
         }]
       }
     },
@@ -214,7 +228,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "rpc-types.js",
-        line: 27
+        line: 29
       },
       name: "FileCloseEvent",
       definition: {
@@ -241,7 +255,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "rpc-types.js",
-        line: 32
+        line: 34
       },
       name: "FileEditEvent",
       definition: {
@@ -289,12 +303,39 @@ Object.defineProperty(module.exports, "defs", {
         }]
       }
     },
+    FileSaveEvent: {
+      kind: "alias",
+      location: {
+        type: "source",
+        fileName: "rpc-types.js",
+        line: 43
+      },
+      name: "FileSaveEvent",
+      definition: {
+        kind: "object",
+        fields: [{
+          name: "kind",
+          type: {
+            kind: "string-literal",
+            value: "save"
+          },
+          optional: false
+        }, {
+          name: "fileVersion",
+          type: {
+            kind: "named",
+            name: "FileVersion"
+          },
+          optional: false
+        }]
+      }
+    },
     FileSyncEvent: {
       kind: "alias",
       location: {
         type: "source",
         fileName: "rpc-types.js",
-        line: 21
+        line: 22
       },
       name: "FileSyncEvent",
       definition: {
@@ -319,6 +360,12 @@ Object.defineProperty(module.exports, "defs", {
             kind: "string"
           },
           optional: false
+        }, {
+          name: "languageId",
+          type: {
+            kind: "string"
+          },
+          optional: false
         }]
       }
     },
@@ -327,7 +374,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "rpc-types.js",
-        line: 42
+        line: 49
       },
       name: "FileEvent",
       definition: {
@@ -350,6 +397,12 @@ Object.defineProperty(module.exports, "defs", {
             optional: false
           }, {
             name: "contents",
+            type: {
+              kind: "string"
+            },
+            optional: false
+          }, {
+            name: "languageId",
             type: {
               kind: "string"
             },
@@ -421,6 +474,23 @@ Object.defineProperty(module.exports, "defs", {
             name: "kind",
             type: {
               kind: "string-literal",
+              value: "save"
+            },
+            optional: false
+          }, {
+            name: "fileVersion",
+            type: {
+              kind: "named",
+              name: "FileVersion"
+            },
+            optional: false
+          }]
+        }, {
+          kind: "object",
+          fields: [{
+            name: "kind",
+            type: {
+              kind: "string-literal",
               value: "sync"
             },
             optional: false
@@ -437,6 +507,12 @@ Object.defineProperty(module.exports, "defs", {
               kind: "string"
             },
             optional: false
+          }, {
+            name: "languageId",
+            type: {
+              kind: "string"
+            },
+            optional: false
           }]
         }],
         discriminantField: "kind"
@@ -448,7 +524,7 @@ Object.defineProperty(module.exports, "defs", {
       location: {
         type: "source",
         fileName: "rpc-types.js",
-        line: 50
+        line: 62
       },
       constructorArgs: null,
       staticMethods: {},
@@ -457,7 +533,7 @@ Object.defineProperty(module.exports, "defs", {
           location: {
             type: "source",
             fileName: "rpc-types.js",
-            line: 51
+            line: 63
           },
           kind: "function",
           argumentTypes: [{
@@ -478,7 +554,7 @@ Object.defineProperty(module.exports, "defs", {
           location: {
             type: "source",
             fileName: "rpc-types.js",
-            line: 52
+            line: 64
           },
           kind: "function",
           argumentTypes: [{
@@ -498,11 +574,26 @@ Object.defineProperty(module.exports, "defs", {
             }
           }
         },
+        getTotalBufferSize: {
+          location: {
+            type: "source",
+            fileName: "rpc-types.js",
+            line: 65
+          },
+          kind: "function",
+          argumentTypes: [],
+          returnType: {
+            kind: "promise",
+            type: {
+              kind: "number"
+            }
+          }
+        },
         dispose: {
           location: {
             type: "source",
             fileName: "rpc-types.js",
-            line: 53
+            line: 66
           },
           kind: "function",
           argumentTypes: [],

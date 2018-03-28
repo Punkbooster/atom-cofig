@@ -9,7 +9,7 @@ var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _UniversalDisposable;
 
@@ -101,6 +101,8 @@ function _load_nuclideUri() {
   return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri.js'));
 }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // This must match URI defined in ../../../nuclide-console/lib/ui/ConsoleContainer
@@ -155,15 +157,15 @@ class SwiftPMTaskRunner {
 
   getExtraUi() {
     const { store, actions } = this._getFlux();
-    return class ExtraUi extends _react.default.Component {
+    return class ExtraUi extends _react.Component {
       render() {
-        return _react.default.createElement((_SwiftPMTaskRunnerToolbar || _load_SwiftPMTaskRunnerToolbar()).default, { store: store, actions: actions });
+        return _react.createElement((_SwiftPMTaskRunnerToolbar || _load_SwiftPMTaskRunnerToolbar()).default, { store: store, actions: actions });
       }
     };
   }
 
   getIcon() {
-    return () => _react.default.createElement((_Icon || _load_Icon()).Icon, { icon: 'nuclicon-swift', className: 'nuclide-swift-task-runner-icon' });
+    return () => _react.createElement((_Icon || _load_Icon()).Icon, { icon: 'nuclicon-swift', className: 'nuclide-swift-task-runner-icon' });
   }
 
   runTask(taskName) {
@@ -184,8 +186,8 @@ class SwiftPMTaskRunner {
         throw new Error(`Unknown task name: ${taskName}`);
     }
 
-    // eslint-disable-next-line nuclide-internal/atom-apis
-    atom.workspace.open(CONSOLE_VIEW_URI);
+    // eslint-disable-next-line rulesdir/atom-apis
+    atom.workspace.open(CONSOLE_VIEW_URI, { searchAllPanes: true });
 
     const observable = (0, (_tasks || _load_tasks()).createMessage)(`${command.command} ${command.args.join(' ')}`, 'log').concat((0, (_process || _load_process()).observeProcess)(command.command, command.args, {
       /* TODO(T17353599) */isExitError: () => false
@@ -218,11 +220,10 @@ class SwiftPMTaskRunner {
   }
 
   setProjectRoot(projectRoot, callback) {
-    const path = projectRoot == null ? null : projectRoot.getPath();
-
-    const storeReady = (0, (_event || _load_event()).observableFromSubscribeFunction)(this._getFlux().store.subscribe.bind(this._getFlux().store)).map(() => this._getFlux().store).startWith(this._getFlux().store).filter(store => store.getProjectRoot() === path).share();
+    const storeReady = (0, (_event || _load_event()).observableFromSubscribeFunction)(this._getFlux().store.subscribe.bind(this._getFlux().store)).map(() => this._getFlux().store).startWith(this._getFlux().store).filter(store => store.getProjectRoot() === projectRoot).share();
 
     const enabledObservable = storeReady.map(store => store.getProjectRoot()).distinctUntilChanged().switchMap(root => {
+      // flowlint-next-line sketchy-null-string:off
       if (!root || (_nuclideUri || _load_nuclideUri()).default.isRemote(root)) {
         return _rxjsBundlesRxMinJs.Observable.of(false);
       }
@@ -233,7 +234,7 @@ class SwiftPMTaskRunner {
 
     const subscription = _rxjsBundlesRxMinJs.Observable.combineLatest(enabledObservable, tasksObservable).subscribe(([enabled, tasks]) => callback(enabled, tasks));
 
-    this._projectRoot.next(path);
+    this._projectRoot.next(projectRoot);
 
     return new (_UniversalDisposable || _load_UniversalDisposable()).default(subscription);
   }

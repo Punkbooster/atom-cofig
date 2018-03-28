@@ -1,9 +1,8 @@
 "*":
   "atom-beautify":
-    general:
-      _analyticsUserId: "b527f0b0-7cac-4680-9862-8d0926193df5"
-    ruby:
-      indent_size: 2
+    ruby: {}
+  "better-git-blame":
+    searchInLayerEnabled: false
   core:
     customFileTypes:
       "source.ini": [
@@ -12,66 +11,42 @@
         ".flowconfig"
       ]
       "source.json": [
-        ".arcconfig"
         "BUCK.autodeps"
       ]
       "source.python": [
         "BUCK"
       ]
     disabledPackages: [
-      "atom-react-autocomplete"
+      "git-blame"
+      "tree-view"
+      "linter-sass-lint"
+      "linter-csslint"
       "linter-rubocop"
-      "nuclide"
+      "tree-view-autoresize"
     ]
     telemetryConsent: "no"
     themes: [
-      "dracula-ui"
-      "dracula-syntax"
+      "one-dark-ui"
+      "city-lights-syntax"
     ]
   editor:
+    fontSize: 12
     scrollPastEnd: true
+    scrollSensitivity: 80
   "exception-reporting":
-    userId: "980bf24e-de05-2b5e-f3c5-71e82ef16fed"
+    userId: "20568aa1-dd42-4085-b8f5-282026b77f41"
   "git-blame":
-    columnWidth: 330
-  linter: {}
-  "linter-eslint":
-    disableWhenNoEslintConfig: false
+    columnWidth: 284
   "linter-ui-default":
     panelHeight: 64
   nuclide:
     "nuclide-file-tree": {}
-    "nuclide-working-sets":
-      workingSets: [
-        {
-          name: "app & spec"
-          active: false
-          uris: [
-            "/home/punkbooster/Spark/greetabl/app"
-            "/home/punkbooster/Spark/greetabl/spec"
-          ]
-        }
-        {
-          name: "db"
-          active: false
-          uris: [
-            "/home/punkbooster/Spark/greetabl/db"
-          ]
-        }
-        {
-          name: "lib"
-          active: false
-          uris: [
-            "/home/punkbooster/Spark/greetabl/lib"
-          ]
-        }
-        {
-          name: "Default"
-          active: true
-          uris: [
-            "/home/punkbooster/Spark/greetabl/app"
-          ]
-        }
-      ]
+    "nuclide-home":
+      showHome: false
+    use:
+      "atom-ide-diagnostics-ui": false
   welcome:
     showOnStartup: false
+".ansi.text":
+  editor:
+    scrollPastEnd: false

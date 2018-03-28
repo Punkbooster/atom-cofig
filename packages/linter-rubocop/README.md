@@ -46,17 +46,27 @@ You can configure linter-rubocop by editing `~/.atom/config.cson`
 
 If you're using RVM and receiving errors in Atom that indicate Rubocop can't be
 found, you may need to change `/bin` to `/wrappers` in the path that gets
-returned from `which rubocop` before using it as your `executablePath` setting.
+returned from `which rubocop` before using it as your `command` setting.
 For example, change:
 
-```text
-/Users/JohnDoe/.rvm/gems/ruby-2.2.4@global/bin/rubocop
+```cson
+"linter-rubocop":
+  command: "/Users/JohnDoe/.rvm/gems/ruby-2.2.4@global/bin/rubocop"
 ```
 
 To:
 
-```text
-/Users/JohnDoe/.rvm/gems/ruby-2.2.4@global/wrappers/rubocop
+```cson
+"linter-rubocop":
+  command: "/Users/JohnDoe/.rvm/gems/ruby-2.2.4@global/wrappers/rubocop"
+```
+### Using `rbenv`
+
+If you're using `rbenv`, it's recommended that you set your `command` to point to the Rubocop shim. This way, when you upgrade Ruby, the command will be a pointer to a Rubocop executable, regardless of your current Ruby version.
+
+```cson
+"linter-rubocop":
+  command: "/Users/JohnDoe/.rbenv/shims/rubocop"
 ```
 
 ## Contributing
@@ -72,7 +82,7 @@ If you would like to contribute enhancements or fixes, please do the following:
 Please note that modifications should follow these coding guidelines:
 
 -   Indent is 2 spaces.
--   Code should pass the `coffeelint` linter.
+-   Code should pass `npm run lint` (eslint).
 -   Vertical whitespace helps readability, don’t be afraid to use it.
 
 Thank you for helping out!
@@ -82,5 +92,5 @@ Thank you for helping out!
 [![Share the love!](https://s3-eu-west-1.amazonaws.com/atom-linter/we-need-your-help.png?style=flat)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KXUYS4ARNHCN8 "Share the love")
 
 [![Gratipay donate button](https://img.shields.io/gratipay/hd-deman.svg?style=flat)](https://www.gratipay.com/hd-deman/ "Donate weekly to this project using Gratipay")
-[![PayPayl donate button](https://img.shields.io/badge/paypal-donate-yellow.svg?style=flat)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KXUYS4ARNHCN8 "Donate once-off to this project using Paypal")
+[![PayPal donate button](https://img.shields.io/badge/paypal-donate-yellow.svg?style=flat)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KXUYS4ARNHCN8 "Donate once-off to this project using Paypal")
 [![BitCoin donate button](https://img.shields.io/badge/bitcoin-donate-yellow.svg?style=flat)](https://www.coinbase.com/checkouts/2945dab392cb1cefbb7097e4cd17a603 "Donate once-off to this project using BitCoin")

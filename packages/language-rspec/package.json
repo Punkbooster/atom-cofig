@@ -2,39 +2,39 @@
   "_args": [
     [
       {
-        "raw": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+        "raw": "/tmp/d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
         "scope": null,
         "escapedName": null,
         "name": null,
-        "rawSpec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
-        "spec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+        "rawSpec": "/tmp/d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
+        "spec": "/tmp/d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
         "type": "local"
       },
-      "/tmp/apm-install-dir-11774-27821-nvzqn7.ddq85mi"
+      "/tmp/apm-install-dir-118018-21305-1ipkyi7.6ps67xpqfr"
     ]
   ],
-  "_from": "../d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
-  "_id": "language-rspec@0.6.3",
+  "_from": "../d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
+  "_id": "language-rspec@0.7.0",
   "_inCache": true,
   "_location": "/language-rspec",
   "_phantomChildren": {},
   "_requested": {
-    "raw": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+    "raw": "/tmp/d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
     "scope": null,
     "escapedName": null,
     "name": null,
-    "rawSpec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
-    "spec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
+    "rawSpec": "/tmp/d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
+    "spec": "/tmp/d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
     "type": "local"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "file:../d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
-  "_shasum": "b7ce46acf5c419dfdb2273d4dd4ceee8fbfb80fc",
+  "_resolved": "file:../d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
+  "_shasum": "de762b680e0b63007e9656333bcd2da1c1d7f2eb",
   "_shrinkwrap": null,
-  "_spec": "/tmp/d-11774-27821-ie4zb0.8gqond0a4i/package.tgz",
-  "_where": "/tmp/apm-install-dir-11774-27821-nvzqn7.ddq85mi",
+  "_spec": "/tmp/d-118018-21305-dkgj6q.f9bzrxjemi/package.tgz",
+  "_where": "/tmp/apm-install-dir-118018-21305-1ipkyi7.6ps67xpqfr",
   "bugs": {
     "url": "https://github.com/pauldruziak/language-rspec/issues"
   },
@@ -62,7 +62,7 @@
     "type": "git",
     "url": "git+https://github.com/pauldruziak/language-rspec.git"
   },
-  "version": "0.6.3",
+  "version": "0.7.0",
   "_atomModuleCache": {
     "version": 1,
     "dependencies": [],

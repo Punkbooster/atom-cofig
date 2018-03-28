@@ -22,6 +22,12 @@ function _load_contextMenu() {
   return _contextMenu = require('../../commons-atom/context-menu');
 }
 
+var _classnames;
+
+function _load_classnames() {
+  return _classnames = _interopRequireDefault(require('classnames'));
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -37,12 +43,23 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * there's less messy bookkeeping regarding lifetimes of the unregister
  * Disposable objects.
  */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
 class BreakpointDisplayController {
 
-  constructor(delegate, breakpointStore, editor, debuggerActions) {
+  constructor(delegate, model, editor, debuggerActions) {
     this._delegate = delegate;
     this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
-    this._breakpointStore = breakpointStore;
+    this._model = model;
     this._debuggerActions = debuggerActions;
     this._editor = editor;
     this._markers = [];
@@ -60,13 +77,12 @@ class BreakpointDisplayController {
       priority: -1100
     });
     this._gutter = gutter;
-    this._disposables.add(gutter.onDidDestroy(this._handleGutterDestroyed.bind(this)), editor.observeGutters(this._registerGutterMouseHandlers.bind(this)), this._breakpointStore.onNeedUIUpdate(this._handleBreakpointsChanged.bind(this)), this._editor.onDidDestroy(this._handleTextEditorDestroyed.bind(this)), this._registerEditorContextMenuHandler());
+    this._disposables.add(gutter.onDidDestroy(this._handleGutterDestroyed.bind(this)), editor.observeGutters(this._registerGutterMouseHandlers.bind(this)), this._model.onNeedUIUpdate(this._handleBreakpointsChanged.bind(this)), this._editor.onDidDestroy(this._handleTextEditorDestroyed.bind(this)), this._registerEditorContextMenuHandler());
     this._update();
   }
 
   _isDebugging() {
-    const debuggerStore = this._breakpointStore.getDebuggerStore();
-    return debuggerStore != null && debuggerStore.isDebugging();
+    return this._model.isDebugging();
   }
 
   _registerEditorContextMenuHandler() {
@@ -145,7 +161,7 @@ class BreakpointDisplayController {
       return true;
     }
 
-    if (info.enabled !== bp.enabled || info.resolved !== bp.resolved) {
+    if (info.enabled !== bp.enabled || info.resolved !== bp.resolved || info.conditional !== (bp.condition !== '')) {
       return true;
     }
 
@@ -167,15 +183,15 @@ class BreakpointDisplayController {
     if (path == null) {
       return;
     }
-    const breakpoints = this._breakpointStore.getBreakpointsForPath(path);
+    const breakpoints = this._model.getBreakpointsForPath(path);
     // A mutable unhandled lines map.
-    const unhandledLines = this._breakpointStore.getBreakpointLinesForPath(path);
+    const unhandledLines = this._model.getBreakpointLinesForPath(path);
     const markersToKeep = [];
 
     // Destroy markers that no longer correspond to breakpoints.
     this._markers.forEach(marker => {
       const line = marker.getStartBufferPosition().row;
-      const bp = this._breakpointStore.getBreakpointAtLine(path, line);
+      const bp = this._model.getBreakpointAtLine(path, line);
       if (debugging === this._debugging && unhandledLines.has(line) && !this._needsUpdate(line, bp)) {
         markersToKeep.push(marker);
         unhandledLines.delete(line);
@@ -187,20 +203,31 @@ class BreakpointDisplayController {
 
     this._debugging = debugging;
 
+    const fileLength = this._editor.getLineCount();
+
     // Add new markers for breakpoints without corresponding markers.
     for (const [line, breakpoint] of breakpoints) {
+      // Remove any breakpoints that are past the end of the file.
+      if (line >= fileLength) {
+        process.nextTick(() => {
+          this._debuggerActions.deleteBreakpoint(path, line);
+        });
+        continue;
+      }
+
       if (!unhandledLines.has(line)) {
         // This line has been handled.
         continue;
       }
       const marker = this._createBreakpointMarkerAtLine(line, false, // isShadow
-      breakpoint.enabled, breakpoint.resolved);
+      breakpoint.enabled, breakpoint.resolved, breakpoint.condition);
 
       // Remember the properties of the marker at this line so it's easy to tell if it
       // needs to be updated when the breakpoint properties change.
       this._markerInfo.set(line, {
         enabled: breakpoint.enabled,
-        resolved: breakpoint.resolved
+        resolved: breakpoint.resolved,
+        conditional: breakpoint.condition !== ''
       });
       marker.onDidChange(this._handleMarkerChange.bind(this));
       markersToKeep.push(marker);
@@ -215,6 +242,7 @@ class BreakpointDisplayController {
    */
   _handleMarkerChange(event) {
     const path = this._editor.getPath();
+    // flowlint-next-line sketchy-null-string:off
     if (!path) {
       return;
     }
@@ -240,19 +268,30 @@ class BreakpointDisplayController {
     }
 
     const path = this._editor.getPath();
+    // flowlint-next-line sketchy-null-string:off
     if (!path) {
       return;
     }
 
     // Don't toggle a breakpoint if the user clicked on something in the gutter that is not
     // the debugger, such as clicking on a line number to select the line.
-    if (!target.classList.contains('nuclide-debugger-shadow-breakpoint-icon') && !target.classList.contains('nuclide-debugger-breakpoint-icon') && !target.classList.contains('nuclide-debugger-breakpoint-icon-disabled') && !target.classList.contains('nuclide-debugger-breakpoint-icon-unresolved')) {
+    if (!target.classList.contains('nuclide-debugger-shadow-breakpoint-icon') && !target.classList.contains('nuclide-debugger-breakpoint-icon') && !target.classList.contains('nuclide-debugger-breakpoint-icon-disabled') && !target.classList.contains('nuclide-debugger-breakpoint-icon-unresolved') && !target.classList.contains('nuclide-debugger-breakpoint-icon-conditional')) {
       return;
     }
 
     try {
       const curLine = this._getCurrentMouseEventLine(event);
       this._debuggerActions.toggleBreakpoint(path, curLine);
+
+      if (this._model.getBreakpointAtLine(path, curLine) != null) {
+        // If a breakpoint was added and showDebuggerOnBpSet config setting
+        // is true, show the debugger.
+        if (atom.config.get('nuclide.nuclide-debugger.showDebuggerOnBpSet')) {
+          atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-debugger:show', {
+            showOnlyIfHidden: true
+          });
+        }
+      }
     } catch (e) {
       return;
     }
@@ -322,11 +361,13 @@ class BreakpointDisplayController {
     if (breakpointsAtLine.length === 0) {
       this._lastShadowBreakpointMarker = this._createBreakpointMarkerAtLine(line, true, // isShadow
       true, // enabled
-      false);
+      false, // resolved
+      '' // condition
+      );
     }
   }
 
-  _createBreakpointMarkerAtLine(line, isShadow, enabled, resolved) {
+  _createBreakpointMarkerAtLine(line, isShadow, enabled, resolved, condition) {
     const marker = this._editor.markBufferPosition([line, 0], {
       invalidate: 'never'
     });
@@ -334,15 +375,29 @@ class BreakpointDisplayController {
     // If the debugger is not attached, display all breakpoints as resolved.
     // Once the debugger attaches, it will determine what's actually resolved or not.
     const unresolved = this._debugging && !resolved;
+    const conditional = condition !== '';
     const elem = document.createElement('span');
     elem.dataset.line = line.toString();
-    elem.className = isShadow ? 'nuclide-debugger-shadow-breakpoint-icon' : !enabled ? 'nuclide-debugger-breakpoint-icon-disabled' : unresolved ? 'nuclide-debugger-breakpoint-icon-unresolved' : 'nuclide-debugger-breakpoint-icon';
+    elem.className = (0, (_classnames || _load_classnames()).default)({
+      'nuclide-debugger-breakpoint-icon': !isShadow && enabled && !unresolved,
+      'nuclide-debugger-breakpoint-icon-conditional': conditional,
+      'nuclide-debugger-breakpoint-icon-nonconditional': !conditional,
+      'nuclide-debugger-shadow-breakpoint-icon': isShadow,
+      'nuclide-debugger-breakpoint-icon-disabled': !isShadow && !enabled,
+      'nuclide-debugger-breakpoint-icon-unresolved': !isShadow && enabled && unresolved
+    });
 
     if (!isShadow) {
       if (!enabled) {
         elem.title = 'Disabled breakpoint';
       } else if (unresolved) {
         elem.title = 'Unresolved breakpoint';
+      } else {
+        elem.title = 'Breakpoint';
+      }
+
+      if (conditional) {
+        elem.title += ` (Condition: ${condition})`;
       }
     }
 
@@ -354,13 +409,4 @@ class BreakpointDisplayController {
     return marker;
   }
 }
-exports.default = BreakpointDisplayController; /**
-                                                * Copyright (c) 2015-present, Facebook, Inc.
-                                                * All rights reserved.
-                                                *
-                                                * This source code is licensed under the license found in the LICENSE file in
-                                                * the root directory of this source tree.
-                                                *
-                                                * 
-                                                * @format
-                                                */
+exports.default = BreakpointDisplayController;

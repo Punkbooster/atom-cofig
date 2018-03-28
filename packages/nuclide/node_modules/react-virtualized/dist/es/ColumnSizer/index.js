@@ -1,4 +1,4 @@
-import _default from './ColumnSizer';
-export { _default as default };
-import _ColumnSizer from './ColumnSizer';
-export { _ColumnSizer as ColumnSizer };
+import ColumnSizer from './ColumnSizer';
+
+export default ColumnSizer;
+export { ColumnSizer };

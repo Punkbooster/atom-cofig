@@ -12,6 +12,12 @@ function _load_nuclideAnalytics() {
   return _nuclideAnalytics = require('../../nuclide-analytics');
 }
 
+var _nuclideLanguageServiceRpc;
+
+function _load_nuclideLanguageServiceRpc() {
+  return _nuclideLanguageServiceRpc = require('../../nuclide-language-service-rpc');
+}
+
 var _libclang;
 
 function _load_libclang() {
@@ -21,16 +27,18 @@ function _load_libclang() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Types longer than this will be truncated.
-const MAX_LENGTH = 256; /**
-                         * Copyright (c) 2015-present, Facebook, Inc.
-                         * All rights reserved.
-                         *
-                         * This source code is licensed under the license found in the LICENSE file in
-                         * the root directory of this source tree.
-                         *
-                         * 
-                         * @format
-                         */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const MAX_LENGTH = 256;
 
 class TypeHintHelpers {
   static typeHint(editor, position) {
@@ -47,7 +55,7 @@ class TypeHintHelpers {
       if (type.length > MAX_LENGTH) {
         hint = type.substr(0, MAX_LENGTH) + '...';
       }
-      return { hint, range };
+      return (0, (_nuclideLanguageServiceRpc || _load_nuclideLanguageServiceRpc()).typeHintFromSnippet)(hint, range);
     }));
   }
 }

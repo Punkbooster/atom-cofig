@@ -3,13 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.MultiGrid = exports.default = undefined;
+exports.MultiGrid = undefined;
 
-var _MultiGrid2 = require('./MultiGrid');
+var _MultiGrid = require('./MultiGrid');
 
-var _MultiGrid3 = _interopRequireDefault(_MultiGrid2);
+var _MultiGrid2 = _interopRequireDefault(_MultiGrid);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = _MultiGrid3.default;
-exports.MultiGrid = _MultiGrid3.default;
+exports.default = _MultiGrid2.default;
+exports.MultiGrid = _MultiGrid2.default;

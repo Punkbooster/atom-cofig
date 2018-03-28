@@ -16,12 +16,12 @@ function _load_UniversalDisposable() {
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
-* Shows the provided menu template. This will result in [an extra call to `templateForEvent()`][1],
-* but it means that we still go through `showMenuForEvent()`, maintaining its behavior wrt
-* (a)synchronousness. See atom/atom#13398.
-*
-* [1]: https://github.com/atom/atom/blob/v1.13.0/src/context-menu-manager.coffee#L200
-*/
+ * Shows the provided menu template. This will result in [an extra call to `templateForEvent()`][1],
+ * but it means that we still go through `showMenuForEvent()`, maintaining its behavior wrt
+ * (a)synchronousness. See atom/atom#13398.
+ *
+ * [1]: https://github.com/atom/atom/blob/v1.13.0/src/context-menu-manager.coffee#L200
+ */
 function showMenuForEvent(event, menuTemplate) {
   if (!(_electron.remote != null)) {
     throw new Error('Invariant violation: "remote != null"');

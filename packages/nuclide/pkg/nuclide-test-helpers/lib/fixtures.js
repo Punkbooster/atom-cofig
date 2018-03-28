@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.generateFixture = exports.copyBuildFixture = exports.generateHgRepo2Fixture = exports.generateHgRepo1Fixture = exports.copyFixture = undefined;
+exports.copyBuildFixture = exports.generateHgRepo4Fixture = exports.overwriteFileWithTestContent = exports.generateHgRepo3Fixture = exports.generateHgRepo2Fixture = exports.generateHgRepo1Fixture = exports.copyFixture = undefined;
 
 var _asyncToGenerator = _interopRequireDefault(require('async-to-generator'));
 
@@ -69,21 +69,12 @@ let copyFixture = exports.copyFixture = (() => {
  *
  * @returns the path to the temporary directory that this function creates.
  */
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
+
 
 let generateHgRepo1Fixture = exports.generateHgRepo1Fixture = (() => {
   var _ref2 = (0, _asyncToGenerator.default)(function* () {
     const testTxt = 'this is a test file\nline 2\n\n  indented line\n';
-    const tempDir = yield generateFixture('hg_repo_1', new Map([['.watchmanconfig', '{}\n'], ['test.txt', testTxt]]));
+    const tempDir = yield (0, (_testHelpers || _load_testHelpers()).generateFixture)('hg_repo_1', new Map([['.watchmanconfig', '{}\n'], ['test.txt', testTxt]]));
     const repoPath = yield (_fsPromise || _load_fsPromise()).default.realpath(tempDir);
     yield (0, (_process || _load_process()).runCommand)('hg', ['init'], { cwd: repoPath }).toPromise();
     yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, '.hg', 'hgrc'), '[ui]\nusername = Test <test@mail.com>\n');
@@ -120,7 +111,7 @@ let generateHgRepo1Fixture = exports.generateHgRepo1Fixture = (() => {
 let generateHgRepo2Fixture = exports.generateHgRepo2Fixture = (() => {
   var _ref3 = (0, _asyncToGenerator.default)(function* () {
     const testTxt = 'this is a test file\nline 2\n\n  indented line\n';
-    const tempDir = yield generateFixture('hg_repo_2', new Map([['.watchmanconfig', '{}\n'], ['test.txt', testTxt]]));
+    const tempDir = yield (0, (_testHelpers || _load_testHelpers()).generateFixture)('hg_repo_2', new Map([['.watchmanconfig', '{}\n'], ['test.txt', testTxt]]));
     const repoPath = yield (_fsPromise || _load_fsPromise()).default.realpath(tempDir);
     yield (0, (_process || _load_process()).runCommand)('hg', ['init'], { cwd: repoPath }).toPromise();
     yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, '.hg', 'hgrc'), '[paths]\ndefault = .\n[ui]\nusername = Test <test@mail.com>\n');
@@ -145,6 +136,130 @@ let generateHgRepo2Fixture = exports.generateHgRepo2Fixture = (() => {
 })();
 
 /**
+ * Generates an hg repository with the following structure:
+ *
+ *   o second commit [secondCommit]
+ *  /
+ * |
+ * |
+ * | o first commit [firstCommit]
+ * |/
+ * |
+ * |
+ * o base commit
+ *
+ * @returns the path to the temporary directory that this function creates.
+ */
+
+
+let generateHgRepo3Fixture = exports.generateHgRepo3Fixture = (() => {
+  var _ref4 = (0, _asyncToGenerator.default)(function* (fileName = 'temp.txt') {
+    const testTxt = 'this is the base file\nline 2\n\n  indented line\n';
+    const tempDir = yield (0, (_testHelpers || _load_testHelpers()).generateFixture)('hg_repo_3', new Map([['.watchmanconfig', '{}\n'], [fileName, testTxt]]));
+    const repoPath = yield (_fsPromise || _load_fsPromise()).default.realpath(tempDir);
+    yield (0, (_process || _load_process()).runCommand)('hg', ['init'], { cwd: repoPath }).toPromise();
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, '.hg', 'hgrc'), '[paths]\ndefault = .\n[ui]\nusername = Test <test@mail.com>\n');
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, fileName), testTxt);
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'base commit'], {
+      cwd: repoPath
+    }).toPromise();
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, fileName), testTxt + '\nthis line added on first commit\n');
+    yield (0, (_process || _load_process()).runCommand)('hg', ['bookmark', 'firstCommit'], {
+      cwd: repoPath
+    }).toPromise();
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'first commit'], {
+      cwd: repoPath
+    }).toPromise();
+    yield (0, (_process || _load_process()).runCommand)('hg', ['prev'], {
+      cwd: repoPath
+    }).toPromise();
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, fileName), testTxt + '\nthis line added on second commit\n');
+    yield (0, (_process || _load_process()).runCommand)('hg', ['bookmark', 'secondCommit'], {
+      cwd: repoPath
+    }).toPromise();
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'second commit'], {
+      cwd: repoPath
+    }).toPromise();
+    return repoPath;
+  });
+
+  return function generateHgRepo3Fixture() {
+    return _ref4.apply(this, arguments);
+  };
+})();
+
+let overwriteFileWithTestContent = exports.overwriteFileWithTestContent = (() => {
+  var _ref5 = (0, _asyncToGenerator.default)(function* (fileName, repoPath, fileContent = testFileContent) {
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, fileName), fileContent);
+  });
+
+  return function overwriteFileWithTestContent(_x3, _x4) {
+    return _ref5.apply(this, arguments);
+  };
+})();
+
+/**
+ * Generates an hg repository with the following structure:
+ *
+ * @ other commit
+ * |
+ * |  o commit 4   <- you are here
+ * |  |
+ * |  o commit 3
+ * |  |
+ * |  o commit 2
+ * |  |
+ * |  o commit 1
+ * | /
+ * |/
+ * o base commit
+ *
+ * @returns the path to the temporary directory that this function creates.
+ */
+
+
+let generateHgRepo4Fixture = exports.generateHgRepo4Fixture = (() => {
+  var _ref6 = (0, _asyncToGenerator.default)(function* () {
+    const testTxt = 'this is a test file\n';
+
+    const tempDir = yield (0, (_testHelpers || _load_testHelpers()).generateFixture)('hg_repo_4', new Map([['.watchmanconfig', '{}\n'], ['test.txt', testTxt], ['test_1.txt', ''], ['test_2.txt', ''], ['test_3.txt', ''], ['test_4.txt', '']]));
+    const repoPath = yield (_fsPromise || _load_fsPromise()).default.realpath(tempDir);
+    yield (0, (_process || _load_process()).runCommand)('hg', ['init'], { cwd: repoPath }).toPromise();
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, '.hg', 'hgrc'), '[paths]\ndefault = .\n[ui]\nusername = Test <test@mail.com>\n\n' + '[extensions]\nhistedit =\nfbhistedit =\n');
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'base commit'], {
+      cwd: repoPath
+    }).toPromise();
+    // make the base a public commit so that smartlog shows all children
+    yield (0, (_process || _load_process()).runCommand)('hg', ['phase', '-p'], {
+      cwd: repoPath
+    }).toPromise();
+
+    yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, 'test.txt'), testTxt + '\n\nmore added here');
+    yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', 'other commit'], {
+      cwd: repoPath
+    }).toPromise();
+    yield (0, (_process || _load_process()).runCommand)('hg', ['update', '.^'], {
+      cwd: repoPath
+    }).toPromise();
+
+    for (let i = 1; i < 5; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      yield (_fsPromise || _load_fsPromise()).default.writeFile((_nuclideUri || _load_nuclideUri()).default.join(repoPath, `test_${i}.txt`), `this is test file ${i}`);
+      // eslint-disable-next-line no-await-in-loop
+      yield (0, (_process || _load_process()).runCommand)('hg', ['commit', '-A', '-m', `commit ${i}`], {
+        cwd: repoPath
+      }).toPromise();
+    }
+
+    return repoPath;
+  });
+
+  return function generateHgRepo4Fixture() {
+    return _ref6.apply(this, arguments);
+  };
+})();
+
+/**
  * Like `copyMercurialFixture` but looks in the entire fixture directory for
  * `BUCK-rename` and `TARGETS-rename` and inserts a .buckversion if applicable.
  *
@@ -154,7 +269,7 @@ let generateHgRepo2Fixture = exports.generateHgRepo2Fixture = (() => {
 
 
 let copyBuildFixture = exports.copyBuildFixture = (() => {
-  var _ref4 = (0, _asyncToGenerator.default)(function* (fixtureName, source) {
+  var _ref7 = (0, _asyncToGenerator.default)(function* (fixtureName, source) {
     const projectDir = yield copyFixture(fixtureName, source);
 
     yield Promise.all([copyBuckVersion(projectDir), renameBuckFiles(projectDir)]);
@@ -162,13 +277,13 @@ let copyBuildFixture = exports.copyBuildFixture = (() => {
     return projectDir;
   });
 
-  return function copyBuildFixture(_x3, _x4) {
-    return _ref4.apply(this, arguments);
+  return function copyBuildFixture(_x5, _x6) {
+    return _ref7.apply(this, arguments);
   };
 })();
 
 let copyBuckVersion = (() => {
-  var _ref5 = (0, _asyncToGenerator.default)(function* (projectDir) {
+  var _ref8 = (0, _asyncToGenerator.default)(function* (projectDir) {
     const versionFile = '.buckversion';
     const buckVersionDir = yield (_fsPromise || _load_fsPromise()).default.findNearestFile(versionFile, __dirname);
     if (buckVersionDir != null) {
@@ -176,98 +291,27 @@ let copyBuckVersion = (() => {
     }
   });
 
-  return function copyBuckVersion(_x5) {
-    return _ref5.apply(this, arguments);
+  return function copyBuckVersion(_x7) {
+    return _ref8.apply(this, arguments);
   };
 })();
 
 let renameBuckFiles = (() => {
-  var _ref6 = (0, _asyncToGenerator.default)(function* (projectDir) {
+  var _ref9 = (0, _asyncToGenerator.default)(function* (projectDir) {
     const renames = yield (_fsPromise || _load_fsPromise()).default.glob('**/{BUCK,TARGETS}-rename', {
       cwd: projectDir
     });
     yield Promise.all(renames.map(function (name) {
       const prevName = (_nuclideUri || _load_nuclideUri()).default.join(projectDir, name);
       const newName = prevName.replace(/-rename$/, '');
-      return (_fsPromise || _load_fsPromise()).default.rename(prevName, newName);
+      return (_fsPromise || _load_fsPromise()).default.mv(prevName, newName);
     }));
   });
 
-  return function renameBuckFiles(_x6) {
-    return _ref6.apply(this, arguments);
+  return function renameBuckFiles(_x8) {
+    return _ref9.apply(this, arguments);
   };
 })();
-
-/**
- * Takes of Map of file/file-content pairs, and creates a temp dir that matches
- * the file structure of the Map. Example:
- *
- * generateFixture('myfixture', new Map([
- *   ['foo.js'],
- *   ['bar/baz.txt', 'some text'],
- * ]));
- *
- * Creates:
- *
- * /tmp/myfixture_1/foo.js (empty file)
- * /tmp/myfixture_1/bar/baz.txt (with 'some text')
- */
-
-
-let generateFixture = exports.generateFixture = (() => {
-  var _ref7 = (0, _asyncToGenerator.default)(function* (fixtureName, files) {
-    (_temp || _load_temp()).default.track();
-
-    const MAX_CONCURRENT_FILE_OPS = 100;
-    const tempDir = yield (_fsPromise || _load_fsPromise()).default.tempdir(fixtureName);
-
-    if (files == null) {
-      return tempDir;
-    }
-
-    // Map -> Array with full paths
-    const fileTuples = Array.from(files, function (tuple) {
-      // It's our own array - it's ok to mutate it
-      tuple[0] = (_nuclideUri || _load_nuclideUri()).default.join(tempDir, tuple[0]);
-      return tuple;
-    });
-
-    // Dedupe the dirs that we have to make.
-    const dirsToMake = fileTuples.map(function ([filename]) {
-      return (_nuclideUri || _load_nuclideUri()).default.dirname(filename);
-    }).filter(function (dirname, i, arr) {
-      return arr.indexOf(dirname) === i;
-    });
-
-    yield (0, (_promise || _load_promise()).asyncLimit)(dirsToMake, MAX_CONCURRENT_FILE_OPS, function (dirname) {
-      return (_fsPromise || _load_fsPromise()).default.mkdirp(dirname);
-    });
-
-    yield (0, (_promise || _load_promise()).asyncLimit)(fileTuples, MAX_CONCURRENT_FILE_OPS, function ([filename, contents]) {
-      // We can't use fsPromise/fs-plus because it does too much extra work.
-      // They call `mkdirp` before `writeFile`. We know that the target dir
-      // exists, so we can optimize by going straight to `fs`. When you're
-      // making 10k files, this adds ~500ms.
-      return new Promise(function (resolve, reject) {
-        _fs.default.writeFile(filename, contents || '', function (err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      });
-    });
-
-    return tempDir;
-  });
-
-  return function generateFixture(_x7, _x8) {
-    return _ref7.apply(this, arguments);
-  };
-})();
-
-var _fs = _interopRequireDefault(require('fs'));
 
 var _fsExtra;
 
@@ -293,16 +337,31 @@ function _load_nuclideUri() {
   return _nuclideUri = _interopRequireDefault(require('nuclide-commons/nuclideUri'));
 }
 
-var _promise;
-
-function _load_promise() {
-  return _promise = require('nuclide-commons/promise');
-}
-
 var _process;
 
 function _load_process() {
   return _process = require('nuclide-commons/process');
 }
 
+var _testHelpers;
+
+function _load_testHelpers() {
+  return _testHelpers = require('nuclide-commons/test-helpers');
+}
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+// This is in devDependencies. This file should only be used in tests.
+// eslint-disable-next-line rulesdir/no-unresolved
+const testFileContent = 'this is the base file\nline 2\n\n  indented line\n';

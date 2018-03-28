@@ -4,7 +4,7 @@ var util = require('util'),
     fs = require('fs'),
     path = require('path'),
     yaml = require('js-yaml'),
-    gonzales = require('gonzales-pe');
+    gonzales = require('gonzales-pe-sl');
 
 var helpers = {};
 
@@ -309,7 +309,10 @@ helpers.attemptTraversal = function (node, traversalPath) {
       currentNodeList = [],
       processChildNode = function processChildNode (child) {
         child.forEach(traversalPath[i], function (n) {
-          nextNodeList.push(n);
+          if (n.content && typeof n.content !== 'string' && n.contains('interpolation')) {
+            return false;
+          }
+          return nextNodeList.push(n);
         });
       };
 

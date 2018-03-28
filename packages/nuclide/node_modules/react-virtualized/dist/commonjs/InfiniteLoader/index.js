@@ -3,13 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.InfiniteLoader = exports.default = undefined;
+exports.InfiniteLoader = undefined;
 
-var _InfiniteLoader2 = require('./InfiniteLoader');
+var _InfiniteLoader = require('./InfiniteLoader');
 
-var _InfiniteLoader3 = _interopRequireDefault(_InfiniteLoader2);
+var _InfiniteLoader2 = _interopRequireDefault(_InfiniteLoader);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = _InfiniteLoader3.default;
-exports.InfiniteLoader = _InfiniteLoader3.default;
+exports.default = _InfiniteLoader2.default;
+exports.InfiniteLoader = _InfiniteLoader2.default;

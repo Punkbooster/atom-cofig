@@ -39,7 +39,7 @@ function _load_collection() {
 var _reduxObservable;
 
 function _load_reduxObservable() {
-  return _reduxObservable = require('../../commons-node/redux-observable');
+  return _reduxObservable = require('nuclide-commons/redux-observable');
 }
 
 var _UniversalDisposable;
@@ -78,8 +78,6 @@ function _load_createPanelItem() {
   return _createPanelItem = require('./ui/createPanelItem');
 }
 
-var _atom = require('atom');
-
 var _redux;
 
 function _load_redux() {
@@ -88,12 +86,20 @@ function _load_redux() {
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
+var _ToolbarUtils;
+
+function _load_ToolbarUtils() {
+  return _ToolbarUtils = require('nuclide-commons-ui/ToolbarUtils');
+}
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // TODO: use a more general versioning mechanism.
 // Perhaps Atom should provide packages with some way of doing this.
+const SERIALIZED_VERSION = 2;
+// These match task types with shortcuts defined in nuclide-task-runner.json
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -105,8 +111,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @format
  */
 
-const SERIALIZED_VERSION = 2;
-// These match task types with shortcuts defined in nuclide-task-runner.json
 const COMMON_TASK_TYPES = ['build', 'run', 'test', 'debug'];
 
 function getVisible(event) {
@@ -136,7 +140,7 @@ class Activation {
     this._store = (0, (_redux || _load_redux()).createStore)((0, (_redux || _load_redux()).combineReducers)(_Reducers || _load_Reducers()), {
       visible: getInitialVisibility(serializedState, preferencesForWorkingRoots)
     }, (0, (_redux || _load_redux()).applyMiddleware)((0, (_reduxObservable || _load_reduxObservable()).createEpicMiddleware)(rootEpic), (_trackingMiddleware || _load_trackingMiddleware()).trackingMiddleware));
-    const states = _rxjsBundlesRxMinJs.Observable.from(this._store).filter(state => state.taskRunnersReady).distinctUntilChanged().share();
+    const states = _rxjsBundlesRxMinJs.Observable.from(this._store).filter(state => state.initialPackagesActivated).distinctUntilChanged().share();
     this._actionCreators = (0, (_redux || _load_redux()).bindActionCreators)(_Actions || _load_Actions(), this._store.dispatch);
     this._panelRenderer = new (_PanelRenderer || _load_PanelRenderer()).default({
       location: 'top',
@@ -170,8 +174,8 @@ class Activation {
     })),
     // Add a command for each enabled common task with mapped keyboard shortcuts
     (0, (_syncAtomCommands || _load_syncAtomCommands()).default)(states.map(state => {
-      const { activeTaskRunner, isUpdatingTaskRunners } = state;
-      if (isUpdatingTaskRunners || !activeTaskRunner) {
+      const { activeTaskRunner, readyTaskRunners, taskRunners } = state;
+      if (taskRunners.count() > readyTaskRunners.count() || !activeTaskRunner) {
         return [];
       }
       const taskRunnerState = state.statesForTaskRunners.get(activeTaskRunner);
@@ -205,7 +209,13 @@ class Activation {
       }
     }), taskRunner => taskRunner.id), states.map(state => state.visible).distinctUntilChanged().subscribe(visible => {
       this._panelRenderer.render({ visible });
-    }));
+    }),
+    // Add a "stop" command when a task is running.
+    states.map(state => state.runningTask != null).distinctUntilChanged().switchMap(taskIsRunning => taskIsRunning ? _rxjsBundlesRxMinJs.Observable.create(() => new (_UniversalDisposable || _load_UniversalDisposable()).default(atom.commands.add('atom-workspace',
+    // eslint-disable-next-line rulesdir/atom-apis
+    'nuclide-task-runner:stop-task', () => {
+      this._actionCreators.stopTask();
+    }))) : _rxjsBundlesRxMinJs.Observable.empty()).subscribe());
   }
 
   dispose() {
@@ -213,9 +223,24 @@ class Activation {
   }
 
   consumeCurrentWorkingDirectory(api) {
-    this._disposables.add(api.observeCwd(directory => {
-      this._actionCreators.setProjectRoot(directory);
-    }));
+    let pkg = this;
+    const cwdSubscription = api.observeCwd(directory => {
+      if (!(pkg != null)) {
+        throw new Error('callback invoked after package deactivated');
+      }
+
+      pkg._actionCreators.setProjectRoot(directory == null ? null : directory.getPath());
+    });
+    this._disposables.add(cwdSubscription, () => {
+      pkg = null;
+    });
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
+      if (pkg != null) {
+        cwdSubscription.dispose();
+        pkg._disposables.remove(cwdSubscription);
+        pkg._actionCreators.setProjectRoot(null);
+      }
+    });
   }
 
   consumeToolBar(getToolBar) {
@@ -223,19 +248,19 @@ class Activation {
     toolBar.addSpacer({
       priority: 400
     });
-    const { element } = toolBar.addButton({
+    const { element } = toolBar.addButton((0, (_ToolbarUtils || _load_ToolbarUtils()).makeToolbarButtonSpec)({
       callback: 'nuclide-task-runner:toggle-toolbar-visibility',
       tooltip: 'Toggle Task Runner Toolbar',
       iconset: 'ion',
       icon: 'play',
       priority: 401
-    });
+    }));
     element.className += ' nuclide-task-runner-tool-bar-button';
 
     const buttonUpdatesDisposable = new (_UniversalDisposable || _load_UniversalDisposable()).default(
     // $FlowFixMe: Update rx defs to accept ish with Symbol.observable
     _rxjsBundlesRxMinJs.Observable.from(this._store).subscribe(state => {
-      if (state.taskRunners.length > 0) {
+      if (state.taskRunners.count() > 0) {
         element.removeAttribute('hidden');
       } else {
         element.setAttribute('hidden', 'hidden');
@@ -243,7 +268,7 @@ class Activation {
     }));
 
     // Remove the button from the toolbar.
-    const buttonPresenceDisposable = new _atom.Disposable(() => {
+    const buttonPresenceDisposable = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       toolBar.removeItems();
     });
 
@@ -252,7 +277,7 @@ class Activation {
 
     // If tool-bar is disabled, stop updating the button state and remove tool-bar related cleanup
     // from this package's disposal actions.
-    return new _atom.Disposable(() => {
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       buttonUpdatesDisposable.dispose();
       this._disposables.remove(buttonUpdatesDisposable);
       this._disposables.remove(buttonPresenceDisposable);
@@ -260,8 +285,16 @@ class Activation {
   }
 
   consumeConsole(service) {
+    let pkg = this;
+    this._disposables.add(() => {
+      pkg = null;
+    });
     this._actionCreators.setConsoleService(service);
-    return new _atom.Disposable(() => this._actionCreators.setConsoleService(null));
+    return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
+      if (pkg != null) {
+        pkg._actionCreators.setConsoleService(null);
+      }
+    });
   }
 
   provideTaskRunnerServiceApi() {
@@ -276,9 +309,22 @@ class Activation {
         }
 
         pkg._actionCreators.registerTaskRunner(taskRunner);
-        return new _atom.Disposable(() => {
+        return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
           if (pkg != null) {
             pkg._actionCreators.unregisterTaskRunner(taskRunner);
+          }
+        });
+      },
+      printToConsole: (message, taskRunner) => {
+        if (!(pkg != null)) {
+          throw new Error('Task runner service API used after deactivation');
+        }
+
+        this._store.dispatch({
+          type: (_Actions || _load_Actions()).TASK_MESSAGE,
+          payload: {
+            taskRunner,
+            message
           }
         });
       }
@@ -321,6 +367,7 @@ class Activation {
 (0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);
 
 function activateInitialPackagesObservable() {
+  // flowlint-next-line sketchy-null-mixed:off
   if (atom.packages.hasActivatedInitialPackages) {
     return _rxjsBundlesRxMinJs.Observable.of(undefined);
   }

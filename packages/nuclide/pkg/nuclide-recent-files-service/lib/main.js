@@ -1,14 +1,16 @@
 'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.activate = activate;
-exports.provideRecentFilesService = provideRecentFilesService;
-exports.serialize = serialize;
-exports.deactivate = deactivate;
+var _UniversalDisposable;
 
-var _atom = require('atom');
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
+var _createPackage;
+
+function _load_createPackage() {
+  return _createPackage = _interopRequireDefault(require('nuclide-commons-atom/createPackage'));
+}
 
 var _RecentFilesService;
 
@@ -21,15 +23,18 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 class Activation {
 
   constructor(state) {
-    this._subscriptions = new _atom.CompositeDisposable();
     this._service = new (_RecentFilesService || _load_RecentFilesService()).default(state);
-    this._subscriptions.add(new _atom.Disposable(() => {
-      this._service.dispose();
-    }));
+    this._subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default(this._service);
   }
 
-  getService() {
+  provideRecentFilesService() {
     return this._service;
+  }
+
+  serialize() {
+    return {
+      filelist: this._service.getRecentFiles()
+    };
   }
 
   dispose() {
@@ -46,35 +51,4 @@ class Activation {
    * @format
    */
 
-let activation = null;
-
-function activate(state) {
-  if (activation == null) {
-    activation = new Activation(state);
-  }
-}
-
-function provideRecentFilesService() {
-  if (!activation) {
-    throw new Error('Invariant violation: "activation"');
-  }
-
-  return activation.getService();
-}
-
-function serialize() {
-  if (!activation) {
-    throw new Error('Invariant violation: "activation"');
-  }
-
-  return {
-    filelist: activation.getService().getRecentFiles()
-  };
-}
-
-function deactivate() {
-  if (activation) {
-    activation.dispose();
-    activation = null;
-  }
-}
+(0, (_createPackage || _load_createPackage()).default)(module.exports, Activation);

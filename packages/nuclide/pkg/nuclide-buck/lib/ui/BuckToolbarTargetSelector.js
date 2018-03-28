@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
@@ -40,6 +40,8 @@ function _load_log4js() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -53,7 +55,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const NO_ACTIVE_PROJECT_ERROR = 'No active Buck project. Check your Current Working Root.';
 
-class BuckToolbarTargetSelector extends _react.default.Component {
+class BuckToolbarTargetSelector extends _react.Component {
 
   constructor(props) {
     super(props);
@@ -76,7 +78,6 @@ class BuckToolbarTargetSelector extends _react.default.Component {
 
     this._projectAliasesCache = new Map();
   }
-
   // Querying Buck can be slow, so cache aliases by project.
   // Putting the cache here allows the user to refresh it by toggling the UI.
 
@@ -121,7 +122,7 @@ class BuckToolbarTargetSelector extends _react.default.Component {
       return this._cachedOwners;
     }
     const buckService = (0, (_nuclideBuckBase || _load_nuclideBuckBase()).getBuckService)(buckRoot);
-    this._cachedOwners = buckService == null ? Promise.resolve([]) : buckService.getOwners(buckRoot, path).then(
+    this._cachedOwners = buckService == null ? Promise.resolve([]) : buckService.getOwners(buckRoot, path, []).then(
     // Strip off the optional leading "//" to match typical user input.
     owners => owners.map(owner => owner.startsWith('//') ? owner.substring(2) : owner)).catch(err => {
       (0, (_log4js || _load_log4js()).getLogger)('nuclide-buck').error(`Error getting Buck owners for ${path}`, err);
@@ -132,7 +133,7 @@ class BuckToolbarTargetSelector extends _react.default.Component {
   }
 
   render() {
-    return _react.default.createElement((_Combobox || _load_Combobox()).Combobox
+    return _react.createElement((_Combobox || _load_Combobox()).Combobox
     // Hack to forcibly refresh the combobox when the target changes.
     // TODO(#11581583): Remove this when Combobox is fully controllable.
     , { key: this.props.appState.buildTarget,

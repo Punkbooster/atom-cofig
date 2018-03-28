@@ -4,6 +4,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
+
 var _formatEnoentNotification;
 
 function _load_formatEnoentNotification() {
@@ -13,7 +19,7 @@ function _load_formatEnoentNotification() {
 var _LogTailer;
 
 function _load_LogTailer() {
-  return _LogTailer = require('../../nuclide-console/lib/LogTailer');
+  return _LogTailer = require('../../nuclide-console-base/lib/LogTailer');
 }
 
 var _createMessageStream;
@@ -27,8 +33,6 @@ var _createProcessStream;
 function _load_createProcessStream() {
   return _createProcessStream = require('./createProcessStream');
 }
-
-var _atom = require('atom');
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
@@ -59,9 +63,9 @@ class Activation {
       }
     });
 
-    this._disposables = new _atom.CompositeDisposable(new _atom.Disposable(() => {
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       this._iosLogTailer.stop();
-    }), atom.commands.add('atom-workspace', {
+    }, atom.commands.add('atom-workspace', {
       'nuclide-ios-simulator-logs:start': () => this._iosLogTailer.start(),
       'nuclide-ios-simulator-logs:stop': () => this._iosLogTailer.stop(),
       'nuclide-ios-simulator-logs:restart': () => this._iosLogTailer.restart()
@@ -86,15 +90,13 @@ class Activation {
     this._disposables.dispose();
   }
 }
-exports.default = Activation;
-// eslint-disable-next-line nuclide-internal/no-cross-atom-imports
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
+exports.default = Activation; /**
+                               * Copyright (c) 2015-present, Facebook, Inc.
+                               * All rights reserved.
+                               *
+                               * This source code is licensed under the license found in the LICENSE file in
+                               * the root directory of this source tree.
+                               *
+                               * 
+                               * @format
+                               */

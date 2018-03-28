@@ -3,13 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ScrollSync = exports.default = undefined;
+exports.ScrollSync = undefined;
 
-var _ScrollSync2 = require('./ScrollSync');
+var _ScrollSync = require('./ScrollSync');
 
-var _ScrollSync3 = _interopRequireDefault(_ScrollSync2);
+var _ScrollSync2 = _interopRequireDefault(_ScrollSync);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = _ScrollSync3.default;
-exports.ScrollSync = _ScrollSync3.default;
+exports.default = _ScrollSync2.default;
+exports.ScrollSync = _ScrollSync2.default;

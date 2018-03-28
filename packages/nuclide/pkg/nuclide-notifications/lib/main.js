@@ -9,7 +9,11 @@ exports.deactivate = deactivate;
 
 var _electron = _interopRequireDefault(require('electron'));
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _featureConfig;
 
@@ -19,16 +23,18 @@ function _load_featureConfig() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const { remote } = _electron.default; /**
-                                       * Copyright (c) 2015-present, Facebook, Inc.
-                                       * All rights reserved.
-                                       *
-                                       * This source code is licensed under the license found in the LICENSE file in
-                                       * the root directory of this source tree.
-                                       *
-                                       * 
-                                       * @format
-                                       */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
+
+const { remote } = _electron.default;
 
 if (!(remote != null)) {
   throw new Error('Invariant violation: "remote != null"');
@@ -37,7 +43,7 @@ if (!(remote != null)) {
 let subscriptions = null;
 
 function activate(state) {
-  subscriptions = new _atom.CompositeDisposable(
+  subscriptions = new (_UniversalDisposable || _load_UniversalDisposable()).default(
   // Listen for Atom notifications:
   atom.notifications.onDidAddNotification(proxyToNativeNotification));
 }
@@ -62,7 +68,11 @@ function raiseNativeNotification(title, body, timeout, raiseIfAtomHasFocus = fal
     // eslint-disable-next-line no-new, no-undef
     new Notification(title, {
       body,
-      icon: 'atom://nuclide/pkg/nuclide-notifications/notification.png'
+      icon: 'atom://nuclide/pkg/nuclide-notifications/notification.png',
+      onclick: () => {
+        // Windows does not properly bring the window into focus.
+        remote.getCurrentWindow().show();
+      }
     });
   };
 
@@ -79,7 +89,7 @@ function raiseNativeNotification(title, body, timeout, raiseIfAtomHasFocus = fal
         clearTimeout(timeoutId);
       });
 
-      return new _atom.Disposable(() => clearTimeout(timeoutId));
+      return new (_UniversalDisposable || _load_UniversalDisposable()).default(() => clearTimeout(timeoutId));
     }
   }
 

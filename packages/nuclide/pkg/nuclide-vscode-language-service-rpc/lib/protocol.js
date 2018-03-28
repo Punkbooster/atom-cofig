@@ -115,7 +115,7 @@ const CompletionItemKind = exports.CompletionItemKind = {
 /**
  * The marked string is rendered:
  * - as markdown if it is represented as a string
- * - as code block of the given langauge if it is represented as a pair of a language and a value
+ * - as code block of the given language if it is represented as a pair of a language and a value
  *
  * The pair of a language and a value is an equivalent to markdown:
  * ```${language};
@@ -204,7 +204,7 @@ const SymbolKind = exports.SymbolKind = {
 
 /**
  * A document link is a range in a text document that links to an internal or
-* external resource, like another
+ * external resource, like another
  * text document or a web site.
  */
 

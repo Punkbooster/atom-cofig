@@ -24,24 +24,16 @@ function _load_constants() {
   return _constants = require('./constants');
 }
 
-var _atom = require('atom');
+var _UniversalDisposable;
+
+function _load_UniversalDisposable() {
+  return _UniversalDisposable = _interopRequireDefault(require('nuclide-commons/UniversalDisposable'));
+}
 
 var _AnalyticsHelper;
 
 function _load_AnalyticsHelper() {
   return _AnalyticsHelper = require('./AnalyticsHelper');
-}
-
-var _DebuggerStore;
-
-function _load_DebuggerStore() {
-  return _DebuggerStore = require('./DebuggerStore');
-}
-
-var _passesGK;
-
-function _load_passesGK() {
-  return _passesGK = _interopRequireDefault(require('../../commons-node/passesGK'));
 }
 
 var _nuclideAnalytics;
@@ -64,19 +56,19 @@ function _load_ChromeActionRegistryActions() {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-debugger'); /**
-                                                                                * Copyright (c) 2015-present, Facebook, Inc.
-                                                                                * All rights reserved.
-                                                                                *
-                                                                                * This source code is licensed under the license found in the LICENSE file in
-                                                                                * the root directory of this source tree.
-                                                                                *
-                                                                                * 
-                                                                                * @format
-                                                                                */
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ *
+ * 
+ * @format
+ */
 
-const GK_DEBUGGER_REQUEST_WINDOW = 'nuclide_debugger_php_request_window';
-const GK_DEBUGGER_REQUEST_SENDER = 'nuclide_debugger_request_sender';
+const logger = (0, (_log4js || _load_log4js()).getLogger)('nuclide-debugger');
+
 
 // This must match URI defined in ../../nuclide-console/lib/ui/ConsoleContainer
 const CONSOLE_VIEW_URI = 'atom://nuclide/console';
@@ -86,10 +78,10 @@ const CONSOLE_VIEW_URI = 'atom://nuclide/console';
  */
 class DebuggerActions {
 
-  constructor(dispatcher, store) {
-    this._disposables = new _atom.CompositeDisposable();
+  constructor(dispatcher, model) {
+    this._disposables = new (_UniversalDisposable || _load_UniversalDisposable()).default();
     this._dispatcher = dispatcher;
-    this._store = store;
+    this._model = model;
   }
 
   startDebugging(processInfo) {
@@ -104,30 +96,23 @@ class DebuggerActions {
       _this.stopDebugging(); // stop existing session.
       _this.setError(null);
       _this._handleDebugModeStart();
-      _this.setDebuggerMode((_DebuggerStore || _load_DebuggerStore()).DebuggerMode.STARTING);
+      _this.setDebuggerMode((_constants || _load_constants()).DebuggerMode.STARTING);
       _this.setDebugProcessInfo(processInfo);
+
       try {
         const debuggerCapabilities = processInfo.getDebuggerCapabilities();
         const debuggerProps = processInfo.getDebuggerProps();
-        const debuggerInstance = yield processInfo.debug();
-        yield _this._store.getBridge().setupNuclideChannel(debuggerInstance);
-        _this._registerConsole();
-        const supportThreadsWindow = debuggerCapabilities.threads && (yield _this._allowThreadsForPhp(processInfo));
-        _this._store.getSettings().set('SupportThreadsWindow', supportThreadsWindow);
+        const supportThreadsWindow = debuggerCapabilities.threads;
+        _this._model.getSettings().supportThreadsWindow = supportThreadsWindow;
         if (supportThreadsWindow) {
-          _this._store.getSettings().set('CustomThreadColumns', debuggerProps.threadColumns);
-          _this._store.getSettings().set('threadsComponentTitle', debuggerProps.threadsComponentTitle);
+          _this._model.getSettings().threadsComponentTitle = debuggerProps.threadsComponentTitle;
         }
-        const singleThreadStepping = debuggerCapabilities.singleThreadStepping;
-        _this._store.getSettings().set('SingleThreadStepping', singleThreadStepping);
-        _this.toggleSingleThreadStepping(singleThreadStepping);
-        if (processInfo.getServiceName() !== 'hhvm' || (yield (0, (_passesGK || _load_passesGK()).default)(GK_DEBUGGER_REQUEST_SENDER))) {
-          const customControlButtons = debuggerProps.customControlButtons;
-          if (customControlButtons.length > 0) {
-            _this.updateControlButtons(customControlButtons);
-          } else {
-            _this.updateControlButtons([]);
-          }
+
+        const customControlButtons = debuggerProps.customControlButtons;
+        if (customControlButtons.length > 0) {
+          _this.updateControlButtons(customControlButtons);
+        } else {
+          _this.updateControlButtons([]);
         }
 
         if (debuggerCapabilities.customSourcePaths) {
@@ -138,6 +123,10 @@ class DebuggerActions {
 
         atom.commands.dispatch(atom.views.getView(atom.workspace), 'nuclide-debugger:show');
 
+        const debuggerInstance = yield processInfo.debug();
+        yield _this._model.getBridge().setupNuclideChannel(debuggerInstance);
+        _this._registerConsole();
+
         yield _this._waitForChromeConnection(debuggerInstance);
       } catch (err) {
         (0, (_AnalyticsHelper || _load_AnalyticsHelper()).failTimerTracking)(err);
@@ -147,15 +136,6 @@ class DebuggerActions {
         atom.notifications.addError(errorMessage);
         _this.stopDebugging();
       }
-    })();
-  }
-
-  _allowThreadsForPhp(processInfo) {
-    return (0, _asyncToGenerator.default)(function* () {
-      if (processInfo.getServiceName() === 'hhvm') {
-        return (0, (_passesGK || _load_passesGK()).default)(GK_DEBUGGER_REQUEST_WINDOW);
-      }
-      return true;
     })();
   }
 
@@ -181,18 +161,17 @@ class DebuggerActions {
         _this2._disposables.add(debuggerInstance.onSessionEnd(handler));
       }
 
-      const socketAddr = yield debuggerInstance.getWebsocketAddress();
       (0, (_AnalyticsHelper || _load_AnalyticsHelper()).endTimerTracking)();
 
       _this2._dispatcher.dispatch({
         actionType: (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.SET_PROCESS_SOCKET,
-        data: socketAddr
+        data: ''
       });
       // Debugger finished initializing and entered debug mode.
-      _this2.setDebuggerMode((_DebuggerStore || _load_DebuggerStore()).DebuggerMode.RUNNING);
+      _this2.setDebuggerMode((_constants || _load_constants()).DebuggerMode.RUNNING);
 
       // Wait for 'resume' event from Bridge.js to guarantee we've passed the loader breakpoint.
-      yield _this2._store.loaderBreakpointResumePromise;
+      yield _this2._model.loaderBreakpointResumePromise;
     })();
   }
 
@@ -204,7 +183,7 @@ class DebuggerActions {
   }
 
   _handleSessionEnd(debuggerInstance) {
-    if (this._store.getDebuggerInstance() === debuggerInstance) {
+    if (this._model.getDebuggerInstance() === debuggerInstance) {
       this.stopDebugging();
     } else {
       // Do nothing, because either:
@@ -214,12 +193,12 @@ class DebuggerActions {
   }
 
   stopDebugging() {
-    if (this._store.getDebuggerMode() === (_DebuggerStore || _load_DebuggerStore()).DebuggerMode.STOPPING) {
+    if (this._model.getDebuggerMode() === (_constants || _load_constants()).DebuggerMode.STOPPING) {
       return;
     }
-    this.setDebuggerMode((_DebuggerStore || _load_DebuggerStore()).DebuggerMode.STOPPING);
+    this.setDebuggerMode((_constants || _load_constants()).DebuggerMode.STOPPING);
     this._unregisterConsole();
-    const debuggerInstance = this._store.getDebuggerInstance();
+    const debuggerInstance = this._model.getDebuggerInstance();
     if (debuggerInstance != null) {
       debuggerInstance.dispose();
       this._setDebuggerInstance(null);
@@ -231,20 +210,20 @@ class DebuggerActions {
 
     this.clearInterface();
     this.updateControlButtons([]);
-    this.setDebuggerMode((_DebuggerStore || _load_DebuggerStore()).DebuggerMode.STOPPED);
+    this.setDebuggerMode((_constants || _load_constants()).DebuggerMode.STOPPED);
     this.setDebugProcessInfo(null);
     this.updateConfigureSourcePathsCallback(null);
     (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)((_constants || _load_constants()).AnalyticsEvents.DEBUGGER_STOP);
     (0, (_AnalyticsHelper || _load_AnalyticsHelper()).endTimerTracking)();
 
-    if (!(this._store.getDebuggerInstance() == null)) {
-      throw new Error('Invariant violation: "this._store.getDebuggerInstance() == null"');
+    if (!(this._model.getDebuggerInstance() == null)) {
+      throw new Error('Invariant violation: "this._model.getDebuggerInstance() == null"');
     }
   }
 
   restartDebugger() {
-    const currentDebuggerInfo = this._store.getDebugProcessInfo();
-    if (currentDebuggerInfo == null || this._store.getDebuggerMode() === (_DebuggerStore || _load_DebuggerStore()).DebuggerMode.STOPPED) {
+    const currentDebuggerInfo = this._model.getDebugProcessInfo();
+    if (currentDebuggerInfo == null || this._model.getDebuggerMode() === (_constants || _load_constants()).DebuggerMode.STOPPED) {
       atom.notifications.addWarning('Cannot restart the debugger: the debugger is not currently running!');
       return;
     }
@@ -436,7 +415,7 @@ class DebuggerActions {
         (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)((_constants || _load_constants()).AnalyticsEvents.DEBUGGER_STEP_OUT);
         break;
       default:
-        logger.error('Unkown debugger action type', actionId);
+        logger.error('Unknown debugger action type', actionId);
         break;
     }
     this._dispatcher.dispatch({
@@ -610,16 +589,6 @@ class DebuggerActions {
     });
   }
 
-  toggleSingleThreadStepping(singleThreadStepping) {
-    (0, (_nuclideAnalytics || _load_nuclideAnalytics()).track)((_constants || _load_constants()).AnalyticsEvents.DEBUGGER_TOGGLE_SINGLE_THREAD_STEPPING, {
-      singleThreadStepping
-    });
-    this._dispatcher.dispatch({
-      actionType: (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.TOGGLE_SINGLE_THREAD_STEPPING,
-      data: singleThreadStepping
-    });
-  }
-
   updateScopes(scopeSections) {
     this._dispatcher.dispatch({
       actionType: (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.UPDATE_SCOPES,
@@ -679,10 +648,6 @@ class DebuggerActions {
     });
   }
 
-  openDevTools() {
-    this._dispatcher.dispatch({ actionType: (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.OPEN_DEV_TOOLS });
-  }
-
   receiveExpressionEvaluationResponse(id, response) {
     this._dispatcher.dispatch({
       actionType: (_DebuggerDispatcher || _load_DebuggerDispatcher()).ActionTypes.RECEIVED_EXPRESSION_EVALUATION_RESPONSE,
@@ -712,8 +677,8 @@ class DebuggerActions {
 
   _handleDebugModeStart() {
     // Open the console window if it's not already opened.
-    // eslint-disable-next-line nuclide-internal/atom-apis
-    atom.workspace.open(CONSOLE_VIEW_URI);
+    // eslint-disable-next-line rulesdir/atom-apis
+    atom.workspace.open(CONSOLE_VIEW_URI, { searchAllPanes: true });
   }
 }
 exports.default = DebuggerActions;

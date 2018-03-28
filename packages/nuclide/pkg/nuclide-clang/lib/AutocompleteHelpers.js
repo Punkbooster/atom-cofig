@@ -94,6 +94,7 @@ function getCompletionBody(completion, columnOffset, indentation) {
   const inlineBody = getCompletionBodyInline(completion);
   const multiLineBody = getCompletionBodyMultiLine(completion, columnOffset, indentation);
 
+  // flowlint-next-line sketchy-null-string:off
   if (columnOffset + inlineBody.length > MAX_LINE_LENGTH && multiLineBody) {
     return multiLineBody;
   }
@@ -229,13 +230,13 @@ function getCompletionPrefix(editor) {
 class AutocompleteHelpers {
 
   static getAutocompleteSuggestions(request) {
-    return (0, (_nuclideAnalytics || _load_nuclideAnalytics()).trackTiming)('nuclide-clang-atom.autocomplete', (0, _asyncToGenerator.default)(function* () {
+    return (0, _asyncToGenerator.default)(function* () {
       const results = yield AutocompleteHelpers._cacher.getSuggestions(request);
       if (results != null) {
         return [...results];
       }
       return [];
-    }));
+    })();
   }
 
   static _getAutocompleteSuggestions(request) {
@@ -293,6 +294,7 @@ class AutocompleteHelpers {
           type,
           leftLabel: completion.result_type,
           rightLabel,
+          // flowlint-next-line sketchy-null-string:off
           description: completion.brief_comment || completion.result_type,
           filterText: completion.typed_name
         };

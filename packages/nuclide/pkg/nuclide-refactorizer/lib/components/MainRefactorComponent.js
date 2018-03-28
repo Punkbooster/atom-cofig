@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.MainRefactorComponent = undefined;
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _Button;
 
@@ -13,10 +13,22 @@ function _load_Button() {
   return _Button = require('nuclide-commons-ui/Button');
 }
 
+var _ButtonGroup;
+
+function _load_ButtonGroup() {
+  return _ButtonGroup = require('nuclide-commons-ui/ButtonGroup');
+}
+
 var _ConfirmRefactorComponent;
 
 function _load_ConfirmRefactorComponent() {
   return _ConfirmRefactorComponent = require('./ConfirmRefactorComponent');
+}
+
+var _DiffPreviewComponent;
+
+function _load_DiffPreviewComponent() {
+  return _DiffPreviewComponent = require('./DiffPreviewComponent');
 }
 
 var _FreeformRefactorComponent;
@@ -51,9 +63,7 @@ function _load_refactorActions() {
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-class MainRefactorComponent extends _react.default.Component {
+class MainRefactorComponent extends _react.Component {
   render() {
     if (this.props.appState.type === 'closed') {
       return null;
@@ -65,12 +75,23 @@ class MainRefactorComponent extends _react.default.Component {
   }
 
   _render() {
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       null,
       this.getHeaderElement(),
       this.getInnerElement()
     );
+  }
+
+  _getBackButton() {
+    const appState = this.props.appState;
+    const previousPhase = appState.phase && appState.phase.previousPhase || null;
+    return previousPhase ? _react.createElement(
+      (_Button || _load_Button()).Button,
+      {
+        onClick: () => this.props.store.dispatch((_refactorActions || _load_refactorActions()).backFromDiffPreview(previousPhase)) },
+      'Back'
+    ) : null;
   }
 
   getHeaderElement() {
@@ -80,18 +101,23 @@ class MainRefactorComponent extends _react.default.Component {
       throw new Error('Invariant violation: "appState.type === \'open\'"');
     }
 
-    return _react.default.createElement(
+    return _react.createElement(
       'div',
       { className: 'nuclide-refactorizer-header' },
-      _react.default.createElement(
+      _react.createElement(
         'span',
         null,
         'Refactor'
       ),
-      _react.default.createElement(
-        (_Button || _load_Button()).Button,
-        { onClick: () => this.props.store.dispatch((_refactorActions || _load_refactorActions()).close()) },
-        'Close'
+      _react.createElement(
+        (_ButtonGroup || _load_ButtonGroup()).ButtonGroup,
+        null,
+        this._getBackButton(),
+        _react.createElement(
+          (_Button || _load_Button()).Button,
+          { onClick: () => this.props.store.dispatch((_refactorActions || _load_refactorActions()).close()) },
+          'Close'
+        )
       )
     );
   }
@@ -106,30 +132,32 @@ class MainRefactorComponent extends _react.default.Component {
     const phase = appState.phase;
     switch (phase.type) {
       case 'get-refactorings':
-        return _react.default.createElement(
+        return _react.createElement(
           'div',
           null,
           'Waiting for refactorings...'
         );
       case 'pick':
-        return _react.default.createElement((_PickRefactorComponent || _load_PickRefactorComponent()).PickRefactorComponent, { pickPhase: phase, store: this.props.store });
+        return _react.createElement((_PickRefactorComponent || _load_PickRefactorComponent()).PickRefactorComponent, { pickPhase: phase, store: this.props.store });
       case 'rename':
-        return _react.default.createElement((_RenameComponent || _load_RenameComponent()).RenameComponent, { phase: phase, store: this.props.store });
+        return _react.createElement((_RenameComponent || _load_RenameComponent()).RenameComponent, { phase: phase, store: this.props.store });
       case 'freeform':
-        return _react.default.createElement((_FreeformRefactorComponent || _load_FreeformRefactorComponent()).FreeformRefactorComponent, { phase: phase, store: this.props.store });
+        return _react.createElement((_FreeformRefactorComponent || _load_FreeformRefactorComponent()).FreeformRefactorComponent, { phase: phase, store: this.props.store });
       case 'execute':
-        return _react.default.createElement(
+        return _react.createElement(
           'div',
           null,
           'Executing refactoring...'
         );
       case 'confirm':
-        return _react.default.createElement((_ConfirmRefactorComponent || _load_ConfirmRefactorComponent()).ConfirmRefactorComponent, { phase: phase, store: this.props.store });
+        return _react.createElement((_ConfirmRefactorComponent || _load_ConfirmRefactorComponent()).ConfirmRefactorComponent, { phase: phase, store: this.props.store });
       case 'progress':
-        return _react.default.createElement((_ProgressComponent || _load_ProgressComponent()).ProgressComponent, { phase: phase });
+        return _react.createElement((_ProgressComponent || _load_ProgressComponent()).ProgressComponent, { phase: phase });
+      case 'diff-preview':
+        return _react.createElement((_DiffPreviewComponent || _load_DiffPreviewComponent()).DiffPreviewComponent, { phase: phase });
       default:
         phase;
-        return _react.default.createElement('div', null);
+        return _react.createElement('div', null);
     }
   }
 }

@@ -26,11 +26,9 @@ exports.consumeCoverageProvider = consumeCoverageProvider;
 exports.consumeStatusBar = consumeStatusBar;
 exports.getDiagnosticsProvider = getDiagnosticsProvider;
 
-var _react = _interopRequireDefault(require('react'));
+var _react = _interopRequireWildcard(require('react'));
 
 var _reactDom = _interopRequireDefault(require('react-dom'));
-
-var _atom = require('atom');
 
 var _rxjsBundlesRxMinJs = require('rxjs/bundles/Rx.min.js');
 
@@ -64,20 +62,20 @@ function _load_coverageDiagnostics() {
   return _coverageDiagnostics = require('./coverageDiagnostics');
 }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
- * 
- * @format
- */
-
-const STATUS_BAR_PRIORITY = 1000;
+const STATUS_BAR_PRIORITY = 1000; /**
+                                   * Copyright (c) 2015-present, Facebook, Inc.
+                                   * All rights reserved.
+                                   *
+                                   * This source code is licensed under the license found in the LICENSE file in
+                                   * the root directory of this source tree.
+                                   *
+                                   * 
+                                   * @format
+                                   */
 
 class Activation {
 
@@ -100,8 +98,7 @@ class Activation {
   }
 
   consumeStatusBar(statusBar) {
-    const item = document.createElement('div');
-    item.className = 'inline-block';
+    const item = document.createElement('span');
 
     const statusBarTile = statusBar.addLeftTile({
       item,
@@ -109,12 +106,12 @@ class Activation {
     });
 
     const resultStream = this._activeEditorRegistry.getResultsStream();
-    _reactDom.default.render(_react.default.createElement((_StatusBarTile || _load_StatusBarTile()).StatusBarTile, {
+    _reactDom.default.render(_react.createElement((_StatusBarTile || _load_StatusBarTile()).StatusBarTile, {
       results: resultStream,
       isActive: this._shouldRenderDiagnostics,
       onClick: () => this._toggleEvents.next()
     }), item);
-    const disposable = new _atom.Disposable(() => {
+    const disposable = new (_UniversalDisposable || _load_UniversalDisposable()).default(() => {
       _reactDom.default.unmountComponentAtNode(item);
       statusBarTile.destroy();
     });
